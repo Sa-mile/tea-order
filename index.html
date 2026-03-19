@@ -1,42 +1,87 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 15px; background: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); }
-        .box { display: flex; flex-direction: column; gap: 10px; }
-        input, button, select { padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; }
-        button { background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); border: none; font-weight: bold; margin-top: 10px; }
+        body { font-family: sans-serif; background: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); padding: 15px; margin: 0; }
+        .category-btn { 
+            width: 100%; padding: 15px; margin-top: 10px; border: none; border-radius: 10px;
+            background: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color);
+            font-weight: bold; text-align: left; cursor: pointer; display: flex; justify-content: space-between;
+        }
+        .items-container { display: none; padding: 10px; background: rgba(0,0,0,0.05); border-radius: 0 0 10px 10px; }
+        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.1); }
+        .item-name { flex: 1; font-size: 14px; }
+        .controls { display: flex; align-items: center; gap: 10px; }
+        .btn-qty { width: 30px; height: 30px; border-radius: 50%; border: none; background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); font-weight: bold; }
+        .qty-val { min-width: 20px; text-align: center; font-weight: bold; }
+        #send_btn { width: 100%; padding: 15px; margin-top: 25px; border: none; border-radius: 10px; background: #31b545; color: white; font-weight: bold; font-size: 16px; }
+        input#client { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; margin-bottom: 10px; }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h3>Оформление заказа ☕</h3>
-        
-        <label>Клиент:</label>
-        <input list="clients-list" id="client" placeholder="Начните вводить...">
-        <datalist id="clients-list"></datalist>
 
-        <label>Товар:</label>
-        <select id="product">
-            <option value="Ягодный чай 0.5">Ягодный чай 0.5</option>
-            <option value="Концентрат Малина">Концентрат Малина</option>
-            <option value="Концентрат Облепиха">Концентрат Облепиха</option>
-        </select>
+    <h3>Оформлення замовлення ☕</h3>
+    
+    <input list="clients-list" id="client" placeholder="Виберіть клієнта...">
+    <datalist id="clients-list"></datalist>
 
-        <label>Количество (шт):</label>
-        <input type="number" id="count" value="1" min="1">
+    <button class="category-btn" onclick="toggleCat('teas')">🍓 Ягідні чаї <span>▼</span></button>
+    <div id="teas" class="items-container"></div>
 
-        <button id="send_btn">Подтвердить и отправить</button>
-    </div>
+    <button class="category-btn" onclick="toggleCat('lemonades')">🍋 Лимонади <span>▼</span></button>
+    <div id="lemonades" class="items-container"></div>
+
+    <button class="category-btn" onclick="toggleCat('other')">📦 Інше <span>▼</span></button>
+    <div id="other" class="items-container"></div>
+
+    <button id="send_btn">ПІДТВЕРДИТИ ЗАМОВЛЕННЯ</button>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // 1. Читаем список клиентов из ссылки
+        const products = {
+            teas: ["Обліпиха", "Журавлина", "Імбир", "Смородина", "Малина", "Чорниця", "Полуниця", "Обліпиха + Маракуя", "Вишня", "Імбир + Малина"],
+            lemonades: ["Апельсин", "Грейпфрут", "Класичний", "Імбир", "Персик", "Диня", "Полуниця", "Маракуйя", "Вишня", "Малина"],
+            other: ["0,4л 100шт", "0,5л 100шт"]
+        };
+
+        const order = {}; // Тут зберігаємо обрані товари
+
+        function renderItems() {
+            for (let cat in products) {
+                const container = document.getElementById(cat);
+                products[cat].forEach(name => {
+                    const row = document.createElement('div');
+                    row.className = 'item-row';
+                    row.innerHTML = `
+                        <div class="item-name">${name}</div>
+                        <div class="controls">
+                            <button class="btn-qty" onclick="changeQty('${name}', -1)">-</button>
+                            <div class="qty-val" id="qty-${name}">0</div>
+                            <button class="btn-qty" onclick="changeQty('${name}', 1)">+</button>
+                        </div>
+                    `;
+                    container.appendChild(row);
+                });
+            }
+        }
+
+        function toggleCat(id) {
+            const el = document.getElementById(id);
+            el.style.display = el.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function changeQty(name, delta) {
+            order[name] = (order[name] || 0) + delta;
+            if (order[name] < 0) order[name] = 0;
+            document.getElementById(`qty-${name}`).innerText = order[name];
+        }
+
+        // Автозаповнення клієнтів (як було раніше)
         const params = new URLSearchParams(window.location.search);
         const dataStr = params.get('clients');
         if (dataStr) {
@@ -49,21 +94,21 @@
             });
         }
 
-        // 2. Логика кнопки
         document.getElementById("send_btn").onclick = function() {
-            let client = document.getElementById("client").value;
-            let product = document.getElementById("product").value;
-            let count = document.getElementById("count").value;
+            const client = document.getElementById("client").value;
+            const finalOrder = Object.entries(order).filter(([_, qty]) => qty > 0);
 
-            if (!client) return alert("Выберите клиента!");
+            if (!client) return alert("Виберіть клієнта!");
+            if (finalOrder.length === 0) return alert("Додайте хоча б один товар!");
 
             tg.sendData(JSON.stringify({
                 client: client,
-                product: product,
-                count: count
+                items: Object.fromEntries(finalOrder)
             }));
             tg.close();
         };
+
+        renderItems();
     </script>
 </body>
 </html>
