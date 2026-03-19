@@ -5,104 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            background: var(--tg-theme-bg-color); 
-            color: var(--tg-theme-text-color); 
-            padding: 15px; 
-            margin: 0; 
-        }
-        h3 { margin-top: 0; }
-        
-        /* Поле выбора клиента */
+        body { font-family: -apple-system, sans-serif; background: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); padding: 15px; margin: 0; }
         .client-section { margin-bottom: 20px; }
-        input#client { 
-            width: 100%; 
-            padding: 12px; 
-            border-radius: 10px; 
-            border: 1px solid #ccc; 
-            box-sizing: border-box;
-            background: var(--tg-theme-secondary-bg-color);
-            color: var(--tg-theme-text-color);
-            font-size: 16px;
-        }
-
-        /* Кнопки категорий */
-        .category-btn { 
-            width: 100%; 
-            padding: 15px; 
-            margin-top: 10px; 
-            border: none; 
-            border-radius: 10px;
-            background: var(--tg-theme-secondary-bg-color); 
-            color: var(--tg-theme-text-color);
-            font-weight: bold; 
-            text-align: left; 
-            cursor: pointer; 
-            display: flex; 
-            justify-content: space-between;
-            font-size: 16px;
-        }
-
-        /* Контейнер товаров */
-        .items-container { 
-            display: none; 
-            padding: 5px 10px; 
-            background: rgba(0,0,0,0.03); 
-            border-radius: 0 0 10px 10px; 
-        }
-        .item-row { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            padding: 10px 0; 
-            border-bottom: 1px solid rgba(0,0,0,0.05); 
-        }
-        .item-name { flex: 1; font-size: 14px; padding-right: 10px; }
-
-        /* Управление количеством */
+        input#client { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; background: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color); font-size: 16px; }
+        .category-btn { width: 100%; padding: 15px; margin-top: 10px; border: none; border-radius: 10px; background: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color); font-weight: bold; text-align: left; display: flex; justify-content: space-between; font-size: 16px; }
+        .items-container { display: none; padding: 5px 10px; background: rgba(0,0,0,0.03); border-radius: 0 0 10px 10px; }
+        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .item-name { flex: 1; font-size: 14px; }
         .controls { display: flex; align-items: center; gap: 8px; }
-        .btn-qty { 
-            width: 32px; 
-            height: 32px; 
-            border-radius: 8px; 
-            border: none; 
-            background: var(--tg-theme-button-color); 
-            color: var(--tg-theme-button-text-color); 
-            font-weight: bold; 
-            font-size: 18px;
-            cursor: pointer;
-        }
-        .qty-input {
-            width: 45px;
-            height: 30px;
-            text-align: center;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            background: var(--tg-theme-bg-color);
-            color: var(--tg-theme-text-color);
-            font-size: 16px;
-            -moz-appearance: textfield;
-        }
-        .qty-input::-webkit-outer-spin-button,
-        .qty-input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-
-        /* Финальная кнопка */
-        #send_btn { 
-            width: 100%; 
-            padding: 16px; 
-            margin-top: 30px; 
-            border: none; 
-            border-radius: 12px; 
-            background: #31b545; 
-            color: white; 
-            font-weight: bold; 
-            font-size: 16px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
+        .btn-qty { width: 32px; height: 32px; border-radius: 8px; border: none; background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); font-weight: bold; font-size: 18px; }
+        .qty-input { width: 45px; height: 30px; text-align: center; border: 1px solid #ccc; border-radius: 6px; background: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); font-size: 16px; }
+        #send_btn { width: 100%; padding: 16px; margin-top: 30px; border: none; border-radius: 12px; background: #31b545; color: white; font-weight: bold; font-size: 16px; }
     </style>
 </head>
 <body>
@@ -113,14 +26,11 @@
         <datalist id="clients-list"></datalist>
     </div>
 
-    <button class="category-btn" onclick="toggleCat('teas')">🍓 Ягідні чаї <span>▼</span></button>
-    <div id="teas" class="items-container"></div>
-
     <button class="category-btn" onclick="toggleCat('lemonades')">🍋 Лимонади <span>▼</span></button>
     <div id="lemonades" class="items-container"></div>
 
-    <button class="category-btn" onclick="toggleCat('other')">📦 Інше <span>▼</span></button>
-    <div id="other" class="items-container"></div>
+    <button class="category-btn" onclick="toggleCat('teas')">🍓 Чай <span>▼</span></button>
+    <div id="teas" class="items-container"></div>
 
     <button id="send_btn">НАДІСЛАТИ ЗАМОВЛЕННЯ</button>
 
@@ -128,10 +38,10 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
+        // НАЗВИ МАЮТЬ БУТИ ТОЧНО ЯК У ДРУГОМУ РЯДКУ ТАБЛИЦІ (БЕЗ ПРОБІЛІВ)
         const products = {
-            teas: ["ОБЛІПИХА", "ЖУРАВЛИНА", "ІМБИР", "СМОРОДИНА", "МАЛИНА", "ЧОРНИЦЯ", "ПОЛУНИЦЯ", "ОБЛІПИХА+МАРАКУЙЯ", "ВИШНЯ", "ІМБИР+МАЛИНА"],
-            lemonades: ["АПЕЛЬСИН", "ГРЕЙПФРУТ", "КЛАСИЧНИЙ", "ІМБИР", "ПЕРСИК", "ДИНЯ", "ПОЛУНИЦЯ", "МАРАКУЙЯ", "ВИШНЯ", "МАЛИНА"],
-            other: ["0,4л 100шт", "0,5л 100шт"]
+            lemonades: ["ГАРБУЗ", "МАЛИНА", "ВИШНЯ", "МАРАКУЙЯ", "ПОЛУНИЦЯ", "ДИНЯ", "ПЕРСИК", "ІМБИР", "КЛАСИК", "ГРЕЙПФРУТ", "АПЕЛЬСИН"],
+            teas: ["ІМБИР+МАЛИНА", "ВИШНЯ", "ОБЛІПИХА+МАРАКУЙЯ", "ПОЛУНИЦЯ", "ЧОРНИЦЯ", "МАЛИНА", "СМОРОДИНА", "ІМБИР", "ЖУРАВЛИНА", "ОБЛІПИХА"]
         };
 
         const order = {}; 
@@ -140,19 +50,15 @@
             for (let cat in products) {
                 const container = document.getElementById(cat);
                 products[cat].forEach(name => {
+                    const itemKey = `${cat}_${name}`;
                     const row = document.createElement('div');
                     row.className = 'item-row';
                     row.innerHTML = `
                         <div class="item-name">${name}</div>
                         <div class="controls">
-                            <button class="btn-qty" onclick="changeQty('${name}', -1)">-</button>
-                            <input type="number" 
-                                   class="qty-input" 
-                                   id="qty-${name}" 
-                                   value="0" 
-                                   min="0" 
-                                   oninput="updateManual('${name}', this.value)">
-                            <button class="btn-qty" onclick="changeQty('${name}', 1)">+</button>
+                            <button class="btn-qty" onclick="changeQty('${itemKey}', -1)">-</button>
+                            <input type="number" class="qty-input" id="qty-${itemKey}" value="0" min="0" oninput="updateManual('${itemKey}', this.value)">
+                            <button class="btn-qty" onclick="changeQty('${itemKey}', 1)">+</button>
                         </div>
                     `;
                     container.appendChild(row);
@@ -162,66 +68,36 @@
 
         function toggleCat(id) {
             const el = document.getElementById(id);
-            const btn = el.previousElementSibling.querySelector('span');
-            if (el.style.display === 'block') {
-                el.style.display = 'none';
-                btn.innerText = '▼';
-            } else {
-                el.style.display = 'block';
-                btn.innerText = '▲';
-            }
+            const span = el.previousElementSibling ? el.previousElementSibling.querySelector('span') : null;
+            el.style.display = el.style.display === 'block' ? 'none' : 'block';
         }
 
-        function changeQty(name, delta) {
-            const input = document.getElementById(`qty-${name}`);
-            let current = parseInt(input.value) || 0;
-            let newVal = current + delta;
-            if (newVal < 0) newVal = 0;
-            
-            input.value = newVal;
-            order[name] = newVal;
-        }
-
-        function updateManual(name, value) {
-            let val = parseInt(value) || 0;
+        function changeQty(key, delta) {
+            const input = document.getElementById(`qty-${key}`);
+            let val = (parseInt(input.value) || 0) + delta;
             if (val < 0) val = 0;
-            order[name] = val;
+            input.value = val;
+            order[key] = val;
         }
 
-        // Завантаження клієнтів
-        const params = new URLSearchParams(window.location.search);
-        const dataStr = params.get('clients');
-        if (dataStr) {
-            try {
-                const clients = JSON.parse(decodeURIComponent(dataStr));
-                const list = document.getElementById('clients-list');
-                clients.forEach(c => {
-                    let opt = document.createElement('option');
-                    opt.value = c;
-                    list.appendChild(opt);
-                });
-            } catch (e) { console.error("Помилка клієнтів:", e); }
+        function updateManual(key, value) {
+            order[key] = parseInt(value) || 0;
         }
+
+        const params = new URLSearchParams(window.location.search);
+        const clients = JSON.parse(decodeURIComponent(params.get('clients') || '[]'));
+        const list = document.getElementById('clients-list');
+        clients.forEach(c => { let opt = document.createElement('option'); opt.value = c; list.appendChild(opt); });
 
         document.getElementById("send_btn").onclick = function() {
             const client = document.getElementById("client").value;
-            // Фільтруємо замовлення, залишаючи тільки позиції > 0
-            const finalOrder = Object.entries(order).filter(([_, qty]) => qty > 0);
+            const finalItems = {};
+            for (let k in order) { if (order[k] > 0) finalItems[k] = order[k]; }
 
-            if (!client) {
-                tg.showAlert("Будь ласка, виберіть клієнта!");
-                return;
-            }
-            if (finalOrder.length === 0) {
-                tg.showAlert("Додайте хоча б один товар у замовлення!");
-                return;
-            }
+            if (!client) return tg.showAlert("Виберіть клієнта!");
+            if (Object.keys(finalItems).length === 0) return tg.showAlert("Додайте товар!");
 
-            // Відправка даних
-            tg.sendData(JSON.stringify({
-                client: client,
-                items: Object.fromEntries(finalOrder)
-            }));
+            tg.sendData(JSON.stringify({ client: client, items: finalItems }));
             tg.close();
         };
 
