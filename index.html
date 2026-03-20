@@ -7,26 +7,25 @@
     <style>
         body { font-family: -apple-system, sans-serif; background: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); padding: 15px; margin: 0; }
         .client-section { margin-bottom: 20px; }
-        input#client { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; background: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color); font-size: 16px; }
-        .category-btn { width: 100%; padding: 15px; margin-top: 10px; border: none; border-radius: 10px; background: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color); font-weight: bold; text-align: left; display: flex; justify-content: space-between; font-size: 16px; }
+        input#client, textarea#comment { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; background: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color); font-size: 16px; }
+        textarea#comment { margin-top: 10px; font-family: inherit; resize: none; }
+        .category-btn { width: 100%; padding: 15px; margin-top: 10px; border: none; border-radius: 10px; background: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color); font-weight: bold; text-align: left; display: flex; justify-content: space-between; font-size: 16px; cursor: pointer; }
         .items-container { display: none; padding: 5px 10px; background: rgba(0,0,0,0.03); border-radius: 0 0 10px 10px; }
         .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
         .item-name { flex: 1; font-size: 14px; }
         .controls { display: flex; align-items: center; gap: 8px; }
-        .btn-qty { width: 32px; height: 32px; border-radius: 8px; border: none; background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); font-weight: bold; font-size: 18px; }
-        .qty-input { width: 45px; height: 30px; text-align: center; border: 1px solid #ccc; border-radius: 6px; background: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); font-size: 16px; }
-        #send_btn { width: 100%; padding: 16px; margin-top: 30px; border: none; border-radius: 12px; background: #31b545; color: white; font-weight: bold; font-size: 16px; }
+        .btn-qty { width: 32px; height: 32px; border-radius: 8px; border: none; background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); font-weight: bold; font-size: 18px; cursor: pointer; }
+        .qty-input { width: 45px; height: 30px; text-align: center; border: 1px solid #ccc; border-radius: 6px; background: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); font-size: 16px; -moz-appearance: textfield; }
+        .qty-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+        #send_btn { width: 100%; padding: 16px; margin-top: 30px; border: none; border-radius: 12px; background: #31b545; color: white; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer; }
     </style>
 </head>
 <body>
-
     <div class="client-section">
         <h3>Оформлення замовлення ☕</h3>
-        <input list="clients-list" id="client" placeholder="Введіть або виберіть клієнта...">
+        <input list="clients-list" id="client" placeholder="Виберіть або введіть назву кав'ярні...">
         <datalist id="clients-list"></datalist>
-        
-        <textarea id="comment" placeholder="Ваш коментар (необов'язково)..." 
-            style="width: 100%; margin-top: 10px; padding: 10px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; background: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color); font-family: inherit; resize: none;" rows="2"></textarea>
+        <textarea id="comment" placeholder="Коментар (час доставки, здача тощо)..." rows="2"></textarea>
     </div>
 
     <button class="category-btn" onclick="toggleCat('lemonades')">🍋 Лимонади <span>▼</span></button>
@@ -41,7 +40,6 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        // НАЗВИ МАЮТЬ БУТИ ТОЧНО ЯК У ДРУГОМУ РЯДКУ ТАБЛИЦІ (БЕЗ ПРОБІЛІВ)
         const products = {
             lemonades: ["ГАРБУЗ", "МАЛИНА", "ВИШНЯ", "МАРАКУЙЯ", "ПОЛУНИЦЯ", "ДИНЯ", "ПЕРСИК", "ІМБИР", "КЛАСИК", "ГРЕЙПФРУТ", "АПЕЛЬСИН"],
             teas: ["ІМБИР+МАЛИНА", "ВИШНЯ", "ОБЛІПИХА+МАРАКУЙЯ", "ПОЛУНИЦЯ", "ЧОРНИЦЯ", "МАЛИНА", "СМОРОДИНА", "ІМБИР", "ЖУРАВЛИНА", "ОБЛІПИХА"]
@@ -62,8 +60,7 @@
                             <button class="btn-qty" onclick="changeQty('${itemKey}', -1)">-</button>
                             <input type="number" class="qty-input" id="qty-${itemKey}" value="0" min="0" oninput="updateManual('${itemKey}', this.value)">
                             <button class="btn-qty" onclick="changeQty('${itemKey}', 1)">+</button>
-                        </div>
-                    `;
+                        </div>`;
                     container.appendChild(row);
                 });
             }
@@ -71,8 +68,10 @@
 
         function toggleCat(id) {
             const el = document.getElementById(id);
-            const span = el.previousElementSibling ? el.previousElementSibling.querySelector('span') : null;
-            el.style.display = el.style.display === 'block' ? 'none' : 'block';
+            const span = el.previousElementSibling.querySelector('span');
+            const isVisible = el.style.display === 'block';
+            el.style.display = isVisible ? 'none' : 'block';
+            span.innerText = isVisible ? '▼' : '▲';
         }
 
         function changeQty(key, delta) {
@@ -94,19 +93,14 @@
 
         document.getElementById("send_btn").onclick = function() {
             const client = document.getElementById("client").value;
-            const comment = document.getElementById("comment").value; // Забираем комментарий
+            const comment = document.getElementById("comment").value;
             const finalItems = {};
             for (let k in order) { if (order[k] > 0) finalItems[k] = order[k]; }
 
-            if (!client) return tg.showAlert("Виберіть клієнта!");
-            if (Object.keys(finalItems).length === 0) return tg.showAlert("Додайте товар!");
+            if (!client) return tg.showAlert("Будь ласка, вкажіть клієнта!");
+            if (Object.keys(finalItems).length === 0) return tg.showAlert("Додайте хоча б один товар!");
 
-            // Отправляем объект с комментарием
-            tg.sendData(JSON.stringify({ 
-                client: client, 
-                comment: comment, 
-                items: finalItems 
-            }));
+            tg.sendData(JSON.stringify({ client: client, comment: comment, items: finalItems }));
             tg.close();
         };
 
