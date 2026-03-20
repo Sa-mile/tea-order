@@ -24,6 +24,9 @@
         <h3>Оформлення замовлення ☕</h3>
         <input list="clients-list" id="client" placeholder="Введіть або виберіть клієнта...">
         <datalist id="clients-list"></datalist>
+        
+        <textarea id="comment" placeholder="Ваш коментар (необов'язково)..." 
+            style="width: 100%; margin-top: 10px; padding: 10px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; background: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color); font-family: inherit; resize: none;" rows="2"></textarea>
     </div>
 
     <button class="category-btn" onclick="toggleCat('lemonades')">🍋 Лимонади <span>▼</span></button>
@@ -91,13 +94,19 @@
 
         document.getElementById("send_btn").onclick = function() {
             const client = document.getElementById("client").value;
+            const comment = document.getElementById("comment").value; // Забираем комментарий
             const finalItems = {};
             for (let k in order) { if (order[k] > 0) finalItems[k] = order[k]; }
 
             if (!client) return tg.showAlert("Виберіть клієнта!");
             if (Object.keys(finalItems).length === 0) return tg.showAlert("Додайте товар!");
 
-            tg.sendData(JSON.stringify({ client: client, items: finalItems }));
+            // Отправляем объект с комментарием
+            tg.sendData(JSON.stringify({ 
+                client: client, 
+                comment: comment, 
+                items: finalItems 
+            }));
             tg.close();
         };
 
