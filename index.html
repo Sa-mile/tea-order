@@ -22,6 +22,10 @@
         .glass-title { font-weight: bold; margin-bottom: 10px; display: block; color: #288c38; font-size: 14px; text-transform: uppercase; }
         .category-btn { width: 100%; padding: 15px; margin-top: 10px; border: none; border-radius: 10px; background: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color); font-weight: bold; text-align: left; display: flex; justify-content: space-between; font-size: 16px; cursor: pointer; }
         .items-container { display: none; padding: 5px 10px; background: rgba(0,0,0,0.03); border-radius: 0 0 10px 10px; }
+        
+        /* Робимо секцію стаканів видимою за замовчуванням */
+        #glass { display: block; }
+
         .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
         .item-name { flex: 1; font-size: 14px; }
         .controls { display: flex; align-items: center; gap: 8px; }
@@ -66,6 +70,10 @@
         const order = {}; 
 
         const params = new URLSearchParams(window.location.search);
+        
+        // --- НОВЕ: отримуємо manager_id з URL ---
+        const managerId = params.get('manager_id');
+        
         const clients = JSON.parse(decodeURIComponent(params.get('clients') || '[]'));
         const clientInput = document.getElementById('client');
         const suggestionsBox = document.getElementById('suggestions');
@@ -137,7 +145,14 @@
             if (!client) return tg.showAlert("Вкажіть назву кав'ярні!");
             if (Object.keys(finalItems).length === 0) return tg.showAlert("Ви не обрали товари!");
 
-            tg.sendData(JSON.stringify({ client, comment, items: finalItems }));
+            // --- НОВЕ: передаємо менеджер ID разом із даними ---
+            tg.sendData(JSON.stringify({ 
+                client, 
+                comment, 
+                items: finalItems,
+                manager_id: managerId 
+            }));
+            
             setTimeout(() => { tg.close(); }, 100);
         };
 
