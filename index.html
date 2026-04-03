@@ -212,8 +212,7 @@
         // --- НОВЕ: отримуємо manager_id з URL ---
         const managerId = params.get('manager_id');
 
-        const rawClients = params.get('clients');
-        const clients = rawClients ? JSON.parse(rawClients) : [];
+        const clients = JSON.parse(decodeURIComponent(params.get('clients') || '[]'));
 
         const clientInput = document.getElementById('client');
         const suggestionsBox = document.getElementById('suggestions');
