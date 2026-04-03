@@ -1,39 +1,177 @@
 <!DOCTYPE html>
 <html lang="uk">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); padding: 15px; margin: 0; }
-        .client-section { margin-bottom: 20px; position: relative; }
-        input#client, textarea#comment { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; background: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color); font-size: 16px; }
-        textarea#comment { margin-top: 10px; font-family: inherit; resize: none; }
-        .autocomplete-container { position: relative; width: 100%; }
-        .suggestions-list { 
-            position: absolute; top: 100%; left: 0; right: 0; 
-            background: var(--tg-theme-secondary-bg-color); border: 1px solid rgba(0,0,0,0.1); 
-            border-radius: 10px; z-index: 1000; max-height: 200px; overflow-y: auto; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; margin-top: 5px;
+        body {
+            font-family: -apple-system, sans-serif;
+            background: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            padding: 15px;
+            margin: 0;
         }
-        .suggestion-item { padding: 12px; cursor: pointer; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 15px; }
-        .suggestion-item:active { background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); }
-        .glass-section { margin-top: 20px; padding: 15px; border-radius: 12px; background: rgba(49, 181, 69, 0.08); border: 1px solid #31b545; }
-        .glass-title { font-weight: bold; margin-bottom: 10px; display: block; color: #288c38; font-size: 14px; text-transform: uppercase; }
-        .category-btn { width: 100%; padding: 15px; margin-top: 10px; border: none; border-radius: 10px; background: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-text-color); font-weight: bold; text-align: left; display: flex; justify-content: space-between; font-size: 16px; cursor: pointer; }
-        .items-container { display: none; padding: 5px 10px; background: rgba(0,0,0,0.03); border-radius: 0 0 10px 10px; }
-        
-        /* Робимо секцію стаканів видимою за замовчуванням */
-        #glass { display: block; }
 
-        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
-        .item-name { flex: 1; font-size: 14px; }
-        .controls { display: flex; align-items: center; gap: 8px; }
-        .btn-qty { width: 32px; height: 32px; border-radius: 8px; border: none; background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); font-weight: bold; font-size: 18px; cursor: pointer; }
-        .qty-input { width: 45px; height: 30px; text-align: center; border: 1px solid #ccc; border-radius: 6px; background: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); font-size: 16px; }
-        #send_btn { width: 100%; padding: 16px; margin-top: 30px; border: none; border-radius: 12px; background: #31b545; color: white; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .client-section {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        input#client,
+        textarea#comment {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            background: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+            font-size: 16px;
+        }
+
+        textarea#comment {
+            margin-top: 10px;
+            font-family: inherit;
+            resize: none;
+        }
+
+        .autocomplete-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .suggestions-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--tg-theme-secondary-bg-color);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+            margin-top: 5px;
+        }
+
+        .suggestion-item {
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-size: 15px;
+        }
+
+        .suggestion-item:active {
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
+
+        .glass-section {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 12px;
+            background: rgba(49, 181, 69, 0.08);
+            border: 1px solid #31b545;
+        }
+
+        .glass-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: block;
+            color: #288c38;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .category-btn {
+            width: 100%;
+            padding: 15px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 10px;
+            background: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+            font-weight: bold;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .items-container {
+            display: none;
+            padding: 5px 10px;
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 0 0 10px 10px;
+        }
+
+        /* Робимо секцію стаканів видимою за замовчуванням */
+        #glass {
+            display: block;
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .item-name {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-qty {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .qty-input {
+            width: 45px;
+            height: 30px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            font-size: 16px;
+        }
+
+        #send_btn {
+            width: 100%;
+            padding: 16px;
+            margin-top: 30px;
+            border: none;
+            border-radius: 12px;
+            background: #31b545;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+        }
     </style>
 </head>
+
 <body>
     <div class="client-section">
         <h3>Оформлення замовлення ☕</h3>
@@ -62,23 +200,25 @@
         tg.expand();
 
         const products = {
-          lemonades: ["АПЕЛЬСИН", "ГРЕЙПФРУТ", "КЛАСИК", "ІМБИР", "ПЕРСИК", "ДИНЯ", "ПОЛУНИЦЯ", "МАРАКУЙЯ", "ВИШНЯ", "МАЛИНА", "ГАРБУЗ"],
-          teas: ["ОБЛІПИХА", "ЖУРАВЛИНА", "ІМБИР ЧАЙ", "СМОРОДИНА", "МАЛИНА ЧАЙ", "ЧОРНИЦЯ", "ПОЛУНИЦЯ ЧАЙ", "ОБЛІПИХА+МАРАКУЙЯ", "ВИШНЯ ЧАЙ", "ІМБИР+МАЛИНА"],
-          glass: ["0,4 ПЕТ 100 шт", "0,5 ПЕТ 100 шт"]
+            lemonades: ["АПЕЛЬСИН", "ГРЕЙПФРУТ", "КЛАСИК", "ІМБИР", "ПЕРСИК", "ДИНЯ", "ПОЛУНИЦЯ", "МАРАКУЙЯ", "ВИШНЯ", "МАЛИНА", "ГАРБУЗ"],
+            teas: ["ОБЛІПИХА", "ЖУРАВЛИНА", "ІМБИР ЧАЙ", "СМОРОДИНА", "МАЛИНА ЧАЙ", "ЧОРНИЦЯ", "ПОЛУНИЦЯ ЧАЙ", "ОБЛІПИХА+МАРАКУЙЯ", "ВИШНЯ ЧАЙ", "ІМБИР+МАЛИНА"],
+            glass: ["0,4 ПЕТ 100 шт", "0,5 ПЕТ 100 шт"]
         };
 
-        const order = {}; 
+        const order = {};
 
         const params = new URLSearchParams(window.location.search);
-        
+
         // --- НОВЕ: отримуємо manager_id з URL ---
         const managerId = params.get('manager_id');
-        
-        const clients = JSON.parse(decodeURIComponent(params.get('clients') || '[]'));
+
+        const rawClients = params.get('clients');
+        const clients = rawClients ? JSON.parse(rawClients) : [];
+
         const clientInput = document.getElementById('client');
         const suggestionsBox = document.getElementById('suggestions');
 
-        clientInput.addEventListener('input', function() {
+        clientInput.addEventListener('input', function () {
             const val = this.value.toLowerCase();
             suggestionsBox.innerHTML = '';
             if (!val) { suggestionsBox.style.display = 'none'; return; }
@@ -87,7 +227,7 @@
                 const div = document.createElement('div');
                 div.className = 'suggestion-item';
                 div.innerText = name;
-                div.onclick = function() { clientInput.value = name; suggestionsBox.style.display = 'none'; };
+                div.onclick = function () { clientInput.value = name; suggestionsBox.style.display = 'none'; };
                 suggestionsBox.appendChild(div);
             });
             suggestionsBox.style.display = filtered.length > 0 ? 'block' : 'none';
@@ -131,12 +271,12 @@
             if (val > 0) order[key] = val; else delete order[key];
         }
 
-        function updateManual(key, value) { 
+        function updateManual(key, value) {
             let val = parseInt(value) || 0;
             if (val > 0) order[key] = val; else delete order[key];
         }
 
-        document.getElementById("send_btn").onclick = function() {
+        document.getElementById("send_btn").onclick = function () {
             const client = clientInput.value.trim();
             const comment = document.getElementById("comment").value.trim();
             const finalItems = {};
@@ -146,17 +286,18 @@
             if (Object.keys(finalItems).length === 0) return tg.showAlert("Ви не обрали товари!");
 
             // --- НОВЕ: передаємо менеджер ID разом із даними ---
-            tg.sendData(JSON.stringify({ 
-                client, 
-                comment, 
+            tg.sendData(JSON.stringify({
+                client,
+                comment,
                 items: finalItems,
-                manager_id: managerId 
+                manager_id: managerId
             }));
-            
+
             setTimeout(() => { tg.close(); }, 100);
         };
 
         renderItems();
     </script>
 </body>
+
 </html>
