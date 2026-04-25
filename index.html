@@ -196,107 +196,117 @@
     <button id="send_btn">НАДІСЛАТИ ЗАМОВЛЕННЯ</button>
 
     <script>
-        let tg = window.Telegram.WebApp;
-        tg.expand();
+    let tg = window.Telegram.WebApp;
+    tg.expand();
 
-        const products = {
-            lemonades: ["АПЕЛЬСИН", "ГРЕЙПФРУТ", "КЛАСИК", "ІМБИР", "ПЕРСИК", "ДИНЯ", "ПОЛУНИЦЯ", "МАРАКУЙЯ", "ВИШНЯ", "МАЛИНА", "ГАРБУЗ"],
-            teas: ["ОБЛІПИХА", "ЖУРАВЛИНА", "ІМБИР ЧАЙ", "СМОРОДИНА", "МАЛИНА ЧАЙ", "ЧОРНИЦЯ", "ПОЛУНИЦЯ ЧАЙ", "ОБЛІПИХА+МАРАКУЙЯ", "ВИШНЯ ЧАЙ", "ІМБИР+МАЛИНА"],
-            glass: ["0,4 ПЕТ 100 шт", "0,5 ПЕТ 100 шт"]
-        };
+    const products = {
+        lemonades: ["АПЕЛЬСИН", "ГРЕЙПФРУТ", "КЛАСИК", "ІМБИР", "ПЕРСИК", "ДИНЯ", "ПОЛУНИЦЯ", "МАРАКУЙЯ", "ВИШНЯ", "МАЛИНА", "ГАРБУЗ"],
+        teas: ["ОБЛІПИХА", "ЖУРАВЛИНА", "ІМБИР ЧАЙ", "СМОРОДИНА", "МАЛИНА ЧАЙ", "ЧОРНИЦЯ", "ПОЛУНИЦЯ ЧАЙ", "ОБЛІПИХА+МАРАКУЙЯ", "ВИШНЯ ЧАЙ", "ІМБИР+МАЛИНА"],
+        glass: ["0,4 ПЕТ 100 шт", "0,5 ПЕТ 100 шт"]
+    };
 
-        const order = {};
+    const order = {};
+    const params = new URLSearchParams(window.location.search);
+    const managerId = params.get('manager_id');
+    const apiUrl = decodeURIComponent(params.get('api_url') || '');
 
-        const params = new URLSearchParams(window.location.search);
+    const clientInput = document.getElementById('client');
+    const suggestionsBox = document.getElementById('suggestions');
 
-        // --- НОВЕ: отримуємо manager_id з URL ---
-        const managerId = params.get('manager_id');
+    // Загружаем клиентов с API
+    let clients = [];
+    async function loadClients() {
+        if (!apiUrl || !managerId) return;
+        try {
+            const resp = await fetch(`${apiUrl}/api/clients?manager_id=${managerId}`);
+            const data = await resp.json();
+            clients = data.clients || [];
+        } catch (e) {
+            console.error('Помилка завантаження клієнтів', e);
+        }
+    }
 
-        const clients = JSON.parse(decodeURIComponent(params.get('clients') || '[]'));
-
-        const clientInput = document.getElementById('client');
-        const suggestionsBox = document.getElementById('suggestions');
-
-        clientInput.addEventListener('input', function () {
-            const val = this.value.toLowerCase();
-            suggestionsBox.innerHTML = '';
-            if (!val) { suggestionsBox.style.display = 'none'; return; }
-            const filtered = clients.filter(c => c.toLowerCase().includes(val));
-            filtered.forEach(name => {
-                const div = document.createElement('div');
-                div.className = 'suggestion-item';
-                div.innerText = name;
-                div.onclick = function () { clientInput.value = name; suggestionsBox.style.display = 'none'; };
-                suggestionsBox.appendChild(div);
-            });
-            suggestionsBox.style.display = filtered.length > 0 ? 'block' : 'none';
+    clientInput.addEventListener('input', function () {
+        const val = this.value.toLowerCase();
+        suggestionsBox.innerHTML = '';
+        if (!val) { suggestionsBox.style.display = 'none'; return; }
+        const filtered = clients.filter(c => c.toLowerCase().includes(val));
+        filtered.forEach(name => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.innerText = name;
+            div.onclick = function () { clientInput.value = name; suggestionsBox.style.display = 'none'; };
+            suggestionsBox.appendChild(div);
         });
+        suggestionsBox.style.display = filtered.length > 0 ? 'block' : 'none';
+    });
 
-        document.addEventListener('click', (e) => { if (e.target !== clientInput) suggestionsBox.style.display = 'none'; });
+    document.addEventListener('click', (e) => { if (e.target !== clientInput) suggestionsBox.style.display = 'none'; });
 
-        function renderItems() {
-            for (let cat in products) {
-                const container = document.getElementById(cat);
-                if (!container) continue;
-                products[cat].forEach(name => {
-                    const itemKey = `${cat}_${name}`;
-                    const row = document.createElement('div');
-                    row.className = 'item-row';
-                    row.innerHTML = `
-                        <div class="item-name">${name}</div>
-                        <div class="controls">
-                            <button class="btn-qty" onclick="changeQty('${itemKey}', -1)">-</button>
-                            <input type="number" class="qty-input" id="qty-${itemKey}" value="0" min="0" oninput="updateManual('${itemKey}', this.value)">
-                            <button class="btn-qty" onclick="changeQty('${itemKey}', 1)">+</button>
-                        </div>`;
-                    container.appendChild(row);
-                });
-            }
+    function renderItems() {
+        for (let cat in products) {
+            const container = document.getElementById(cat);
+            if (!container) continue;
+            products[cat].forEach(name => {
+                const itemKey = `${cat}_${name}`;
+                const row = document.createElement('div');
+                row.className = 'item-row';
+                row.innerHTML = `
+                    <div class="item-name">${name}</div>
+                    <div class="controls">
+                        <button class="btn-qty" onclick="changeQty('${itemKey}', -1)">-</button>
+                        <input type="number" class="qty-input" id="qty-${itemKey}" value="0" min="0" oninput="updateManual('${itemKey}', this.value)">
+                        <button class="btn-qty" onclick="changeQty('${itemKey}', 1)">+</button>
+                    </div>`;
+                container.appendChild(row);
+            });
         }
+    }
 
-        function toggleCat(id) {
-            const el = document.getElementById(id);
-            const span = el.previousElementSibling.querySelector('span');
-            const isVisible = el.style.display === 'block';
-            el.style.display = isVisible ? 'none' : 'block';
-            span.innerText = isVisible ? '▼' : '▲';
-        }
+    function toggleCat(id) {
+        const el = document.getElementById(id);
+        const span = el.previousElementSibling.querySelector('span');
+        const isVisible = el.style.display === 'block';
+        el.style.display = isVisible ? 'none' : 'block';
+        span.innerText = isVisible ? '▼' : '▲';
+    }
 
-        function changeQty(key, delta) {
-            const input = document.getElementById(`qty-${key}`);
-            let val = (parseInt(input.value) || 0) + delta;
-            if (val < 0) val = 0;
-            input.value = val;
-            if (val > 0) order[key] = val; else delete order[key];
-        }
+    function changeQty(key, delta) {
+        const input = document.getElementById(`qty-${key}`);
+        let val = (parseInt(input.value) || 0) + delta;
+        if (val < 0) val = 0;
+        input.value = val;
+        if (val > 0) order[key] = val; else delete order[key];
+    }
 
-        function updateManual(key, value) {
-            let val = parseInt(value) || 0;
-            if (val > 0) order[key] = val; else delete order[key];
-        }
+    function updateManual(key, value) {
+        let val = parseInt(value) || 0;
+        if (val > 0) order[key] = val; else delete order[key];
+    }
 
-        document.getElementById("send_btn").onclick = function () {
-            const client = clientInput.value.trim();
-            const comment = document.getElementById("comment").value.trim();
-            const finalItems = {};
-            for (let k in order) { if (order[k] > 0) finalItems[k] = order[k]; }
+    document.getElementById("send_btn").onclick = function () {
+        const client = clientInput.value.trim();
+        const comment = document.getElementById("comment").value.trim();
+        const finalItems = {};
+        for (let k in order) { if (order[k] > 0) finalItems[k] = order[k]; }
 
-            if (!client) return tg.showAlert("Вкажіть назву кав'ярні!");
-            if (Object.keys(finalItems).length === 0) return tg.showAlert("Ви не обрали товари!");
+        if (!client) return tg.showAlert("Вкажіть назву кав'ярні!");
+        if (Object.keys(finalItems).length === 0) return tg.showAlert("Ви не обрали товари!");
 
-            // --- НОВЕ: передаємо менеджер ID разом із даними ---
-            tg.sendData(JSON.stringify({
-                client,
-                comment,
-                items: finalItems,
-                manager_id: managerId
-            }));
+        tg.sendData(JSON.stringify({
+            client,
+            comment,
+            items: finalItems,
+            manager_id: managerId
+        }));
 
-            setTimeout(() => { tg.close(); }, 100);
-        };
+        setTimeout(() => { tg.close(); }, 100);
+    };
 
-        renderItems();
-    </script>
+    // Запуск
+    loadClients();
+    renderItems();
+</script>
 </body>
 
 </html>
