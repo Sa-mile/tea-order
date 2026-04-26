@@ -618,10 +618,14 @@
         </button>
         <div id="teas" class="items-container"></div>
 
-        <div class="glass-section">
-            <span class="glass-title">🥤 СТАКАНИ ПЕТ:</span>
-            <div id="pet"></div>
-        </div>
+        <button class="category-btn" onclick="toggleCatOpen('pet', this)">
+            <div class="cat-btn-left">
+                <div class="cat-check" id="check-pet" onclick="selectAllInCat('pet', event)"></div>
+                🥤 ПЕТ Стакани
+            </div>
+            <span>▼</span>
+        </button>
+        <div id="pet" class="items-container"></div>
 
         <button id="show-btn" onclick="loadReport()">🔍 ПОКАЗАТИ ЗВІТ</button>
 
