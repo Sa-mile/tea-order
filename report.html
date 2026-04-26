@@ -268,6 +268,15 @@
         .prod-amount { font-weight: 700; font-size: 14px; }
         .prod-qty { color: #888; font-size: 12px; }
 
+        .prod-toggle {
+            text-align: center;
+            padding: 10px 0 2px;
+            color: #31b545;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
         .day-row {
             display: flex;
             justify-content: space-between;
@@ -359,12 +368,13 @@
             <div id="clients-list"></div>
         </div>
         <div class="result-section">
-            <div class="result-title">📦 Позиції</div>
-            <div id="products-list"></div>
-        </div>
-        <div class="result-section">
             <div class="result-title">📅 По днях</div>
             <div id="days-list"></div>
+        </div>
+        <div class="result-section">
+            <div class="result-title">📦 Позиції</div>
+            <div id="products-list"></div>
+            <div class="prod-toggle" id="prod-toggle" onclick="toggleProducts()"></div>
         </div>
         <button id="copy-btn" onclick="copyReport()">📋 Скопіювати звіт</button>
     </div>
@@ -389,6 +399,9 @@
         let selectedClients = [];
         let selectedProducts = {};
         let lastReport = null;
+        let allProducts = [];
+        let prodsExpanded = false;
+        const PRODS_PREVIEW = 5;
 
         // ПЕРИОД
         function setPeriod(type, btn) {
@@ -478,7 +491,7 @@
             renderSelectedClients();
         }
 
-        // ПРОДУКТЫ
+        // ПРОДУКТЫ (фильтр)
         function renderItems() {
             ['lemonades', 'teas', 'pet'].forEach(cat => {
                 const container = document.getElementById(cat);
@@ -509,7 +522,6 @@
             e.stopPropagation();
             const catCheck = document.getElementById(`check-${cat}`);
             const allChecked = PRODUCTS[cat].every(p => selectedProducts[p]);
-
             if (allChecked) {
                 PRODUCTS[cat].forEach(p => {
                     delete selectedProducts[p];
@@ -576,6 +588,7 @@
                 const resp = await fetch(url);
                 const data = await resp.json();
                 lastReport = data;
+                prodsExpanded = false;
                 renderReport(data);
                 document.getElementById('results').style.display = 'block';
                 setTimeout(() => document.getElementById('results').scrollIntoView({ behavior: 'smooth' }), 100);
@@ -586,6 +599,44 @@
 
             btn.disabled = false;
             btn.textContent = '🔍 ПОКАЗАТИ ЗВІТ';
+        }
+
+        // ПОЗИЦИИ — сворачиваемые
+        function renderProductsList() {
+            const list = document.getElementById('products-list');
+            const toggle = document.getElementById('prod-toggle');
+
+            if (allProducts.length === 0) {
+                list.innerHTML = '<div class="empty">Немає даних</div>';
+                toggle.style.display = 'none';
+                return;
+            }
+
+            const visible = prodsExpanded ? allProducts : allProducts.slice(0, PRODS_PREVIEW);
+
+            list.innerHTML = visible.map(p => `
+                <div class="prod-row">
+                    <div class="prod-name">${p.name}</div>
+                    <div class="prod-stats">
+                        <div class="prod-amount">${fmt(p.amount)} грн</div>
+                        <div class="prod-qty">${p.qty} шт</div>
+                    </div>
+                </div>
+            `).join('');
+
+            if (allProducts.length > PRODS_PREVIEW) {
+                toggle.style.display = 'block';
+                toggle.textContent = prodsExpanded
+                    ? '▲ Менше'
+                    : `▼ Більше (ще ${allProducts.length - PRODS_PREVIEW})`;
+            } else {
+                toggle.style.display = 'none';
+            }
+        }
+
+        function toggleProducts() {
+            prodsExpanded = !prodsExpanded;
+            renderProductsList();
         }
 
         function renderReport(data) {
@@ -612,7 +663,7 @@
                 `).join('')}
             `;
 
-            // Клиенты — первыми
+            // Клиенты
             document.getElementById('clients-list').innerHTML = data.top_clients.length === 0
                 ? '<div class="empty">Немає даних</div>'
                 : data.top_clients.map((c, i) => `
@@ -626,20 +677,7 @@
                     </div>
                 `).join('');
 
-            // Позиции — после клиентов
-            const filteredProds = data.products.filter(p => p.name !== 'ВАРТІСТЬ');
-            document.getElementById('products-list').innerHTML = filteredProds.length === 0
-                ? '<div class="empty">Немає даних</div>'
-                : filteredProds.map(p => `
-                    <div class="prod-row">
-                        <div class="prod-name">${p.name}</div>
-                        <div class="prod-stats">
-                            <div class="prod-amount">${fmt(p.amount)} грн</div>
-                            <div class="prod-qty">${p.qty} шт</div>
-                        </div>
-                    </div>
-                `).join('');
-
+            // По дням
             document.getElementById('days-list').innerHTML = data.by_day.length === 0
                 ? '<div class="empty">Немає даних</div>'
                 : data.by_day.map(d => `
@@ -649,6 +687,10 @@
                         <div class="damount">${fmt(d.amount)} грн</div>
                     </div>
                 `).join('');
+
+            // Позиции — в самом низу, сворачиваемые
+            allProducts = data.products.filter(p => p.name !== 'ВАРТІСТЬ');
+            renderProductsList();
         }
 
         function fmt(n) { return Math.round(n).toLocaleString('uk-UA'); }
