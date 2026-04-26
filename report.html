@@ -638,11 +638,13 @@
                 <div class="result-title">🏆 Клієнти <span style="color:#aaa;font-size:11px;font-weight:400">— натисніть
                         для деталей</span></div>
                 <div id="clients-list"></div>
+                <div class="prod-toggle" id="clients-toggle" onclick="toggleClients()"></div>
             </div>
             <div class="result-section">
                 <div class="result-title">📅 По днях <span style="color:#aaa;font-size:11px;font-weight:400">— натисніть
                         для деталей</span></div>
                 <div id="days-list"></div>
+                <div class="prod-toggle" id="days-toggle" onclick="toggleDays()"></div>
             </div>
             <div class="result-section">
                 <div class="result-title">📦 Позиції</div>
@@ -709,6 +711,8 @@
         let lastReport = null;
         let allProductsList = [];
         let prodsExpanded = false;
+        let clientsExpanded = false;
+        let daysExpanded = false;
         const PRODS_PREVIEW = 5;
         let prevScreen = 'screen-main';
 
@@ -905,6 +909,8 @@
                 const data = await resp.json();
                 lastReport = { ...data, dateFrom: fmtDate(dateFrom), dateTo: fmtDate(dateTo) };
                 prodsExpanded = false;
+                clientsExpanded = false;
+                daysExpanded = false;
                 renderReport(data);
                 document.getElementById('main-results').style.display = 'block';
                 setTimeout(() => document.getElementById('main-results').scrollIntoView({ behavior: 'smooth' }), 100);
@@ -944,11 +950,29 @@
             `).join('')}
         `;
 
-            // Клиенты — кликабельные
-            document.getElementById('clients-list').innerHTML = data.top_clients.length === 0
-                ? '<div class="empty">Немає даних</div>'
-                : data.top_clients.map((c, i) => `
-                <div class="clickable-row" onclick="openClientOrders('${c.name.replace(/'/g, "\\'")}', '${dateFrom}', '${dateTo}')">
+            // Клиенты и дни (сворачиваемые)
+            renderClientsList();
+            renderDaysList();
+
+            // Позиции — сворачиваемые, внизу
+            allProductsList = data.products.filter(p => p.name !== 'ВАРТІСТЬ');
+            renderProductsList();
+        }
+
+        function renderClientsList() {
+            const list = document.getElementById('clients-list');
+            const toggle = document.getElementById('clients-toggle');
+            const data = lastReport.top_clients;
+
+            if (!data || data.length === 0) {
+                list.innerHTML = '<div class="empty">Немає даних</div>';
+                toggle.style.display = 'none';
+                return;
+            }
+
+            const visible = clientsExpanded ? data : data.slice(0, PRODS_PREVIEW);
+            list.innerHTML = visible.map((c, i) => `
+                <div class="clickable-row" onclick="openClientOrders('${c.name.replace(/'/g, "\\'")}', '${lastReport.dateFrom}', '${lastReport.dateTo}')">
                     <div class="cnum ${i === 0 ? 't1' : i === 1 ? 't2' : i === 2 ? 't3' : ''}">${i + 1}</div>
                     <div class="row-main">
                         <div class="row-name">${c.name}</div>
@@ -961,10 +985,32 @@
                 </div>
             `).join('');
 
-            // По дням — кликабельные
-            document.getElementById('days-list').innerHTML = data.by_day.length === 0
-                ? '<div class="empty">Немає даних</div>'
-                : data.by_day.map(d => `
+            if (data.length > PRODS_PREVIEW) {
+                toggle.style.display = 'block';
+                toggle.textContent = clientsExpanded ? '▲ Менше' : `▼ Більше (ще ${data.length - PRODS_PREVIEW})`;
+            } else {
+                toggle.style.display = 'none';
+            }
+        }
+
+        function toggleClients() {
+            clientsExpanded = !clientsExpanded;
+            renderClientsList();
+        }
+
+        function renderDaysList() {
+            const list = document.getElementById('days-list');
+            const toggle = document.getElementById('days-toggle');
+            const data = lastReport.by_day;
+
+            if (!data || data.length === 0) {
+                list.innerHTML = '<div class="empty">Немає даних</div>';
+                toggle.style.display = 'none';
+                return;
+            }
+
+            const visible = daysExpanded ? data : data.slice(0, PRODS_PREVIEW);
+            list.innerHTML = visible.map(d => `
                 <div class="clickable-row" onclick="openDayClients('${d.date}')">
                     <div class="row-main">
                         <div class="row-name">${d.date}</div>
@@ -977,9 +1023,17 @@
                 </div>
             `).join('');
 
-            // Позиции — сворачиваемые, внизу
-            allProductsList = data.products.filter(p => p.name !== 'ВАРТІСТЬ');
-            renderProductsList();
+            if (data.length > PRODS_PREVIEW) {
+                toggle.style.display = 'block';
+                toggle.textContent = daysExpanded ? '▲ Менше' : `▼ Більше (ще ${data.length - PRODS_PREVIEW})`;
+            } else {
+                toggle.style.display = 'none';
+            }
+        }
+
+        function toggleDays() {
+            daysExpanded = !daysExpanded;
+            renderDaysList();
         }
 
         // ─── ПОЗИЦИИ СВОРАЧИВАЕМЫЕ ───
