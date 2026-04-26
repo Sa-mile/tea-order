@@ -1149,6 +1149,9 @@
                 // Группируем по категориям
                 const byCategory = {};
                 data.items.forEach(item => {
+                    // Игнорируем технические колонки, если они остались в базе
+                    if (item.name === 'ВАРТІСТЬ' || item.name === 'ВСЬОГО') return;
+
                     if (!byCategory[item.category]) byCategory[item.category] = [];
                     byCategory[item.category].push(item);
                 });
