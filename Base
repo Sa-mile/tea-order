@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            padding: 15px;
+            font-size: 14px;
+        }
+
+        h3 { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
+
+        .field-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            letter-spacing: 0.4px;
+        }
+
+        .field-block { margin-bottom: 18px; }
+
+        input[type=text], textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            background: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+            font-size: 16px;
+            font-family: inherit;
+        }
+
+        textarea { resize: none; }
+
+        .suggestions-list {
+            background: var(--tg-theme-secondary-bg-color);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 10px;
+            margin-top: 5px;
+            max-height: 220px;
+            overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: none;
+        }
+
+        .suggestion-item {
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-size: 15px;
+        }
+
+        .suggestion-item:last-child { border-bottom: none; }
+        .suggestion-item:active {
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
+
+        .selected-client {
+            display: none;
+            background: rgba(49,181,69,0.1);
+            border: 1px solid #31b545;
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 8px;
+            font-weight: 600;
+            color: #288c38;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .selected-client.visible { display: flex; }
+
+        .clear-btn {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 4px;
+        }
+
+        .coords-btn {
+            width: 100%;
+            padding: 13px;
+            border-radius: 10px;
+            border: 1.5px solid #31b545;
+            background: transparent;
+            color: #31b545;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .coords-btn.loaded {
+            background: rgba(49,181,69,0.1);
+        }
+
+        .coords-result {
+            margin-top: 8px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: rgba(49,181,69,0.08);
+            font-size: 13px;
+            color: #288c38;
+            display: none;
+        }
+
+        .coords-result.visible { display: block; }
+
+        .photo-section {
+            margin-bottom: 18px;
+        }
+
+        .photo-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .photo-thumb {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid #31b545;
+        }
+
+        .add-photo-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            border: 2px dashed #ccc;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #ccc;
+            cursor: pointer;
+        }
+
+        #photo-input { display: none; }
+
+        #send-btn {
+            width: 100%;
+            padding: 16px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 12px;
+            background: #31b545;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #send-btn:disabled { opacity: 0.5; }
+
+        .loader {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 16px;
+            color: #aaa;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <h3>📍 База — точка доставки</h3>
+
+    <!-- Клиент -->
+    <div class="field-block">
+        <div class="field-label">🏪 Клієнт</div>
+        <input type="text" id="client-search" placeholder="Введіть назву кав'ярні..." autocomplete="off">
+        <div class="suggestions-list" id="suggestions"></div>
+        <div class="selected-client" id="selected-display">
+            <span id="selected-name"></span>
+            <button class="clear-btn" onclick="clearClient()">×</button>
+        </div>
+    </div>
+
+    <!-- Скорректированное название -->
+    <div class="field-block" id="fixed-block" style="display:none">
+        <div class="field-label">✏️ Скоректована назва / адреса</div>
+        <textarea id="client-fixed" rows="2" placeholder="Повна назва або адреса..."></textarea>
+    </div>
+
+    <!-- Координаты -->
+    <div class="field-block" id="coords-block" style="display:none">
+        <div class="field-label">📌 Координати</div>
+        <button class="coords-btn" id="coords-btn" onclick="getCoords()">
+            📍 Додати координати
+        </button>
+        <div class="coords-result" id="coords-result"></div>
+    </div>
+
+    <!-- Фото -->
+    <div class="photo-section" id="photo-block" style="display:none">
+        <div class="field-label">📸 Фото</div>
+        <div class="photo-grid" id="photo-grid">
+            <button class="add-photo-btn" onclick="document.getElementById('photo-input').click()">+</button>
+        </div>
+        <input type="file" id="photo-input" accept="image/*" multiple onchange="handlePhotos(this)">
+    </div>
+
+    <button id="send-btn" onclick="sendData()" disabled>НАДІСЛАТИ</button>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        const params   = new URLSearchParams(window.location.search);
+        const managerId = params.get('manager_id');
+        const apiUrl    = decodeURIComponent(params.get('api_url') || '');
+
+        let allClients     = [];
+        let selectedClient = null; // {id, name}
+        let coordsValue    = '';
+        let photoFiles     = [];
+
+        // ─── ЗАГРУЗКА КЛИЕНТОВ ───
+        async function loadTodayClients() {
+            try {
+                const resp = await fetch(`${apiUrl}/api/today-clients`);
+                const data = await resp.json();
+                allClients = data.clients || [];
+
+                if (allClients.length === 0) {
+                    document.getElementById('client-search').placeholder = 'Сьогодні замовлень немає';
+                    document.getElementById('client-search').disabled = true;
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        // ─── ПОИСК КЛИЕНТА ───
+        const searchInput   = document.getElementById('client-search');
+        const suggestionsBox = document.getElementById('suggestions');
+
+        searchInput.addEventListener('input', function() {
+            const val = this.value.toLowerCase().trim();
+            suggestionsBox.innerHTML = '';
+            if (!val) { suggestionsBox.style.display = 'none'; return; }
+
+            const filtered = allClients.filter(c => c.name.toLowerCase().includes(val));
+
+            if (filtered.length === 0) {
+                suggestionsBox.innerHTML = '<div class="empty">Не знайдено</div>';
+                suggestionsBox.style.display = 'block';
+                return;
+            }
+
+            filtered.forEach(client => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.textContent = client.name;
+                div.onclick = () => selectClient(client);
+                suggestionsBox.appendChild(div);
+            });
+            suggestionsBox.style.display = 'block';
+        });
+
+        document.addEventListener('click', e => {
+            if (e.target !== searchInput) suggestionsBox.style.display = 'none';
+        });
+
+        function selectClient(client) {
+            selectedClient = client;
+            searchInput.value = '';
+            suggestionsBox.style.display = 'none';
+
+            document.getElementById('selected-name').textContent = client.name;
+            document.getElementById('selected-display').classList.add('visible');
+
+            // Показываем остальные поля
+            document.getElementById('fixed-block').style.display = 'block';
+            document.getElementById('coords-block').style.display = 'block';
+            document.getElementById('photo-block').style.display = 'block';
+
+            // Предзаполняем поле скорректированного названия
+            document.getElementById('client-fixed').value = client.name;
+
+            checkCanSend();
+        }
+
+        function clearClient() {
+            selectedClient = null;
+            searchInput.value = '';
+            document.getElementById('selected-display').classList.remove('visible');
+            document.getElementById('fixed-block').style.display = 'none';
+            document.getElementById('coords-block').style.display = 'none';
+            document.getElementById('photo-block').style.display = 'none';
+            coordsValue = '';
+            photoFiles  = [];
+            document.getElementById('photo-grid').innerHTML =
+                '<button class="add-photo-btn" onclick="document.getElementById(\'photo-input\').click()">+</button>';
+            document.getElementById('coords-result').classList.remove('visible');
+            document.getElementById('coords-btn').classList.remove('loaded');
+            document.getElementById('coords-btn').textContent = '📍 Додати координати';
+            checkCanSend();
+        }
+
+        // ─── КООРДИНАТЫ ───
+        function getCoords() {
+            const btn = document.getElementById('coords-btn');
+            btn.textContent = '⏳ Визначаємо...';
+            btn.disabled = true;
+
+            if (!navigator.geolocation) {
+                tg.showAlert('Геолокація не підтримується');
+                btn.textContent = '📍 Додати координати';
+                btn.disabled = false;
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                pos => {
+                    const lat = pos.coords.latitude.toFixed(6);
+                    const lng = pos.coords.longitude.toFixed(6);
+                    coordsValue = `${lat}, ${lng}`;
+
+                    const result = document.getElementById('coords-result');
+                    result.textContent = `📌 ${coordsValue}`;
+                    result.classList.add('visible');
+
+                    btn.innerHTML = '✅ Координати додано';
+                    btn.classList.add('loaded');
+                    btn.disabled = false;
+                    checkCanSend();
+                },
+                err => {
+                    tg.showAlert('Не вдалось отримати геолокацію. Перевірте дозволи.');
+                    btn.textContent = '📍 Спробувати ще раз';
+                    btn.disabled = false;
+                }
+            );
+        }
+
+        // ─── ФОТО ───
+        function handlePhotos(input) {
+            const files = Array.from(input.files);
+            files.forEach(file => {
+                photoFiles.push(file);
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = document.createElement('img');
+                    img.className = 'photo-thumb';
+                    img.src = e.target.result;
+
+                    const grid = document.getElementById('photo-grid');
+                    const addBtn = grid.querySelector('.add-photo-btn');
+                    grid.insertBefore(img, addBtn);
+                };
+                reader.readAsDataURL(file);
+            });
+            input.value = '';
+            checkCanSend();
+        }
+
+        // ─── ПРОВЕРКА ГОТОВНОСТИ ───
+        function checkCanSend() {
+            const ready = selectedClient && coordsValue;
+            document.getElementById('send-btn').disabled = !ready;
+        }
+
+        // ─── ОТПРАВКА ───
+        async function sendData() {
+            if (!selectedClient || !coordsValue) return;
+
+            const clientFixed = document.getElementById('client-fixed').value.trim() || selectedClient.name;
+
+            // Конвертируем фото в base64
+            const photosBase64 = await Promise.all(
+                photoFiles.map(file => new Promise(resolve => {
+                    const reader = new FileReader();
+                    reader.onload = e => resolve({
+                        name: file.name,
+                        data: e.target.result.split(',')[1],
+                        type: file.type
+                    });
+                    reader.readAsDataURL(file);
+                }))
+            );
+
+            tg.sendData(JSON.stringify({
+                type:             'delivery',
+                client_id:        selectedClient.id,
+                client_db_name:   selectedClient.name,
+                client_fixed:     clientFixed,
+                coords:           coordsValue,
+                photos:           photosBase64
+            }));
+
+            setTimeout(() => tg.close(), 100);
+        }
+
+        loadTodayClients();
+    </script>
+</body>
+</html>
