@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html lang="uk">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
@@ -15,10 +20,19 @@
             font-size: 14px;
         }
 
-        h3 { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
+        h3 {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
 
-        .screen { display: none; }
-        .screen.active { display: block; }
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
 
         /* Кнопка назад */
         .back-btn {
@@ -49,7 +63,12 @@
         }
 
         /* Период */
-        .period-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+        .period-btns {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
 
         .period-btn {
             padding: 7px 14px;
@@ -68,7 +87,11 @@
             font-weight: 600;
         }
 
-        .date-row { display: flex; gap: 8px; align-items: center; }
+        .date-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
 
         .date-row input[type=date] {
             flex: 1;
@@ -80,10 +103,15 @@
             font-size: 14px;
         }
 
-        .date-row span { color: #888; }
+        .date-row span {
+            color: #888;
+        }
 
         /* Клиенты */
-        .autocomplete-container { position: relative; width: 100%; }
+        .autocomplete-container {
+            position: relative;
+            width: 100%;
+        }
 
         input#client-search {
             width: 100%;
@@ -101,12 +129,12 @@
             left: 0;
             right: 0;
             background: var(--tg-theme-secondary-bg-color);
-            border: 1px solid rgba(0,0,0,0.1);
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 10px;
             z-index: 1000;
             max-height: 200px;
             overflow-y: auto;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             display: none;
             margin-top: 5px;
         }
@@ -114,21 +142,38 @@
         .suggestion-item {
             padding: 12px;
             cursor: pointer;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
             font-size: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .suggestion-item:active { background: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color); }
-        .suggestion-item .check { color: #31b545; font-weight: bold; display: none; }
-        .suggestion-item.selected .check { display: block; }
+        .suggestion-item:active {
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
 
-        .selected-clients { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; min-height: 20px; }
+        .suggestion-item .check {
+            color: #31b545;
+            font-weight: bold;
+            display: none;
+        }
+
+        .suggestion-item.selected .check {
+            display: block;
+        }
+
+        .selected-clients {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+            min-height: 20px;
+        }
 
         .client-tag {
-            background: rgba(49,181,69,0.15);
+            background: rgba(49, 181, 69, 0.15);
             color: #288c38;
             padding: 5px 10px;
             border-radius: 20px;
@@ -140,15 +185,22 @@
             cursor: pointer;
         }
 
-        .client-tag .remove { color: #888; font-size: 15px; }
-        .all-clients-hint { color: #aaa; font-size: 13px; }
+        .client-tag .remove {
+            color: #888;
+            font-size: 15px;
+        }
+
+        .all-clients-hint {
+            color: #aaa;
+            font-size: 13px;
+        }
 
         /* Секции */
         .glass-section {
             margin-top: 20px;
             padding: 15px;
             border-radius: 12px;
-            background: rgba(49,181,69,0.08);
+            background: rgba(49, 181, 69, 0.08);
             border: 1px solid #31b545;
         }
 
@@ -193,13 +245,22 @@
             cursor: pointer;
         }
 
-        .cat-check.checked { background: #31b545; border-color: #31b545; color: white; }
-        .cat-btn-left { display: flex; align-items: center; flex: 1; }
+        .cat-check.checked {
+            background: #31b545;
+            border-color: #31b545;
+            color: white;
+        }
+
+        .cat-btn-left {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
 
         .items-container {
             display: none;
             padding: 5px 10px;
-            background: rgba(0,0,0,0.03);
+            background: rgba(0, 0, 0, 0.03);
             border-radius: 0 0 10px 10px;
         }
 
@@ -208,12 +269,18 @@
             justify-content: space-between;
             align-items: center;
             padding: 10px 0;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
             cursor: pointer;
         }
 
-        .item-row:last-child { border-bottom: none; }
-        .item-name { flex: 1; font-size: 14px; }
+        .item-row:last-child {
+            border-bottom: none;
+        }
+
+        .item-name {
+            flex: 1;
+            font-size: 14px;
+        }
 
         .item-check {
             width: 24px;
@@ -228,7 +295,11 @@
             flex-shrink: 0;
         }
 
-        .item-check.checked { background: #31b545; border-color: #31b545; color: white; }
+        .item-check.checked {
+            background: #31b545;
+            border-color: #31b545;
+            color: white;
+        }
 
         /* Кнопка показати */
         #show-btn {
@@ -244,7 +315,9 @@
             cursor: pointer;
         }
 
-        #show-btn:disabled { opacity: 0.6; }
+        #show-btn:disabled {
+            opacity: 0.6;
+        }
 
         /* Результаты */
         .result-section {
@@ -262,44 +335,113 @@
             margin-bottom: 12px;
         }
 
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
 
-        .stat-card { background: rgba(49,181,69,0.08); border-radius: 10px; padding: 10px 12px; }
-        .stat-card.full { grid-column: 1 / -1; }
-        .stat-card .slabel { font-size: 11px; color: #888; margin-bottom: 2px; }
-        .stat-card .svalue { font-size: 17px; font-weight: 700; color: #31b545; }
+        .stat-card {
+            background: rgba(49, 181, 69, 0.08);
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+
+        .stat-card.full {
+            grid-column: 1 / -1;
+        }
+
+        .stat-card .slabel {
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 2px;
+        }
+
+        .stat-card .svalue {
+            font-size: 17px;
+            font-weight: 700;
+            color: #31b545;
+        }
 
         /* Кликабельные строки */
         .clickable-row {
             display: flex;
             align-items: center;
             padding: 11px 0;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
             font-size: 13px;
             cursor: pointer;
             gap: 8px;
             transition: opacity 0.15s;
         }
 
-        .clickable-row:last-child { border-bottom: none; }
-        .clickable-row:active { opacity: 0.7; }
+        .clickable-row:last-child {
+            border-bottom: none;
+        }
 
-        .row-main { flex: 1; }
-        .row-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
-        .row-sub { color: #888; font-size: 12px; }
-        .row-right { text-align: right; flex-shrink: 0; }
-        .row-amount { font-weight: 700; color: #31b545; font-size: 14px; }
-        .row-meta { color: #aaa; font-size: 11px; }
-        .row-arrow { color: #ccc; font-size: 16px; }
+        .clickable-row:active {
+            opacity: 0.7;
+        }
 
-        .cnum { font-weight: 700; color: #aaa; width: 22px; flex-shrink: 0; font-size: 13px; }
-        .cnum.t1 { color: #f5a623; }
-        .cnum.t2 { color: #9b9b9b; }
-        .cnum.t3 { color: #c0803a; }
+        .row-main {
+            flex: 1;
+        }
+
+        .row-name {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .row-sub {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .row-right {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .row-amount {
+            font-weight: 700;
+            color: #31b545;
+            font-size: 14px;
+        }
+
+        .row-meta {
+            color: #aaa;
+            font-size: 11px;
+        }
+
+        .row-arrow {
+            color: #ccc;
+            font-size: 16px;
+        }
+
+        .cnum {
+            font-weight: 700;
+            color: #aaa;
+            width: 22px;
+            flex-shrink: 0;
+            font-size: 13px;
+        }
+
+        .cnum.t1 {
+            color: #f5a623;
+        }
+
+        .cnum.t2 {
+            color: #9b9b9b;
+        }
+
+        .cnum.t3 {
+            color: #c0803a;
+        }
 
         /* Детализация заказа */
         .order-summary {
-            background: rgba(49,181,69,0.08);
+            background: rgba(49, 181, 69, 0.08);
             border-radius: 10px;
             padding: 12px;
             margin-bottom: 16px;
@@ -312,22 +454,41 @@
             margin-bottom: 4px;
         }
 
-        .order-summary .meta { font-size: 13px; color: #888; }
+        .order-summary .meta {
+            font-size: 13px;
+            color: #888;
+        }
 
         .detail-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 9px 0;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
             font-size: 13px;
         }
 
-        .detail-row:last-child { border-bottom: none; }
-        .detail-name { flex: 1; }
-        .detail-right { text-align: right; }
-        .detail-amount { font-weight: 700; font-size: 14px; }
-        .detail-qty { color: #888; font-size: 12px; }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-name {
+            flex: 1;
+        }
+
+        .detail-right {
+            text-align: right;
+        }
+
+        .detail-amount {
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .detail-qty {
+            color: #888;
+            font-size: 12px;
+        }
 
         .cat-divider {
             font-size: 11px;
@@ -344,15 +505,31 @@
             justify-content: space-between;
             align-items: center;
             padding: 9px 0;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
             font-size: 13px;
         }
 
-        .prod-row:last-child { border-bottom: none; }
-        .prod-name { flex: 1; }
-        .prod-stats { text-align: right; }
-        .prod-amount { font-weight: 700; font-size: 14px; }
-        .prod-qty { color: #888; font-size: 12px; }
+        .prod-row:last-child {
+            border-bottom: none;
+        }
+
+        .prod-name {
+            flex: 1;
+        }
+
+        .prod-stats {
+            text-align: right;
+        }
+
+        .prod-amount {
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .prod-qty {
+            color: #888;
+            font-size: 12px;
+        }
 
         .prod-toggle {
             text-align: center;
@@ -377,359 +554,372 @@
             margin-top: 8px;
         }
 
-        .empty { text-align: center; padding: 16px; color: #aaa; font-size: 13px; }
-        .loader { text-align: center; padding: 30px; color: #888; }
+        .empty {
+            text-align: center;
+            padding: 16px;
+            color: #aaa;
+            font-size: 13px;
+        }
+
+        .loader {
+            text-align: center;
+            padding: 30px;
+            color: #888;
+        }
     </style>
 </head>
+
 <body>
 
-<!-- ═══════════════════════════════════════ -->
-<!-- ЭКРАН 1: Фильтры + Отчёт              -->
-<!-- ═══════════════════════════════════════ -->
-<div id="screen-main" class="screen active">
-    <h3>📊 Розширений звіт</h3>
+    <!-- ═══════════════════════════════════════ -->
+    <!-- ЭКРАН 1: Фильтры + Отчёт              -->
+    <!-- ═══════════════════════════════════════ -->
+    <div id="screen-main" class="screen active">
+        <h3>📊 Розширений звіт</h3>
 
-    <div class="period-btns">
-        <button class="period-btn" onclick="setPeriod('today', this)">Сьогодні</button>
-        <button class="period-btn active" onclick="setPeriod('week', this)">Тиждень</button>
-        <button class="period-btn" onclick="setPeriod('month', this)">Місяць</button>
-        <button class="period-btn" onclick="setPeriod('all', this)">Всі</button>
-    </div>
-    <div class="date-row">
-        <input type="date" id="date-from">
-        <span>—</span>
-        <input type="date" id="date-to">
-    </div>
-
-    <div class="glass-section">
-        <span class="glass-title">🏪 КЛІЄНТИ:</span>
-        <div class="autocomplete-container">
-            <input type="text" id="client-search" placeholder="Пошук клієнта..." autocomplete="off">
-            <div id="suggestions" class="suggestions-list"></div>
+        <div class="period-btns">
+            <button class="period-btn" onclick="setPeriod('today', this)">Сьогодні</button>
+            <button class="period-btn active" onclick="setPeriod('week', this)">Тиждень</button>
+            <button class="period-btn" onclick="setPeriod('month', this)">Місяць</button>
+            <button class="period-btn" onclick="setPeriod('all', this)">Всі</button>
         </div>
-        <div class="selected-clients" id="selected-clients">
-            <span class="all-clients-hint">Всі клієнти</span>
+        <div class="date-row">
+            <input type="date" id="date-from">
+            <span>—</span>
+            <input type="date" id="date-to">
+        </div>
+
+        <div class="glass-section">
+            <span class="glass-title">🏪 КЛІЄНТИ:</span>
+            <div class="autocomplete-container">
+                <input type="text" id="client-search" placeholder="Пошук клієнта..." autocomplete="off">
+                <div id="suggestions" class="suggestions-list"></div>
+            </div>
+            <div class="selected-clients" id="selected-clients">
+                <span class="all-clients-hint">Всі клієнти</span>
+            </div>
+        </div>
+
+        <button class="category-btn" onclick="toggleCatOpen('lemonades', this)">
+            <div class="cat-btn-left">
+                <div class="cat-check" id="check-lemonades" onclick="selectAllInCat('lemonades', event)"></div>
+                🍋 Лимонади
+            </div>
+            <span>▼</span>
+        </button>
+        <div id="lemonades" class="items-container"></div>
+
+        <button class="category-btn" onclick="toggleCatOpen('teas', this)">
+            <div class="cat-btn-left">
+                <div class="cat-check" id="check-teas" onclick="selectAllInCat('teas', event)"></div>
+                🍓 Чаї
+            </div>
+            <span>▼</span>
+        </button>
+        <div id="teas" class="items-container"></div>
+
+        <div class="glass-section">
+            <span class="glass-title">🥤 СТАКАНИ ПЕТ:</span>
+            <div id="pet"></div>
+        </div>
+
+        <button id="show-btn" onclick="loadReport()">🔍 ПОКАЗАТИ ЗВІТ</button>
+
+        <div id="main-results" style="display:none; margin-top:20px;">
+            <div class="result-section">
+                <div class="result-title">📈 Загальне</div>
+                <div class="stat-grid" id="summary-grid"></div>
+            </div>
+            <div class="result-section">
+                <div class="result-title">🏆 Клієнти <span style="color:#aaa;font-size:11px;font-weight:400">— натисніть
+                        для деталей</span></div>
+                <div id="clients-list"></div>
+            </div>
+            <div class="result-section">
+                <div class="result-title">📅 По днях <span style="color:#aaa;font-size:11px;font-weight:400">— натисніть
+                        для деталей</span></div>
+                <div id="days-list"></div>
+            </div>
+            <div class="result-section">
+                <div class="result-title">📦 Позиції</div>
+                <div id="products-list"></div>
+                <div class="prod-toggle" id="prod-toggle" onclick="toggleProducts()"></div>
+            </div>
+            <button class="copy-btn" onclick="copyReport()">📋 Скопіювати звіт</button>
         </div>
     </div>
 
-    <button class="category-btn" onclick="toggleCatOpen('lemonades', this)">
-        <div class="cat-btn-left">
-            <div class="cat-check" id="check-lemonades" onclick="selectAllInCat('lemonades', event)"></div>
-            🍋 Лимонади
-        </div>
-        <span>▼</span>
-    </button>
-    <div id="lemonades" class="items-container"></div>
-
-    <button class="category-btn" onclick="toggleCatOpen('teas', this)">
-        <div class="cat-btn-left">
-            <div class="cat-check" id="check-teas" onclick="selectAllInCat('teas', event)"></div>
-            🍓 Чаї
-        </div>
-        <span>▼</span>
-    </button>
-    <div id="teas" class="items-container"></div>
-
-    <div class="glass-section">
-        <span class="glass-title">🥤 СТАКАНИ ПЕТ:</span>
-        <div id="pet"></div>
+    <!-- ═══════════════════════════════════════ -->
+    <!-- ЭКРАН 2А: Заказы клиента              -->
+    <!-- ═══════════════════════════════════════ -->
+    <div id="screen-client" class="screen">
+        <button class="back-btn" onclick="goBack('screen-main')">◀️ Назад</button>
+        <div class="screen-title" id="client-screen-title"></div>
+        <div class="screen-subtitle" id="client-screen-sub"></div>
+        <div id="client-orders-list"></div>
     </div>
 
-    <button id="show-btn" onclick="loadReport()">🔍 ПОКАЗАТИ ЗВІТ</button>
+    <!-- ═══════════════════════════════════════ -->
+    <!-- ЭКРАН 2Б: Клиенты дня                 -->
+    <!-- ═══════════════════════════════════════ -->
+    <div id="screen-day" class="screen">
+        <button class="back-btn" onclick="goBack('screen-main')">◀️ Назад</button>
+        <div class="screen-title" id="day-screen-title"></div>
+        <div class="screen-subtitle" id="day-screen-sub"></div>
+        <div id="day-clients-list"></div>
+    </div>
 
-    <div id="main-results" style="display:none; margin-top:20px;">
+    <!-- ═══════════════════════════════════════ -->
+    <!-- ЭКРАН 3: Детализация заказа           -->
+    <!-- ═══════════════════════════════════════ -->
+    <div id="screen-order" class="screen">
+        <button class="back-btn" id="order-back-btn">◀️ Назад</button>
+        <div class="screen-title" id="order-screen-title"></div>
+        <div class="screen-subtitle" id="order-screen-sub"></div>
+        <div class="order-summary" id="order-summary"></div>
         <div class="result-section">
-            <div class="result-title">📈 Загальне</div>
-            <div class="stat-grid" id="summary-grid"></div>
+            <div class="result-title">📦 Позиції замовлення</div>
+            <div id="order-items-list"></div>
         </div>
-        <div class="result-section">
-            <div class="result-title">🏆 Клієнти <span style="color:#aaa;font-size:11px;font-weight:400">— натисніть для деталей</span></div>
-            <div id="clients-list"></div>
-        </div>
-        <div class="result-section">
-            <div class="result-title">📅 По днях <span style="color:#aaa;font-size:11px;font-weight:400">— натисніть для деталей</span></div>
-            <div id="days-list"></div>
-        </div>
-        <div class="result-section">
-            <div class="result-title">📦 Позиції</div>
-            <div id="products-list"></div>
-            <div class="prod-toggle" id="prod-toggle" onclick="toggleProducts()"></div>
-        </div>
-        <button class="copy-btn" onclick="copyReport()">📋 Скопіювати звіт</button>
     </div>
-</div>
 
-<!-- ═══════════════════════════════════════ -->
-<!-- ЭКРАН 2А: Заказы клиента              -->
-<!-- ═══════════════════════════════════════ -->
-<div id="screen-client" class="screen">
-    <button class="back-btn" onclick="goBack('screen-main')">◀️ Назад</button>
-    <div class="screen-title" id="client-screen-title"></div>
-    <div class="screen-subtitle" id="client-screen-sub"></div>
-    <div id="client-orders-list"></div>
-</div>
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
 
-<!-- ═══════════════════════════════════════ -->
-<!-- ЭКРАН 2Б: Клиенты дня                 -->
-<!-- ═══════════════════════════════════════ -->
-<div id="screen-day" class="screen">
-    <button class="back-btn" onclick="goBack('screen-main')">◀️ Назад</button>
-    <div class="screen-title" id="day-screen-title"></div>
-    <div class="screen-subtitle" id="day-screen-sub"></div>
-    <div id="day-clients-list"></div>
-</div>
+        const params = new URLSearchParams(window.location.search);
+        const managerId = params.get('manager_id');
+        const apiUrl = decodeURIComponent(params.get('api_url') || '');
 
-<!-- ═══════════════════════════════════════ -->
-<!-- ЭКРАН 3: Детализация заказа           -->
-<!-- ═══════════════════════════════════════ -->
-<div id="screen-order" class="screen">
-    <button class="back-btn" id="order-back-btn">◀️ Назад</button>
-    <div class="screen-title" id="order-screen-title"></div>
-    <div class="screen-subtitle" id="order-screen-sub"></div>
-    <div class="order-summary" id="order-summary"></div>
-    <div class="result-section">
-        <div class="result-title">📦 Позиції замовлення</div>
-        <div id="order-items-list"></div>
-    </div>
-</div>
+        const PRODUCTS_FILTER = {
+            lemonades: ["АПЕЛЬСИН", "ГРЕЙПФРУТ", "КЛАСИК", "ІМБИР", "ПЕРСИК", "ДИНЯ", "ПОЛУНИЦЯ", "МАРАКУЙЯ", "ВИШНЯ", "МАЛИНА", "ГАРБУЗ"],
+            teas: ["ОБЛІПИХА", "ЖУРАВЛИНА", "ІМБИР ЧАЙ", "СМОРОДИНА", "МАЛИНА ЧАЙ", "ЧОРНИЦЯ", "ПОЛУНИЦЯ ЧАЙ", "ОБЛІПИХА+МАРАКУЙЯ", "ВИШНЯ ЧАЙ", "ІМБИР+МАЛИНА"],
+            pet: ["0,4 ПЕТ 100 ШТ", "0,5 ПЕТ 100 ШТ"]
+        };
 
-<script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
+        const CAT_LABELS = { лимонади: '🍋 Лимонади', чаї: '🍓 Чаї', пет: '🥤 ПЕТ', інше: '📦 Інше' };
 
-    const params = new URLSearchParams(window.location.search);
-    const managerId = params.get('manager_id');
-    const apiUrl = decodeURIComponent(params.get('api_url') || '');
+        let allClients = [];
+        let selectedClients = [];
+        let selectedProducts = {};
+        let lastReport = null;
+        let allProductsList = [];
+        let prodsExpanded = false;
+        const PRODS_PREVIEW = 5;
+        let prevScreen = 'screen-main';
 
-    const PRODUCTS_FILTER = {
-        lemonades: ["АПЕЛЬСИН","ГРЕЙПФРУТ","КЛАСИК","ІМБИР","ПЕРСИК","ДИНЯ","ПОЛУНИЦЯ","МАРАКУЙЯ","ВИШНЯ","МАЛИНА"],
-        teas: ["ОБЛІПИХА","ЖУРАВЛИНА","ІМБИР ЧАЙ","СМОРОДИНА","МАЛИНА ЧАЙ","ЧОРНИЦЯ","ПОЛУНИЦЯ ЧАЙ","ОБЛІПИХА+МАРАКУЙЯ","ВИШНЯ ЧАЙ","ІМБИР+МАЛИНА"],
-        pet: ["0,4 ПЕТ 100 ШТ","0,5 ПЕТ 100 ШТ"]
-    };
+        // ─── НАВИГАЦИЯ ───
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            window.scrollTo(0, 0);
+        }
 
-    const CAT_LABELS = { лимонади: '🍋 Лимонади', чаї: '🍓 Чаї', пет: '🥤 ПЕТ', інше: '📦 Інше' };
+        function goBack(target) {
+            showScreen(target);
+        }
 
-    let allClients = [];
-    let selectedClients = [];
-    let selectedProducts = {};
-    let lastReport = null;
-    let allProductsList = [];
-    let prodsExpanded = false;
-    const PRODS_PREVIEW = 5;
-    let prevScreen = 'screen-main';
+        // ─── ПЕРИОД ───
+        function setPeriod(type, btn) {
+            document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const today = new Date();
+            const fmt = d => d.toISOString().split('T')[0];
+            let from;
+            if (type === 'today') { from = fmt(today); }
+            else if (type === 'week') {
+                const mon = new Date(today);
+                mon.setDate(today.getDate() - (today.getDay() || 7) + 1);
+                from = fmt(mon);
+            } else if (type === 'month') {
+                from = fmt(new Date(today.getFullYear(), today.getMonth(), 1));
+            } else { from = '2026-01-01'; }
+            document.getElementById('date-from').value = from;
+            document.getElementById('date-to').value = fmt(today);
+        }
 
-    // ─── НАВИГАЦИЯ ───
-    function showScreen(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        window.scrollTo(0, 0);
-    }
-
-    function goBack(target) {
-        showScreen(target);
-    }
-
-    // ─── ПЕРИОД ───
-    function setPeriod(type, btn) {
-        document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const today = new Date();
-        const fmt = d => d.toISOString().split('T')[0];
-        let from;
-        if (type === 'today') { from = fmt(today); }
-        else if (type === 'week') {
+        (function () {
+            const today = new Date();
+            const fmt = d => d.toISOString().split('T')[0];
             const mon = new Date(today);
             mon.setDate(today.getDate() - (today.getDay() || 7) + 1);
-            from = fmt(mon);
-        } else if (type === 'month') {
-            from = fmt(new Date(today.getFullYear(), today.getMonth(), 1));
-        } else { from = '2026-01-01'; }
-        document.getElementById('date-from').value = from;
-        document.getElementById('date-to').value = fmt(today);
-    }
+            document.getElementById('date-from').value = fmt(mon);
+            document.getElementById('date-to').value = fmt(today);
+        })();
 
-    (function() {
-        const today = new Date();
-        const fmt = d => d.toISOString().split('T')[0];
-        const mon = new Date(today);
-        mon.setDate(today.getDate() - (today.getDay() || 7) + 1);
-        document.getElementById('date-from').value = fmt(mon);
-        document.getElementById('date-to').value = fmt(today);
-    })();
-
-    // ─── КЛИЕНТЫ (фильтр) ───
-    async function loadClients() {
-        if (!apiUrl || !managerId) return;
-        try {
-            const resp = await fetch(`${apiUrl}/api/clients?manager_id=${managerId}`);
-            const data = await resp.json();
-            allClients = data.clients || [];
-        } catch(e) { console.error(e); }
-    }
-
-    const searchInput = document.getElementById('client-search');
-    const suggestionsBox = document.getElementById('suggestions');
-
-    searchInput.addEventListener('input', function() {
-        const val = this.value.toLowerCase();
-        suggestionsBox.innerHTML = '';
-        if (!val) { suggestionsBox.style.display = 'none'; return; }
-        const filtered = allClients.filter(c => c.toLowerCase().includes(val)).slice(0, 40);
-        filtered.forEach(name => {
-            const div = document.createElement('div');
-            div.className = 'suggestion-item' + (selectedClients.includes(name) ? ' selected' : '');
-            div.innerHTML = `<span>${name}</span><span class="check">✓</span>`;
-            div.onclick = () => {
-                toggleClient(name);
-                div.classList.toggle('selected', selectedClients.includes(name));
-            };
-            suggestionsBox.appendChild(div);
-        });
-        suggestionsBox.style.display = filtered.length > 0 ? 'block' : 'none';
-    });
-
-    document.addEventListener('click', e => {
-        if (e.target !== searchInput) suggestionsBox.style.display = 'none';
-    });
-
-    function toggleClient(name) {
-        const idx = selectedClients.indexOf(name);
-        if (idx >= 0) selectedClients.splice(idx, 1);
-        else selectedClients.push(name);
-        renderSelectedClients();
-    }
-
-    function renderSelectedClients() {
-        const box = document.getElementById('selected-clients');
-        if (selectedClients.length === 0) {
-            box.innerHTML = '<span class="all-clients-hint">Всі клієнти</span>';
-            return;
+        // ─── КЛИЕНТЫ (фильтр) ───
+        async function loadClients() {
+            if (!apiUrl || !managerId) return;
+            try {
+                const resp = await fetch(`${apiUrl}/api/clients?manager_id=${managerId}`);
+                const data = await resp.json();
+                allClients = data.clients || [];
+            } catch (e) { console.error(e); }
         }
-        box.innerHTML = selectedClients.map(name =>
-            `<div class="client-tag" onclick="removeClient('${name.replace(/'/g,"\\'")}')">
+
+        const searchInput = document.getElementById('client-search');
+        const suggestionsBox = document.getElementById('suggestions');
+
+        searchInput.addEventListener('input', function () {
+            const val = this.value.toLowerCase();
+            suggestionsBox.innerHTML = '';
+            if (!val) { suggestionsBox.style.display = 'none'; return; }
+            const filtered = allClients.filter(c => c.toLowerCase().includes(val)).slice(0, 40);
+            filtered.forEach(name => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item' + (selectedClients.includes(name) ? ' selected' : '');
+                div.innerHTML = `<span>${name}</span><span class="check">✓</span>`;
+                div.onclick = () => {
+                    toggleClient(name);
+                    div.classList.toggle('selected', selectedClients.includes(name));
+                };
+                suggestionsBox.appendChild(div);
+            });
+            suggestionsBox.style.display = filtered.length > 0 ? 'block' : 'none';
+        });
+
+        document.addEventListener('click', e => {
+            if (e.target !== searchInput) suggestionsBox.style.display = 'none';
+        });
+
+        function toggleClient(name) {
+            const idx = selectedClients.indexOf(name);
+            if (idx >= 0) selectedClients.splice(idx, 1);
+            else selectedClients.push(name);
+            renderSelectedClients();
+        }
+
+        function renderSelectedClients() {
+            const box = document.getElementById('selected-clients');
+            if (selectedClients.length === 0) {
+                box.innerHTML = '<span class="all-clients-hint">Всі клієнти</span>';
+                return;
+            }
+            box.innerHTML = selectedClients.map(name =>
+                `<div class="client-tag" onclick="removeClient('${name.replace(/'/g, "\\'")}')">
                 ${name} <span class="remove">×</span>
             </div>`
-        ).join('');
-    }
+            ).join('');
+        }
 
-    function removeClient(name) {
-        selectedClients = selectedClients.filter(c => c !== name);
-        renderSelectedClients();
-    }
+        function removeClient(name) {
+            selectedClients = selectedClients.filter(c => c !== name);
+            renderSelectedClients();
+        }
 
-    // ─── ФИЛЬТР ПРОДУКТОВ ───
-    function renderItems() {
-        ['lemonades', 'teas', 'pet'].forEach(cat => {
-            const container = document.getElementById(cat);
-            if (!container) return;
-            PRODUCTS_FILTER[cat].forEach(name => {
-                const safeKey = name.replace(/[^a-zA-ZА-Яа-я0-9]/g,'_');
-                const row = document.createElement('div');
-                row.className = 'item-row';
-                row.innerHTML = `
+        // ─── ФИЛЬТР ПРОДУКТОВ ───
+        function renderItems() {
+            ['lemonades', 'teas', 'pet'].forEach(cat => {
+                const container = document.getElementById(cat);
+                if (!container) return;
+                PRODUCTS_FILTER[cat].forEach(name => {
+                    const safeKey = name.replace(/[^a-zA-ZА-Яа-я0-9]/g, '_');
+                    const row = document.createElement('div');
+                    row.className = 'item-row';
+                    row.innerHTML = `
                     <div class="item-name">${name}</div>
                     <div class="item-check" id="icheck-${cat}_${safeKey}"></div>
                 `;
-                row.onclick = () => toggleProduct(cat, name);
-                container.appendChild(row);
+                    row.onclick = () => toggleProduct(cat, name);
+                    container.appendChild(row);
+                });
             });
-        });
-    }
-
-    function toggleCatOpen(id, btn) {
-        const el = document.getElementById(id);
-        const span = btn.querySelector('span');
-        const isVisible = el.style.display === 'block';
-        el.style.display = isVisible ? 'none' : 'block';
-        span.innerText = isVisible ? '▼' : '▲';
-    }
-
-    function selectAllInCat(cat, e) {
-        e.stopPropagation();
-        const catCheck = document.getElementById(`check-${cat}`);
-        const allChecked = PRODUCTS_FILTER[cat].every(p => selectedProducts[p]);
-        if (allChecked) {
-            PRODUCTS_FILTER[cat].forEach(p => {
-                delete selectedProducts[p];
-                const safeKey = p.replace(/[^a-zA-ZА-Яа-я0-9]/g,'_');
-                const el = document.getElementById(`icheck-${cat}_${safeKey}`);
-                if (el) { el.classList.remove('checked'); el.textContent = ''; }
-            });
-            catCheck.classList.remove('checked'); catCheck.textContent = '';
-        } else {
-            PRODUCTS_FILTER[cat].forEach(p => {
-                selectedProducts[p] = true;
-                const safeKey = p.replace(/[^a-zA-ZА-Яа-я0-9]/g,'_');
-                const el = document.getElementById(`icheck-${cat}_${safeKey}`);
-                if (el) { el.classList.add('checked'); el.textContent = '✓'; }
-            });
-            catCheck.classList.add('checked'); catCheck.textContent = '✓';
         }
-    }
 
-    function toggleProduct(cat, name) {
-        const safeKey = name.replace(/[^a-zA-ZА-Яа-я0-9]/g,'_');
-        const el = document.getElementById(`icheck-${cat}_${safeKey}`);
-        if (selectedProducts[name]) {
-            delete selectedProducts[name];
-            el.classList.remove('checked'); el.textContent = '';
-        } else {
-            selectedProducts[name] = true;
-            el.classList.add('checked'); el.textContent = '✓';
+        function toggleCatOpen(id, btn) {
+            const el = document.getElementById(id);
+            const span = btn.querySelector('span');
+            const isVisible = el.style.display === 'block';
+            el.style.display = isVisible ? 'none' : 'block';
+            span.innerText = isVisible ? '▼' : '▲';
         }
-        const catCheck = document.getElementById(`check-${cat}`);
-        if (catCheck) {
+
+        function selectAllInCat(cat, e) {
+            e.stopPropagation();
+            const catCheck = document.getElementById(`check-${cat}`);
             const allChecked = PRODUCTS_FILTER[cat].every(p => selectedProducts[p]);
-            catCheck.classList.toggle('checked', allChecked);
-            catCheck.textContent = allChecked ? '✓' : '';
+            if (allChecked) {
+                PRODUCTS_FILTER[cat].forEach(p => {
+                    delete selectedProducts[p];
+                    const safeKey = p.replace(/[^a-zA-ZА-Яа-я0-9]/g, '_');
+                    const el = document.getElementById(`icheck-${cat}_${safeKey}`);
+                    if (el) { el.classList.remove('checked'); el.textContent = ''; }
+                });
+                catCheck.classList.remove('checked'); catCheck.textContent = '';
+            } else {
+                PRODUCTS_FILTER[cat].forEach(p => {
+                    selectedProducts[p] = true;
+                    const safeKey = p.replace(/[^a-zA-ZА-Яа-я0-9]/g, '_');
+                    const el = document.getElementById(`icheck-${cat}_${safeKey}`);
+                    if (el) { el.classList.add('checked'); el.textContent = '✓'; }
+                });
+                catCheck.classList.add('checked'); catCheck.textContent = '✓';
+            }
         }
-    }
 
-    // ─── ЗАГРУЗКА ОТЧЁТА ───
-    async function loadReport() {
-        const btn = document.getElementById('show-btn');
-        btn.disabled = true;
-        btn.textContent = '⏳ Завантаження...';
+        function toggleProduct(cat, name) {
+            const safeKey = name.replace(/[^a-zA-ZА-Яа-я0-9]/g, '_');
+            const el = document.getElementById(`icheck-${cat}_${safeKey}`);
+            if (selectedProducts[name]) {
+                delete selectedProducts[name];
+                el.classList.remove('checked'); el.textContent = '';
+            } else {
+                selectedProducts[name] = true;
+                el.classList.add('checked'); el.textContent = '✓';
+            }
+            const catCheck = document.getElementById(`check-${cat}`);
+            if (catCheck) {
+                const allChecked = PRODUCTS_FILTER[cat].every(p => selectedProducts[p]);
+                catCheck.classList.toggle('checked', allChecked);
+                catCheck.textContent = allChecked ? '✓' : '';
+            }
+        }
 
-        const dateFrom = document.getElementById('date-from').value;
-        const dateTo   = document.getElementById('date-to').value;
+        // ─── ЗАГРУЗКА ОТЧЁТА ───
+        async function loadReport() {
+            const btn = document.getElementById('show-btn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Завантаження...';
 
-        if (!dateFrom || !dateTo) {
-            tg.showAlert('Оберіть період!');
+            const dateFrom = document.getElementById('date-from').value;
+            const dateTo = document.getElementById('date-to').value;
+
+            if (!dateFrom || !dateTo) {
+                tg.showAlert('Оберіть період!');
+                btn.disabled = false;
+                btn.textContent = '🔍 ПОКАЗАТИ ЗВІТ';
+                return;
+            }
+
+            const fmtDate = iso => iso.split('-').reverse().join('.');
+            let url = `${apiUrl}/api/report?manager_id=${managerId}&date_from=${fmtDate(dateFrom)}&date_to=${fmtDate(dateTo)}`;
+            selectedClients.forEach(c => url += `&client=${encodeURIComponent(c)}`);
+            Object.keys(selectedProducts).forEach(p => url += `&product=${encodeURIComponent(p)}`);
+
+            try {
+                const resp = await fetch(url);
+                const data = await resp.json();
+                lastReport = { ...data, dateFrom: fmtDate(dateFrom), dateTo: fmtDate(dateTo) };
+                prodsExpanded = false;
+                renderReport(data);
+                document.getElementById('main-results').style.display = 'block';
+                setTimeout(() => document.getElementById('main-results').scrollIntoView({ behavior: 'smooth' }), 100);
+            } catch (e) {
+                tg.showAlert('Помилка завантаження звіту');
+                console.error(e);
+            }
+
             btn.disabled = false;
             btn.textContent = '🔍 ПОКАЗАТИ ЗВІТ';
-            return;
         }
 
-        const fmtDate = iso => iso.split('-').reverse().join('.');
-        let url = `${apiUrl}/api/report?manager_id=${managerId}&date_from=${fmtDate(dateFrom)}&date_to=${fmtDate(dateTo)}`;
-        selectedClients.forEach(c => url += `&client=${encodeURIComponent(c)}`);
-        Object.keys(selectedProducts).forEach(p => url += `&product=${encodeURIComponent(p)}`);
+        function renderReport(data) {
+            const total = data.categories.reduce((s, c) => s + c.amount, 0);
+            const dateFrom = lastReport.dateFrom;
+            const dateTo = lastReport.dateTo;
 
-        try {
-            const resp = await fetch(url);
-            const data = await resp.json();
-            lastReport = { ...data, dateFrom: fmtDate(dateFrom), dateTo: fmtDate(dateTo) };
-            prodsExpanded = false;
-            renderReport(data);
-            document.getElementById('main-results').style.display = 'block';
-            setTimeout(() => document.getElementById('main-results').scrollIntoView({ behavior: 'smooth' }), 100);
-        } catch(e) {
-            tg.showAlert('Помилка завантаження звіту');
-            console.error(e);
-        }
-
-        btn.disabled = false;
-        btn.textContent = '🔍 ПОКАЗАТИ ЗВІТ';
-    }
-
-    function renderReport(data) {
-        const total = data.categories.reduce((s, c) => s + c.amount, 0);
-        const dateFrom = lastReport.dateFrom;
-        const dateTo   = lastReport.dateTo;
-
-        // Итоги
-        document.getElementById('summary-grid').innerHTML = `
+            // Итоги
+            document.getElementById('summary-grid').innerHTML = `
             <div class="stat-card full">
                 <div class="slabel">💰 Всього</div>
                 <div class="svalue">${fmt(total)} грн</div>
@@ -750,12 +940,12 @@
             `).join('')}
         `;
 
-        // Клиенты — кликабельные
-        document.getElementById('clients-list').innerHTML = data.top_clients.length === 0
-            ? '<div class="empty">Немає даних</div>'
-            : data.top_clients.map((c, i) => `
-                <div class="clickable-row" onclick="openClientOrders('${c.name.replace(/'/g,"\\'")}', '${dateFrom}', '${dateTo}')">
-                    <div class="cnum ${i===0?'t1':i===1?'t2':i===2?'t3':''}">${i+1}</div>
+            // Клиенты — кликабельные
+            document.getElementById('clients-list').innerHTML = data.top_clients.length === 0
+                ? '<div class="empty">Немає даних</div>'
+                : data.top_clients.map((c, i) => `
+                <div class="clickable-row" onclick="openClientOrders('${c.name.replace(/'/g, "\\'")}', '${dateFrom}', '${dateTo}')">
+                    <div class="cnum ${i === 0 ? 't1' : i === 1 ? 't2' : i === 2 ? 't3' : ''}">${i + 1}</div>
                     <div class="row-main">
                         <div class="row-name">${c.name}</div>
                         <div class="row-sub">${c.orders} замовлень</div>
@@ -767,10 +957,10 @@
                 </div>
             `).join('');
 
-        // По дням — кликабельные
-        document.getElementById('days-list').innerHTML = data.by_day.length === 0
-            ? '<div class="empty">Немає даних</div>'
-            : data.by_day.map(d => `
+            // По дням — кликабельные
+            document.getElementById('days-list').innerHTML = data.by_day.length === 0
+                ? '<div class="empty">Немає даних</div>'
+                : data.by_day.map(d => `
                 <div class="clickable-row" onclick="openDayClients('${d.date}')">
                     <div class="row-main">
                         <div class="row-name">${d.date}</div>
@@ -783,24 +973,24 @@
                 </div>
             `).join('');
 
-        // Позиции — сворачиваемые, внизу
-        allProductsList = data.products.filter(p => p.name !== 'ВАРТІСТЬ');
-        renderProductsList();
-    }
-
-    // ─── ПОЗИЦИИ СВОРАЧИВАЕМЫЕ ───
-    function renderProductsList() {
-        const list   = document.getElementById('products-list');
-        const toggle = document.getElementById('prod-toggle');
-
-        if (allProductsList.length === 0) {
-            list.innerHTML = '<div class="empty">Немає даних</div>';
-            toggle.style.display = 'none';
-            return;
+            // Позиции — сворачиваемые, внизу
+            allProductsList = data.products.filter(p => p.name !== 'ВАРТІСТЬ');
+            renderProductsList();
         }
 
-        const visible = prodsExpanded ? allProductsList : allProductsList.slice(0, PRODS_PREVIEW);
-        list.innerHTML = visible.map(p => `
+        // ─── ПОЗИЦИИ СВОРАЧИВАЕМЫЕ ───
+        function renderProductsList() {
+            const list = document.getElementById('products-list');
+            const toggle = document.getElementById('prod-toggle');
+
+            if (allProductsList.length === 0) {
+                list.innerHTML = '<div class="empty">Немає даних</div>';
+                toggle.style.display = 'none';
+                return;
+            }
+
+            const visible = prodsExpanded ? allProductsList : allProductsList.slice(0, PRODS_PREVIEW);
+            list.innerHTML = visible.map(p => `
             <div class="prod-row">
                 <div class="prod-name">${p.name}</div>
                 <div class="prod-stats">
@@ -810,41 +1000,41 @@
             </div>
         `).join('');
 
-        if (allProductsList.length > PRODS_PREVIEW) {
-            toggle.style.display = 'block';
-            toggle.textContent = prodsExpanded
-                ? '▲ Менше'
-                : `▼ Більше (ще ${allProductsList.length - PRODS_PREVIEW})`;
-        } else {
-            toggle.style.display = 'none';
-        }
-    }
-
-    function toggleProducts() {
-        prodsExpanded = !prodsExpanded;
-        renderProductsList();
-    }
-
-    // ─── ЭКРАН 2А: ЗАКАЗЫ КЛИЕНТА ───
-    async function openClientOrders(clientName, dateFrom, dateTo) {
-        document.getElementById('client-screen-title').textContent = clientName;
-        document.getElementById('client-screen-sub').textContent = `${dateFrom} — ${dateTo}`;
-        document.getElementById('client-orders-list').innerHTML = '<div class="loader">⏳ Завантаження...</div>';
-        showScreen('screen-client');
-
-        try {
-            const url = `${apiUrl}/api/client-orders?manager_id=${managerId}&client=${encodeURIComponent(clientName)}&date_from=${dateFrom}&date_to=${dateTo}`;
-            const resp = await fetch(url);
-            const data = await resp.json();
-
-            if (!data.orders || data.orders.length === 0) {
-                document.getElementById('client-orders-list').innerHTML = '<div class="empty">Немає замовлень</div>';
-                return;
+            if (allProductsList.length > PRODS_PREVIEW) {
+                toggle.style.display = 'block';
+                toggle.textContent = prodsExpanded
+                    ? '▲ Менше'
+                    : `▼ Більше (ще ${allProductsList.length - PRODS_PREVIEW})`;
+            } else {
+                toggle.style.display = 'none';
             }
+        }
 
-            const totalAll = data.orders.reduce((s, o) => s + o.total, 0);
+        function toggleProducts() {
+            prodsExpanded = !prodsExpanded;
+            renderProductsList();
+        }
 
-            document.getElementById('client-orders-list').innerHTML = `
+        // ─── ЭКРАН 2А: ЗАКАЗЫ КЛИЕНТА ───
+        async function openClientOrders(clientName, dateFrom, dateTo) {
+            document.getElementById('client-screen-title').textContent = clientName;
+            document.getElementById('client-screen-sub').textContent = `${dateFrom} — ${dateTo}`;
+            document.getElementById('client-orders-list').innerHTML = '<div class="loader">⏳ Завантаження...</div>';
+            showScreen('screen-client');
+
+            try {
+                const url = `${apiUrl}/api/client-orders?manager_id=${managerId}&client=${encodeURIComponent(clientName)}&date_from=${dateFrom}&date_to=${dateTo}`;
+                const resp = await fetch(url);
+                const data = await resp.json();
+
+                if (!data.orders || data.orders.length === 0) {
+                    document.getElementById('client-orders-list').innerHTML = '<div class="empty">Немає замовлень</div>';
+                    return;
+                }
+
+                const totalAll = data.orders.reduce((s, o) => s + o.total, 0);
+
+                document.getElementById('client-orders-list').innerHTML = `
                 <div class="result-section">
                     <div class="result-title">Всього за період</div>
                     <div class="stat-grid">
@@ -861,7 +1051,7 @@
                 <div class="result-section">
                     <div class="result-title">Замовлення <span style="color:#aaa;font-size:11px;font-weight:400">— натисніть для деталей</span></div>
                     ${data.orders.map(o => `
-                        <div class="clickable-row" onclick="openOrderDetail(${o.id}, '${clientName.replace(/'/g,"\\'")}', '${o.date}', 'screen-client')">
+                        <div class="clickable-row" onclick="openOrderDetail(${o.id}, '${clientName.replace(/'/g, "\\'")}', '${o.date}', 'screen-client')">
                             <div class="row-main">
                                 <div class="row-name">${o.date}</div>
                                 ${o.comment ? `<div class="row-sub">${o.comment}</div>` : ''}
@@ -874,32 +1064,32 @@
                     `).join('')}
                 </div>
             `;
-        } catch(e) {
-            document.getElementById('client-orders-list').innerHTML = '<div class="empty">Помилка завантаження</div>';
-            console.error(e);
-        }
-    }
-
-    // ─── ЭКРАН 2Б: КЛИЕНТЫ ДНЯ ───
-    async function openDayClients(dateStr) {
-        document.getElementById('day-screen-title').textContent = `📅 ${dateStr}`;
-        document.getElementById('day-screen-sub').textContent = 'Замовлення за день';
-        document.getElementById('day-clients-list').innerHTML = '<div class="loader">⏳ Завантаження...</div>';
-        showScreen('screen-day');
-
-        try {
-            const url = `${apiUrl}/api/day-clients?manager_id=${managerId}&date=${dateStr}`;
-            const resp = await fetch(url);
-            const data = await resp.json();
-
-            if (!data.clients || data.clients.length === 0) {
-                document.getElementById('day-clients-list').innerHTML = '<div class="empty">Немає замовлень</div>';
-                return;
+            } catch (e) {
+                document.getElementById('client-orders-list').innerHTML = '<div class="empty">Помилка завантаження</div>';
+                console.error(e);
             }
+        }
 
-            const totalDay = data.clients.reduce((s, c) => s + c.total, 0);
+        // ─── ЭКРАН 2Б: КЛИЕНТЫ ДНЯ ───
+        async function openDayClients(dateStr) {
+            document.getElementById('day-screen-title').textContent = `📅 ${dateStr}`;
+            document.getElementById('day-screen-sub').textContent = 'Замовлення за день';
+            document.getElementById('day-clients-list').innerHTML = '<div class="loader">⏳ Завантаження...</div>';
+            showScreen('screen-day');
 
-            document.getElementById('day-clients-list').innerHTML = `
+            try {
+                const url = `${apiUrl}/api/day-clients?manager_id=${managerId}&date=${dateStr}`;
+                const resp = await fetch(url);
+                const data = await resp.json();
+
+                if (!data.clients || data.clients.length === 0) {
+                    document.getElementById('day-clients-list').innerHTML = '<div class="empty">Немає замовлень</div>';
+                    return;
+                }
+
+                const totalDay = data.clients.reduce((s, c) => s + c.total, 0);
+
+                document.getElementById('day-clients-list').innerHTML = `
                 <div class="result-section">
                     <div class="result-title">Підсумок дня</div>
                     <div class="stat-grid">
@@ -916,8 +1106,8 @@
                 <div class="result-section">
                     <div class="result-title">Клієнти <span style="color:#aaa;font-size:11px;font-weight:400">— натисніть для деталей</span></div>
                     ${data.clients.map((c, i) => `
-                        <div class="clickable-row" onclick="openOrderDetail(${c.id}, '${c.name.replace(/'/g,"\\'")}', '${dateStr}', 'screen-day')">
-                            <div class="cnum ${i===0?'t1':i===1?'t2':i===2?'t3':''}">${i+1}</div>
+                        <div class="clickable-row" onclick="openOrderDetail(${c.id}, '${c.name.replace(/'/g, "\\'")}', '${dateStr}', 'screen-day')">
+                            <div class="cnum ${i === 0 ? 't1' : i === 1 ? 't2' : i === 2 ? 't3' : ''}">${i + 1}</div>
                             <div class="row-main">
                                 <div class="row-name">${c.name}</div>
                                 ${c.comment ? `<div class="row-sub">${c.comment}</div>` : ''}
@@ -930,44 +1120,44 @@
                     `).join('')}
                 </div>
             `;
-        } catch(e) {
-            document.getElementById('day-clients-list').innerHTML = '<div class="empty">Помилка завантаження</div>';
-            console.error(e);
+            } catch (e) {
+                document.getElementById('day-clients-list').innerHTML = '<div class="empty">Помилка завантаження</div>';
+                console.error(e);
+            }
         }
-    }
 
-    // ─── ЭКРАН 3: ДЕТАЛИЗАЦИЯ ЗАКАЗА ───
-    async function openOrderDetail(orderId, clientName, dateStr, backScreen) {
-        prevScreen = backScreen;
-        document.getElementById('order-back-btn').onclick = () => goBack(backScreen);
-        document.getElementById('order-screen-title').textContent = clientName;
-        document.getElementById('order-screen-sub').textContent = dateStr;
-        document.getElementById('order-summary').innerHTML = '<div class="loader">⏳ Завантаження...</div>';
-        document.getElementById('order-items-list').innerHTML = '';
-        showScreen('screen-order');
+        // ─── ЭКРАН 3: ДЕТАЛИЗАЦИЯ ЗАКАЗА ───
+        async function openOrderDetail(orderId, clientName, dateStr, backScreen) {
+            prevScreen = backScreen;
+            document.getElementById('order-back-btn').onclick = () => goBack(backScreen);
+            document.getElementById('order-screen-title').textContent = clientName;
+            document.getElementById('order-screen-sub').textContent = dateStr;
+            document.getElementById('order-summary').innerHTML = '<div class="loader">⏳ Завантаження...</div>';
+            document.getElementById('order-items-list').innerHTML = '';
+            showScreen('screen-order');
 
-        try {
-            const resp = await fetch(`${apiUrl}/api/order-detail?order_id=${orderId}`);
-            const data = await resp.json();
+            try {
+                const resp = await fetch(`${apiUrl}/api/order-detail?order_id=${orderId}`);
+                const data = await resp.json();
 
-            document.getElementById('order-summary').innerHTML = `
+                document.getElementById('order-summary').innerHTML = `
                 <div class="total">${fmt(data.total)} грн</div>
                 <div class="meta">${data.date} · ${data.client}</div>
                 ${data.comment ? `<div class="meta" style="margin-top:4px">💬 ${data.comment}</div>` : ''}
             `;
 
-            // Группируем по категориям
-            const byCategory = {};
-            data.items.forEach(item => {
-                if (!byCategory[item.category]) byCategory[item.category] = [];
-                byCategory[item.category].push(item);
-            });
+                // Группируем по категориям
+                const byCategory = {};
+                data.items.forEach(item => {
+                    if (!byCategory[item.category]) byCategory[item.category] = [];
+                    byCategory[item.category].push(item);
+                });
 
-            let html = '';
-            for (const [cat, items] of Object.entries(byCategory)) {
-                html += `<div class="cat-divider">${CAT_LABELS[cat] || cat}</div>`;
-                items.forEach(item => {
-                    html += `
+                let html = '';
+                for (const [cat, items] of Object.entries(byCategory)) {
+                    html += `<div class="cat-divider">${CAT_LABELS[cat] || cat}</div>`;
+                    items.forEach(item => {
+                        html += `
                         <div class="detail-row">
                             <div class="detail-name">${item.name}</div>
                             <div class="detail-right">
@@ -976,36 +1166,37 @@
                             </div>
                         </div>
                     `;
+                    });
+                }
+
+                document.getElementById('order-items-list').innerHTML = html;
+            } catch (e) {
+                document.getElementById('order-summary').innerHTML = '<div class="empty">Помилка завантаження</div>';
+                console.error(e);
+            }
+        }
+
+        function fmt(n) { return Math.round(n).toLocaleString('uk-UA'); }
+
+        function copyReport() {
+            if (!lastReport) return;
+            const total = lastReport.categories.reduce((s, c) => s + c.amount, 0);
+            let text = `📊 Звіт\n💰 Всього: ${fmt(total)} грн\n🧾 Замовлень: ${lastReport.order_count}\n\n`;
+            lastReport.categories.filter(c => c.name !== 'інше').forEach(c => {
+                text += `${CAT_LABELS[c.name] || c.name}: ${fmt(c.amount)} грн (${c.qty} шт)\n`;
+            });
+            if (lastReport.top_clients.length > 0) {
+                text += `\n🏆 Клієнти:\n`;
+                lastReport.top_clients.slice(0, 5).forEach((c, i) => {
+                    text += `${i + 1}. ${c.name} — ${fmt(c.amount)} грн\n`;
                 });
             }
-
-            document.getElementById('order-items-list').innerHTML = html;
-        } catch(e) {
-            document.getElementById('order-summary').innerHTML = '<div class="empty">Помилка завантаження</div>';
-            console.error(e);
+            navigator.clipboard.writeText(text).then(() => tg.showAlert('Скопійовано!'));
         }
-    }
 
-    function fmt(n) { return Math.round(n).toLocaleString('uk-UA'); }
-
-    function copyReport() {
-        if (!lastReport) return;
-        const total = lastReport.categories.reduce((s, c) => s + c.amount, 0);
-        let text = `📊 Звіт\n💰 Всього: ${fmt(total)} грн\n🧾 Замовлень: ${lastReport.order_count}\n\n`;
-        lastReport.categories.filter(c => c.name !== 'інше').forEach(c => {
-            text += `${CAT_LABELS[c.name] || c.name}: ${fmt(c.amount)} грн (${c.qty} шт)\n`;
-        });
-        if (lastReport.top_clients.length > 0) {
-            text += `\n🏆 Клієнти:\n`;
-            lastReport.top_clients.slice(0, 5).forEach((c, i) => {
-                text += `${i+1}. ${c.name} — ${fmt(c.amount)} грн\n`;
-            });
-        }
-        navigator.clipboard.writeText(text).then(() => tg.showAlert('Скопійовано!'));
-    }
-
-    loadClients();
-    renderItems();
-</script>
+        loadClients();
+        renderItems();
+    </script>
 </body>
+
 </html>
