@@ -70,22 +70,7 @@
             color: var(--tg-theme-button-text-color);
         }
 
-        .glass-section {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 12px;
-            background: rgba(49, 181, 69, 0.08);
-            border: 1px solid #31b545;
-        }
 
-        .glass-title {
-            font-weight: bold;
-            margin-bottom: 10px;
-            display: block;
-            color: #288c38;
-            font-size: 14px;
-            text-transform: uppercase;
-        }
 
         .category-btn {
             width: 100%;
@@ -110,10 +95,7 @@
             border-radius: 0 0 10px 10px;
         }
 
-        /* Робимо секцію стаканів видимою за замовчуванням */
-        #glass {
-            display: block;
-        }
+
 
         .item-row {
             display: flex;
@@ -181,10 +163,6 @@
         </div>
         <textarea id="comment" placeholder="Коментар..." rows="2"></textarea>
 
-        <div class="glass-section">
-            <span class="glass-title">🥤 СТАКАНИ (100 шт):</span>
-            <div id="glass"></div>
-        </div>
     </div>
 
     <button class="category-btn" onclick="toggleCat('lemonades')">🍋 Лимонади <span>▼</span></button>
@@ -192,6 +170,9 @@
 
     <button class="category-btn" onclick="toggleCat('teas')">🍓 Чай <span>▼</span></button>
     <div id="teas" class="items-container"></div>
+
+    <button class="category-btn" onclick="toggleCat('glass')">🥤 ПЕТ Стакани <span>▼</span></button>
+    <div id="glass" class="items-container"></div>
 
     <button id="send_btn">НАДІСЛАТИ ЗАМОВЛЕННЯ</button>
 
