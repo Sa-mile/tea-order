@@ -1188,16 +1188,31 @@
         function copyReport() {
             if (!lastReport) return;
             const total = lastReport.categories.reduce((s, c) => s + c.amount, 0);
-            let text = `📊 Звіт\n💰 Всього: ${fmt(total)} грн\n🧾 Замовлень: ${lastReport.order_count}\n\n`;
+            
+            let periodText = lastReport.dateFrom === lastReport.dateTo 
+                ? lastReport.dateFrom 
+                : `${lastReport.dateFrom} — ${lastReport.dateTo}`;
+
+            let text = `📊 Звіт за ${periodText}\n💰 Всього: ${fmt(total)} грн\n🧾 Замовлень: ${lastReport.order_count}\n\n`;
+            
             lastReport.categories.filter(c => c.name !== 'інше').forEach(c => {
                 text += `${CAT_LABELS[c.name] || c.name}: ${fmt(c.amount)} грн (${c.qty} шт)\n`;
             });
-            if (lastReport.top_clients.length > 0) {
-                text += `\n🏆 Клієнти:\n`;
-                lastReport.top_clients.slice(0, 5).forEach((c, i) => {
+
+            if (lastReport.by_day && lastReport.by_day.length > 0) {
+                text += `\n📅 По днях:\n`;
+                lastReport.by_day.forEach(d => {
+                    text += `• ${d.date}: ${fmt(d.amount)} грн (${d.orders} зам.)\n`;
+                });
+            }
+
+            if (lastReport.top_clients && lastReport.top_clients.length > 0) {
+                text += `\n🏆 Всі клієнти:\n`;
+                lastReport.top_clients.forEach((c, i) => {
                     text += `${i + 1}. ${c.name} — ${fmt(c.amount)} грн\n`;
                 });
             }
+            
             navigator.clipboard.writeText(text).then(() => tg.showAlert('Скопійовано!'));
         }
 
