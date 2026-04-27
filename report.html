@@ -33,34 +33,16 @@
 
         .screen.active {
             display: block;
-            animation: slideIn 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+            animation: fadeIn 0.18s ease both;
         }
 
-        .screen.slide-back {
-            animation: slideBack 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-        }
-
-        @keyframes slideIn {
+        @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateX(32px);
             }
 
             to {
                 opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        @keyframes slideBack {
-            from {
-                opacity: 0;
-                transform: translateX(-24px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateX(0);
             }
         }
 
@@ -705,7 +687,7 @@
     <!-- ЭКРАН 2А: Заказы клиента              -->
     <!-- ═══════════════════════════════════════ -->
     <div id="screen-client" class="screen">
-        <button class="back-btn" onclick="goBack('screen-main')">◀️ Назад</button>
+        <button class="back-btn" id="client-back-btn">Назад</button>
         <div class="screen-title" id="client-screen-title"></div>
         <div class="screen-subtitle" id="client-screen-sub"></div>
         <div id="client-orders-list"></div>
@@ -763,22 +745,14 @@
         let prevScreen = 'screen-main';
 
         // ─── НАВИГАЦИЯ ───
-        function showScreen(id, isBack = false) {
-            document.querySelectorAll('.screen').forEach(s => {
-                s.classList.remove('active', 'slide-back');
-            });
-            const el = document.getElementById(id);
-            el.classList.add('active');
-            if (isBack) {
-                el.classList.add('slide-back');
-                // Прибираємо клас після анімації
-                el.addEventListener('animationend', () => el.classList.remove('slide-back'), { once: true });
-            }
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
             window.scrollTo(0, 0);
         }
 
         function goBack(target) {
-            showScreen(target, true);
+            showScreen(target);
         }
 
         // ─── ПЕРИОД ───
@@ -1153,7 +1127,8 @@
         }
 
         // ─── ЭКРАН 2А: ЗАКАЗЫ КЛИЕНТА ───
-        async function openClientOrders(clientName, dateFrom, dateTo) {
+        // fromScreen — звідки прийшли (screen-main або screen-day)
+        async function openClientOrders(clientName, dateFrom, dateTo, fromScreen = 'screen-main') {
             try {
                 const url = `${apiUrl}/api/client-orders?manager_id=${managerId}&client=${encodeURIComponent(clientName)}&date_from=${dateFrom}&date_to=${dateTo}`;
                 const resp = await fetch(url);
@@ -1164,12 +1139,15 @@
                     return;
                 }
 
-                // ОПТИМИЗАЦИЯ: Если заказ всего один — сразу открываем детализацию
+                // Якщо замовлення одне — одразу відкриваємо деталі, повертатись буде на fromScreen
                 if (data.orders.length === 1) {
                     const o = data.orders[0];
-                    openOrderDetail(o.id, clientName, o.date, 'screen-main');
+                    openOrderDetail(o.id, clientName, o.date, fromScreen);
                     return;
                 }
+
+                // Налаштовуємо кнопку «Назад» для screen-client
+                document.getElementById('client-back-btn').onclick = () => goBack(fromScreen);
 
                 document.getElementById('client-screen-title').textContent = clientName;
                 document.getElementById('client-screen-sub').textContent = `${dateFrom} — ${dateTo}`;
@@ -1229,9 +1207,9 @@
                     return;
                 }
 
-                // ОПТИМИЗАЦИЯ: Если клиент всего один — сразу переходим к его заказам
+                // Якщо 1 клієнт — одразу до його замовлень, але повернення буде на screen-day
                 if (data.clients.length === 1) {
-                    openClientOrders(data.clients[0].name, dateStr, dateStr);
+                    openClientOrders(data.clients[0].name, dateStr, dateStr, 'screen-day');
                     return;
                 }
 
