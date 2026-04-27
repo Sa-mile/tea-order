@@ -1133,12 +1133,9 @@
 
         // ─── ЭКРАН 2Б: КЛИЕНТЫ ДНЯ ───
         async function openDayClients(dateStr) {
-            // ОПТИМИЗАЦИЯ: Если в отчете всего один день, не нужно открывать новый экран
+            // ОПТИМИЗАЦИЯ: Если в отчете всего один день, просто скроллим вверх
             if (lastReport && lastReport.by_day && lastReport.by_day.length === 1) {
-                tg.showScanQrPopup({ text: 'Вище всі замовлення цього дня' }); // Используем тост или алерт
-                setTimeout(() => tg.closeScanQrPopup(), 2000);
-
-                // Прокручиваем к списку клиентов
+                tg.HapticFeedback.impactOccurred('medium');
                 document.getElementById('clients-list').scrollIntoView({ behavior: 'smooth' });
                 return;
             }
