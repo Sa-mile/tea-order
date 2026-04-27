@@ -1133,17 +1133,27 @@
 
         // ─── ЭКРАН 2Б: КЛИЕНТЫ ДНЯ ───
         async function openDayClients(dateStr) {
+            // ОПТИМИЗАЦИЯ: Если в отчете всего один день, не нужно открывать новый экран
+            if (lastReport && lastReport.by_day && lastReport.by_day.length === 1) {
+                tg.showScanQrPopup({ text: 'Вище всі замовлення цього дня' }); // Используем тост или алерт
+                setTimeout(() => tg.closeScanQrPopup(), 2000);
+
+                // Прокручиваем к списку клиентов
+                document.getElementById('clients-list').scrollIntoView({ behavior: 'smooth' });
+                return;
+            }
+
             try {
                 const url = `${apiUrl}/api/day-clients?manager_id=${managerId}&date=${dateStr}`;
                 const resp = await fetch(url);
                 const data = await resp.json();
 
                 if (!data.clients || data.clients.length === 0) {
-                    tg.showAlert('Немає замовлень');
+                    tg.showAlert('Вище всі замовлення цього дня');
                     return;
                 }
 
-                // ОПТИМИЗАЦИЯ: Если клиент всего один — сразу переходим к его заказам (которые могут тоже перекинуться в детали)
+                // ОПТИМИЗАЦИЯ: Если клиент всего один — сразу переходим к его заказам
                 if (data.clients.length === 1) {
                     openClientOrders(data.clients[0].name, dateStr, dateStr);
                     return;
