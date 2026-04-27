@@ -728,31 +728,56 @@
         }
 
         // ─── ПЕРИОД ───
-        function setPeriod(type, btn) {
+        // Локальний форматтер (не залежить від UTC, уникає зсуву дат)
+        function fmtLocal(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        async function setPeriod(type, btn) {
             document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             const today = new Date();
-            const fmt = d => d.toISOString().split('T')[0];
-            let from;
-            if (type === 'today') { from = fmt(today); }
-            else if (type === 'week') {
+            let from, to;
+
+            if (type === 'today') {
+                from = fmtLocal(today);
+                to = fmtLocal(today);
+            } else if (type === 'week') {
                 const mon = new Date(today);
                 mon.setDate(today.getDate() - (today.getDay() || 7) + 1);
-                from = fmt(mon);
+                from = fmtLocal(mon);
+                // Перевіряємо чи є замовлення на завтра в БД
+                const tomorrow = new Date(today);
+                tomorrow.setDate(today.getDate() + 1);
+                try {
+                    const tomorrowStr = fmtLocal(tomorrow).split('-').reverse().join('.');
+                    const resp = await fetch(`${apiUrl}/api/day-clients?manager_id=${managerId}&date=${tomorrowStr}`);
+                    const data = await resp.json();
+                    to = (data.clients && data.clients.length > 0) ? fmtLocal(tomorrow) : fmtLocal(today);
+                } catch {
+                    to = fmtLocal(today);
+                }
             } else if (type === 'month') {
-                from = fmt(new Date(today.getFullYear(), today.getMonth(), 1));
-            } else { from = '2026-01-01'; }
+                from = fmtLocal(new Date(today.getFullYear(), today.getMonth(), 1));
+                to = fmtLocal(today);
+            } else {
+                from = '2026-01-01';
+                to = fmtLocal(today);
+            }
+
             document.getElementById('date-from').value = from;
-            document.getElementById('date-to').value = fmt(today);
+            document.getElementById('date-to').value = to;
         }
 
         (function () {
             const today = new Date();
-            const fmt = d => d.toISOString().split('T')[0];
             const mon = new Date(today);
             mon.setDate(today.getDate() - (today.getDay() || 7) + 1);
-            document.getElementById('date-from').value = fmt(mon);
-            document.getElementById('date-to').value = fmt(today);
+            document.getElementById('date-from').value = fmtLocal(mon);
+            document.getElementById('date-to').value = fmtLocal(today);
         })();
 
         // ─── КЛИЕНТЫ (фильтр) ───
