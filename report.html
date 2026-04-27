@@ -26,27 +26,73 @@
             margin-bottom: 16px;
         }
 
+        /* ─── АНІМАЦІЯ ЕКРАНІВ ─── */
         .screen {
             display: none;
         }
 
         .screen.active {
             display: block;
+            animation: slideIn 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
         }
 
-        /* Кнопка назад */
+        .screen.slide-back {
+            animation: slideBack 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(32px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideBack {
+            from {
+                opacity: 0;
+                transform: translateX(-24px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* ─── КНОПКА НАЗАД ─── */
         .back-btn {
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 6px;
             color: #31b545;
-            font-weight: 600;
-            font-size: 15px;
+            font-weight: 700;
+            font-size: 14px;
             cursor: pointer;
-            margin-bottom: 16px;
-            background: none;
-            border: none;
-            padding: 0;
+            margin-bottom: 18px;
+            background: rgba(49, 181, 69, 0.10);
+            border: 1.5px solid rgba(49, 181, 69, 0.25);
+            border-radius: 20px;
+            padding: 7px 16px 7px 12px;
+            transition: background 0.15s, transform 0.1s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .back-btn:active {
+            background: rgba(49, 181, 69, 0.22);
+            transform: scale(0.96);
+        }
+
+        .back-btn::before {
+            content: '‹';
+            font-size: 20px;
+            line-height: 1;
+            margin-top: -1px;
+            font-weight: 400;
         }
 
         /* Заголовок экрана */
@@ -717,14 +763,22 @@
         let prevScreen = 'screen-main';
 
         // ─── НАВИГАЦИЯ ───
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+        function showScreen(id, isBack = false) {
+            document.querySelectorAll('.screen').forEach(s => {
+                s.classList.remove('active', 'slide-back');
+            });
+            const el = document.getElementById(id);
+            el.classList.add('active');
+            if (isBack) {
+                el.classList.add('slide-back');
+                // Прибираємо клас після анімації
+                el.addEventListener('animationend', () => el.classList.remove('slide-back'), { once: true });
+            }
             window.scrollTo(0, 0);
         }
 
         function goBack(target) {
-            showScreen(target);
+            showScreen(target, true);
         }
 
         // ─── ПЕРИОД ───
