@@ -1075,30 +1075,32 @@
 
         // ─── ЭКРАН 2А: ЗАКАЗЫ КЛИЕНТА ───
         async function openClientOrders(clientName, dateFrom, dateTo) {
-            document.getElementById('client-screen-title').textContent = clientName;
-            document.getElementById('client-screen-sub').textContent = `${dateFrom} — ${dateTo}`;
-            document.getElementById('client-orders-list').innerHTML = '<div class="loader">⏳ Завантаження...</div>';
-            showScreen('screen-client');
-
             try {
                 const url = `${apiUrl}/api/client-orders?manager_id=${managerId}&client=${encodeURIComponent(clientName)}&date_from=${dateFrom}&date_to=${dateTo}`;
                 const resp = await fetch(url);
                 const data = await resp.json();
 
                 if (!data.orders || data.orders.length === 0) {
-                    document.getElementById('client-orders-list').innerHTML = '<div class="empty">Немає замовлень</div>';
+                    tg.showAlert('Немає замовлень');
                     return;
                 }
 
-                const totalAll = data.orders.reduce((s, o) => s + o.total, 0);
+                // ОПТИМИЗАЦИЯ: Если заказ всего один — сразу открываем детализацию
+                if (data.orders.length === 1) {
+                    const o = data.orders[0];
+                    openOrderDetail(o.id, clientName, o.date, 'screen-main');
+                    return;
+                }
 
+                document.getElementById('client-screen-title').textContent = clientName;
+                document.getElementById('client-screen-sub').textContent = `${dateFrom} — ${dateTo}`;
                 document.getElementById('client-orders-list').innerHTML = `
                 <div class="result-section">
                     <div class="result-title">Всього за період</div>
                     <div class="stat-grid">
                         <div class="stat-card full">
                             <div class="slabel">💰 Сума</div>
-                            <div class="svalue">${fmt(totalAll)} грн</div>
+                            <div class="svalue">${fmt(data.orders.reduce((s, o) => s + o.total, 0))} грн</div>
                         </div>
                         <div class="stat-card">
                             <div class="slabel">🧾 Замовлень</div>
@@ -1122,28 +1124,33 @@
                     `).join('')}
                 </div>
             `;
+                showScreen('screen-client');
             } catch (e) {
-                document.getElementById('client-orders-list').innerHTML = '<div class="empty">Помилка завантаження</div>';
+                tg.showAlert('Помилка завантаження замовлень');
                 console.error(e);
             }
         }
 
         // ─── ЭКРАН 2Б: КЛИЕНТЫ ДНЯ ───
         async function openDayClients(dateStr) {
-            document.getElementById('day-screen-title').textContent = `📅 ${dateStr}`;
-            document.getElementById('day-screen-sub').textContent = 'Замовлення за день';
-            document.getElementById('day-clients-list').innerHTML = '<div class="loader">⏳ Завантаження...</div>';
-            showScreen('screen-day');
-
             try {
                 const url = `${apiUrl}/api/day-clients?manager_id=${managerId}&date=${dateStr}`;
                 const resp = await fetch(url);
                 const data = await resp.json();
 
                 if (!data.clients || data.clients.length === 0) {
-                    document.getElementById('day-clients-list').innerHTML = '<div class="empty">Немає замовлень</div>';
+                    tg.showAlert('Немає замовлень');
                     return;
                 }
+
+                // ОПТИМИЗАЦИЯ: Если клиент всего один — сразу переходим к его заказам (которые могут тоже перекинуться в детали)
+                if (data.clients.length === 1) {
+                    openClientOrders(data.clients[0].name, dateStr, dateStr);
+                    return;
+                }
+
+                document.getElementById('day-screen-title').textContent = `📅 ${dateStr}`;
+                document.getElementById('day-screen-sub').textContent = 'Замовлення за день';
 
                 const totalDay = data.clients.reduce((s, c) => s + c.total, 0);
 
@@ -1156,16 +1163,15 @@
                             <div class="svalue">${fmt(totalDay)} грн</div>
                         </div>
                         <div class="stat-card">
-                            <div class="slabel">🧾 Клієнтів</div>
+                            <div class="slabel">🏪 Клієнтів</div>
                             <div class="svalue">${data.clients.length}</div>
                         </div>
                     </div>
                 </div>
                 <div class="result-section">
-                    <div class="result-title">Клієнти <span style="color:#aaa;font-size:11px;font-weight:400">— натисніть для деталей</span></div>
-                    ${data.clients.map((c, i) => `
-                        <div class="clickable-row" onclick="openOrderDetail(${c.id}, '${c.name.replace(/'/g, "\\'")}', '${dateStr}', 'screen-day')">
-                            <div class="cnum ${i === 0 ? 't1' : i === 1 ? 't2' : i === 2 ? 't3' : ''}">${i + 1}</div>
+                    <div class="result-title">Клієнти дня <span style="color:#aaa;font-size:11px;font-weight:400">— натисніть для деталей</span></div>
+                    ${data.clients.map(c => `
+                        <div class="clickable-row" onclick="openClientOrders('${c.name.replace(/'/g, "\\'")}', '${dateStr}', '${dateStr}')">
                             <div class="row-main">
                                 <div class="row-name">${c.name}</div>
                                 ${c.comment ? `<div class="row-sub">${c.comment}</div>` : ''}
@@ -1178,8 +1184,9 @@
                     `).join('')}
                 </div>
             `;
+                showScreen('screen-day');
             } catch (e) {
-                document.getElementById('day-clients-list').innerHTML = '<div class="empty">Помилка завантаження</div>';
+                tg.showAlert('Помилка завантаження замовлень');
                 console.error(e);
             }
         }
@@ -1242,13 +1249,13 @@
         function copyReport() {
             if (!lastReport) return;
             const total = lastReport.categories.reduce((s, c) => s + c.amount, 0);
-            
-            let periodText = lastReport.dateFrom === lastReport.dateTo 
-                ? lastReport.dateFrom 
+
+            let periodText = lastReport.dateFrom === lastReport.dateTo
+                ? lastReport.dateFrom
                 : `${lastReport.dateFrom} — ${lastReport.dateTo}`;
 
             let text = `📊 Звіт за ${periodText}\n💰 Всього: ${fmt(total)} грн\n🧾 Замовлень: ${lastReport.order_count}\n\n`;
-            
+
             lastReport.categories.filter(c => c.name !== 'інше').forEach(c => {
                 text += `${CAT_LABELS[c.name] || c.name}: ${fmt(c.amount)} грн (${c.qty} шт)\n`;
             });
@@ -1266,7 +1273,7 @@
                     text += `${i + 1}. ${c.name} — ${fmt(c.amount)} грн\n`;
                 });
             }
-            
+
             navigator.clipboard.writeText(text).then(() => tg.showAlert('Скопійовано!'));
         }
 
