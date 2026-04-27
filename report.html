@@ -697,7 +697,7 @@
     <!-- ЭКРАН 2Б: Клиенты дня                 -->
     <!-- ═══════════════════════════════════════ -->
     <div id="screen-day" class="screen">
-        <button class="back-btn" onclick="goBack('screen-main')">◀️ Назад</button>
+        <button class="back-btn" onclick="goBack('screen-main')">Назад</button>
         <div class="screen-title" id="day-screen-title"></div>
         <div class="screen-subtitle" id="day-screen-sub"></div>
         <div id="day-clients-list"></div>
@@ -707,7 +707,7 @@
     <!-- ЭКРАН 3: Детализация заказа           -->
     <!-- ═══════════════════════════════════════ -->
     <div id="screen-order" class="screen">
-        <button class="back-btn" id="order-back-btn">◀️ Назад</button>
+        <button class="back-btn" id="order-back-btn">Назад</button>
         <div class="screen-title" id="order-screen-title"></div>
         <div class="screen-subtitle" id="order-screen-sub"></div>
         <div class="order-summary" id="order-summary"></div>
@@ -774,6 +774,20 @@
             return `${y}-${m}-${day}`;
         }
 
+        // Перевіряємо чи є в БД замовлення на завтра, і якщо так — повертаємо завтра, інакше сьогодні
+        async function getEndDate(today) {
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+            try {
+                const tomorrowStr = fmtLocal(tomorrow).split('-').reverse().join('.');
+                const resp = await fetch(`${apiUrl}/api/day-clients?manager_id=${managerId}&date=${tomorrowStr}`);
+                const data = await resp.json();
+                return (data.clients && data.clients.length > 0) ? fmtLocal(tomorrow) : fmtLocal(today);
+            } catch {
+                return fmtLocal(today);
+            }
+        }
+
         async function setPeriod(type, btn) {
             document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
@@ -787,23 +801,13 @@
                 const mon = new Date(today);
                 mon.setDate(today.getDate() - (today.getDay() || 7) + 1);
                 from = fmtLocal(mon);
-                // Перевіряємо чи є замовлення на завтра в БД
-                const tomorrow = new Date(today);
-                tomorrow.setDate(today.getDate() + 1);
-                try {
-                    const tomorrowStr = fmtLocal(tomorrow).split('-').reverse().join('.');
-                    const resp = await fetch(`${apiUrl}/api/day-clients?manager_id=${managerId}&date=${tomorrowStr}`);
-                    const data = await resp.json();
-                    to = (data.clients && data.clients.length > 0) ? fmtLocal(tomorrow) : fmtLocal(today);
-                } catch {
-                    to = fmtLocal(today);
-                }
+                to = await getEndDate(today);
             } else if (type === 'month') {
                 from = fmtLocal(new Date(today.getFullYear(), today.getMonth(), 1));
-                to = fmtLocal(today);
+                to = await getEndDate(today);
             } else {
                 from = '2026-01-01';
-                to = fmtLocal(today);
+                to = await getEndDate(today);
             }
 
             document.getElementById('date-from').value = from;
