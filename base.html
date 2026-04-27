@@ -436,30 +436,54 @@
             if (!selectedClient || !coordsValue) return;
 
             const clientFixed = document.getElementById('client-fixed').value.trim() || selectedClient.name;
+            const btn = document.getElementById('send-btn');
+            btn.textContent = '⏳ Обробка...';
+            btn.disabled = true;
 
-            // Конвертируем фото в base64
-            const photosBase64 = await Promise.all(
-                photoFiles.map(file => new Promise(resolve => {
-                    const reader = new FileReader();
-                    reader.onload = e => resolve({
-                        name: file.name,
-                        data: e.target.result.split(',')[1],
-                        type: file.type
-                    });
-                    reader.readAsDataURL(file);
-                }))
-            );
+            try {
+                // Конвертируем фото в base64
+                const photosBase64 = await Promise.all(
+                    photoFiles.map(file => new Promise(resolve => {
+                        const reader = new FileReader();
+                        reader.onload = e => resolve({
+                            name: file.name,
+                            data: e.target.result.split(',')[1],
+                            type: file.type
+                        });
+                        reader.readAsDataURL(file);
+                    }))
+                );
 
-            tg.sendData(JSON.stringify({
-                type: 'delivery',
-                client_id: selectedClient.id,
-                client_db_name: selectedClient.name,
-                client_fixed: clientFixed,
-                coords: coordsValue,
-                photos: photosBase64
-            }));
+                const payloadStr = JSON.stringify({
+                    manager_id: managerId,
+                    type: 'delivery',
+                    client_id: selectedClient.id,
+                    client_db_name: selectedClient.name,
+                    client_fixed: clientFixed,
+                    coords: coordsValue,
+                    photos: photosBase64
+                });
 
-            setTimeout(() => tg.close(), 100);
+                const response = await fetch(`${apiUrl}/api/delivery`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: payloadStr
+                });
+
+                if (response.ok) {
+                    tg.close();
+                } else {
+                    tg.showAlert('❌ Помилка збереження на сервері.');
+                    btn.textContent = 'НАДІСЛАТИ';
+                    btn.disabled = false;
+                }
+
+            } catch (e) {
+                tg.showAlert('❌ Сталася помилка при обробці даних.');
+                console.error(e);
+                btn.textContent = 'НАДІСЛАТИ';
+                btn.disabled = false;
+            }
         }
 
         loadTodayClients();
