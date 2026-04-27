@@ -744,8 +744,14 @@
         const PRODS_PREVIEW = 5;
         let prevScreen = 'screen-main';
 
+        let mainScrollY = 0; // Зберігаємо позицію прокрутки головного екрану
+
         // ─── НАВИГАЦИЯ ───
         function showScreen(id) {
+            // Якщо виходимо з головного — запам'ятовуємо де були
+            if (document.getElementById('screen-main').classList.contains('active')) {
+                mainScrollY = window.scrollY;
+            }
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             window.scrollTo(0, 0);
@@ -753,12 +759,9 @@
 
         function goBack(target) {
             showScreen(target);
-            // При поверненні на головну — скролимо до результатів, а не до фільтрів
-            if (target === 'screen-main') {
-                const results = document.getElementById('main-results');
-                if (results && results.style.display !== 'none') {
-                    setTimeout(() => results.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30);
-                }
+            // При поверненні на головну — відновлюємо позицію де стояли
+            if (target === 'screen-main' && mainScrollY > 0) {
+                setTimeout(() => window.scrollTo({ top: mainScrollY, behavior: 'smooth' }), 30);
             }
         }
 
