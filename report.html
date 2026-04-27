@@ -753,6 +753,13 @@
 
         function goBack(target) {
             showScreen(target);
+            // При поверненні на головну — скролимо до результатів, а не до фільтрів
+            if (target === 'screen-main') {
+                const results = document.getElementById('main-results');
+                if (results && results.style.display !== 'none') {
+                    setTimeout(() => results.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30);
+                }
+            }
         }
 
         // ─── ПЕРИОД ───
@@ -1235,7 +1242,7 @@
                 <div class="result-section">
                     <div class="result-title">Клієнти дня <span style="color:#aaa;font-size:11px;font-weight:400">— натисніть для деталей</span></div>
                     ${data.clients.map(c => `
-                        <div class="clickable-row" onclick="openClientOrders('${c.name.replace(/'/g, "\\'")}', '${dateStr}', '${dateStr}')">
+                        <div class="clickable-row" onclick="openClientOrders('${c.name.replace(/'/g, "\\'")}', '${dateStr}', '${dateStr}', 'screen-day')">
                             <div class="row-main">
                                 <div class="row-name">${c.name}</div>
                                 ${c.comment ? `<div class="row-sub">${c.comment}</div>` : ''}
