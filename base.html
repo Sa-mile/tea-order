@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html lang="uk">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
@@ -15,7 +20,11 @@
             font-size: 14px;
         }
 
-        h3 { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
+        h3 {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
 
         .field-label {
             font-size: 12px;
@@ -26,9 +35,12 @@
             letter-spacing: 0.4px;
         }
 
-        .field-block { margin-bottom: 18px; }
+        .field-block {
+            margin-bottom: 18px;
+        }
 
-        input[type=text], textarea {
+        input[type=text],
+        textarea {
             width: 100%;
             padding: 12px;
             border-radius: 10px;
@@ -39,27 +51,32 @@
             font-family: inherit;
         }
 
-        textarea { resize: none; }
+        textarea {
+            resize: none;
+        }
 
         .suggestions-list {
             background: var(--tg-theme-secondary-bg-color);
-            border: 1px solid rgba(0,0,0,0.1);
+            border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 10px;
             margin-top: 5px;
             max-height: 220px;
             overflow-y: auto;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             display: none;
         }
 
         .suggestion-item {
             padding: 12px;
             cursor: pointer;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
             font-size: 15px;
         }
 
-        .suggestion-item:last-child { border-bottom: none; }
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
         .suggestion-item:active {
             background: var(--tg-theme-button-color);
             color: var(--tg-theme-button-text-color);
@@ -67,7 +84,7 @@
 
         .selected-client {
             display: none;
-            background: rgba(49,181,69,0.1);
+            background: rgba(49, 181, 69, 0.1);
             border: 1px solid #31b545;
             border-radius: 10px;
             padding: 12px;
@@ -79,7 +96,9 @@
             justify-content: space-between;
         }
 
-        .selected-client.visible { display: flex; }
+        .selected-client.visible {
+            display: flex;
+        }
 
         .clear-btn {
             background: none;
@@ -107,20 +126,22 @@
         }
 
         .coords-btn.loaded {
-            background: rgba(49,181,69,0.1);
+            background: rgba(49, 181, 69, 0.1);
         }
 
         .coords-result {
             margin-top: 8px;
             padding: 10px 12px;
             border-radius: 8px;
-            background: rgba(49,181,69,0.08);
+            background: rgba(49, 181, 69, 0.08);
             font-size: 13px;
             color: #288c38;
             display: none;
         }
 
-        .coords-result.visible { display: block; }
+        .coords-result.visible {
+            display: block;
+        }
 
         .photo-section {
             margin-bottom: 18px;
@@ -155,7 +176,9 @@
             cursor: pointer;
         }
 
-        #photo-input { display: none; }
+        #photo-input {
+            display: none;
+        }
 
         #send-btn {
             width: 100%;
@@ -170,7 +193,9 @@
             cursor: pointer;
         }
 
-        #send-btn:disabled { opacity: 0.5; }
+        #send-btn:disabled {
+            opacity: 0.5;
+        }
 
         .loader {
             text-align: center;
@@ -186,6 +211,7 @@
         }
     </style>
 </head>
+
 <body>
     <h3>📍 База — точка доставки</h3>
 
@@ -197,6 +223,10 @@
         <div class="selected-client" id="selected-display">
             <span id="selected-name"></span>
             <button class="clear-btn" onclick="clearClient()">×</button>
+        </div>
+        <div id="exists-warning"
+            style="display:none; margin-top:8px; padding:10px 12px; border-radius:10px; background:rgba(255,180,0,0.15); border:1px solid #f5a623; color:#b87800; font-size:13px;">
+            ⚠️ Ця точка вже є в базі. Дані будуть оновлені.
         </div>
     </div>
 
@@ -230,36 +260,42 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        const params   = new URLSearchParams(window.location.search);
+        const params = new URLSearchParams(window.location.search);
         const managerId = params.get('manager_id');
-        const apiUrl    = decodeURIComponent(params.get('api_url') || '');
+        const apiUrl = decodeURIComponent(params.get('api_url') || '');
 
-        let allClients     = [];
+        let allClients = [];
         let selectedClient = null; // {id, name}
-        let coordsValue    = '';
-        let photoFiles     = [];
+        let coordsValue = '';
+        let photoFiles = [];
+
+        let existingIds = new Set();
 
         // ─── ЗАГРУЗКА КЛИЕНТОВ ───
         async function loadTodayClients() {
             try {
-                const resp = await fetch(`${apiUrl}/api/today-clients`);
-                const data = await resp.json();
-                allClients = data.clients || [];
+                const [clientsResp, existingResp] = await Promise.all([
+                    fetch(`${apiUrl}/api/today-clients`),
+                    fetch(`${apiUrl}/api/existing-deliveries`)
+                ]);
+                const clientsData = await clientsResp.json();
+                const existingData = await existingResp.json();
+
+                allClients = clientsData.clients || [];
+                existingIds = new Set(existingData.existing.map(String));
 
                 if (allClients.length === 0) {
                     document.getElementById('client-search').placeholder = 'Сьогодні замовлень немає';
                     document.getElementById('client-search').disabled = true;
                 }
-            } catch(e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
 
         // ─── ПОИСК КЛИЕНТА ───
-        const searchInput   = document.getElementById('client-search');
+        const searchInput = document.getElementById('client-search');
         const suggestionsBox = document.getElementById('suggestions');
 
-        searchInput.addEventListener('input', function() {
+        searchInput.addEventListener('input', function () {
             const val = this.value.toLowerCase().trim();
             suggestionsBox.innerHTML = '';
             if (!val) { suggestionsBox.style.display = 'none'; return; }
@@ -291,8 +327,18 @@
             searchInput.value = '';
             suggestionsBox.style.display = 'none';
 
+            const alreadyExists = existingIds.has(String(client.id));
+
             document.getElementById('selected-name').textContent = client.name;
             document.getElementById('selected-display').classList.add('visible');
+
+            // Показываем предупреждение если уже есть
+            const warning = document.getElementById('exists-warning');
+            if (alreadyExists) {
+                warning.style.display = 'block';
+            } else {
+                warning.style.display = 'none';
+            }
 
             // Показываем остальные поля
             document.getElementById('fixed-block').style.display = 'block';
@@ -313,7 +359,7 @@
             document.getElementById('coords-block').style.display = 'none';
             document.getElementById('photo-block').style.display = 'none';
             coordsValue = '';
-            photoFiles  = [];
+            photoFiles = [];
             document.getElementById('photo-grid').innerHTML =
                 '<button class="add-photo-btn" onclick="document.getElementById(\'photo-input\').click()">+</button>';
             document.getElementById('coords-result').classList.remove('visible');
@@ -405,12 +451,12 @@
             );
 
             tg.sendData(JSON.stringify({
-                type:             'delivery',
-                client_id:        selectedClient.id,
-                client_db_name:   selectedClient.name,
-                client_fixed:     clientFixed,
-                coords:           coordsValue,
-                photos:           photosBase64
+                type: 'delivery',
+                client_id: selectedClient.id,
+                client_db_name: selectedClient.name,
+                client_fixed: clientFixed,
+                coords: coordsValue,
+                photos: photosBase64
             }));
 
             setTimeout(() => tg.close(), 100);
@@ -419,4 +465,5 @@
         loadTodayClients();
     </script>
 </body>
+
 </html>
