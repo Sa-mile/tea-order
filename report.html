@@ -1133,9 +1133,9 @@
 
         // ─── ЭКРАН 2Б: КЛИЕНТЫ ДНЯ ───
         async function openDayClients(dateStr) {
-            // ОПТИМИЗАЦИЯ: Если в отчете всего один день, просто скроллим вверх
+            // Якщо у звіті всього ОДИН день — просто скролимо вгору до списку клієнтів
             if (lastReport && lastReport.by_day && lastReport.by_day.length === 1) {
-                tg.HapticFeedback.impactOccurred('medium');
+                tg.HapticFeedback.impactOccurred('light');
                 document.getElementById('clients-list').scrollIntoView({ behavior: 'smooth' });
                 return;
             }
@@ -1146,7 +1146,7 @@
                 const data = await resp.json();
 
                 if (!data.clients || data.clients.length === 0) {
-                    tg.showAlert('Вище всі замовлення цього дня');
+                    tg.showAlert('За цей день замовлень не знайдено');
                     return;
                 }
 
