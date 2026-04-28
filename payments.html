@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            padding: 15px;
+            font-size: 14px;
+        }
+
+        h3 {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        /* ─── АНІМАЦІЯ ЕКРАНІВ ─── */
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.18s ease both;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* ─── КНОПКА НАЗАД ─── */
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #31b545;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 18px;
+            background: rgba(49, 181, 69, 0.10);
+            border: 1.5px solid rgba(49, 181, 69, 0.25);
+            border-radius: 20px;
+            padding: 7px 16px 7px 12px;
+            transition: background 0.15s, transform 0.1s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .back-btn:active {
+            background: rgba(49, 181, 69, 0.22);
+            transform: scale(0.96);
+        }
+
+        .back-btn::before {
+            content: '‹';
+            font-size: 20px;
+            line-height: 1;
+            margin-top: -1px;
+            font-weight: 400;
+        }
+
+        /* Таби */
+        .period-btns {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .period-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1.5px solid #ccc;
+            background: transparent;
+            color: var(--tg-theme-text-color);
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .period-btn.active {
+            background: #31b545;
+            border-color: #31b545;
+            color: white;
+        }
+
+        /* Пошук */
+        .autocomplete-container {
+            position: relative;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        input[type=text],
+        input[type=number] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            background: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+            font-size: 16px;
+        }
+
+        .suggestions-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--tg-theme-secondary-bg-color);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+            margin-top: 5px;
+        }
+
+        .suggestion-item {
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-size: 15px;
+        }
+
+        .suggestion-item:active {
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
+
+        /* Картка */
+        .card {
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .card-title {
+            font-weight: bold;
+            font-size: 15px;
+            color: #31b545;
+            margin-bottom: 10px;
+        }
+
+        /* Списки */
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .item-row:last-child {
+            border-bottom: none;
+        }
+
+        .item-name {
+            font-weight: 600;
+        }
+
+        .item-val {
+            text-align: right;
+            font-weight: 700;
+        }
+
+        .red {
+            color: #e53935;
+        }
+
+        .green {
+            color: #43a047;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .btn-green {
+            background: #31b545;
+            color: white;
+        }
+
+        .btn-red {
+            background: #e53935;
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid #31b545;
+            color: #31b545;
+        }
+
+        .badge-red {
+            background: rgba(229, 57, 53, 0.1);
+            color: #e53935;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* Fullscreen image */
+        #screen-receipt {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #screen-receipt img {
+            max-width: 95%;
+            max-height: 95%;
+            object-fit: contain;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="period-btns">
+        <button class="period-btn active" id="tab-today" onclick="switchTab('today')">Сьогодні</button>
+        <button class="period-btn" id="tab-debts" onclick="switchTab('debts')">Борги</button>
+    </div>
+
+    <!-- ════ ЕКРАН 1: СЬОГОДНІ ════ -->
+    <div id="screen-today" class="screen active">
+        <div class="card">
+            <div class="card-title">🔍 Пошук замовлення клієнта</div>
+            <div class="autocomplete-container">
+                <input type="text" id="today-search" placeholder="Введіть назву кав'ярні..." autocomplete="off">
+                <div id="today-suggestions" class="suggestions-list"></div>
+            </div>
+
+            <div id="today-order-card" style="display:none;">
+                <div class="card-title" id="today-order-client-name" style="color:var(--tg-theme-text-color);"></div>
+                <div id="today-order-items"></div>
+                <div class="item-row" style="border-top: 1px dashed #ccc; padding-top:10px;">
+                    <div class="item-name">Разом:</div>
+                    <div class="item-val" id="today-order-total">0.00 грн</div>
+                </div>
+                <div style="margin-top:15px;">
+                    <label style="font-size:12px; color:#888; font-weight:600;">СУМА ОПЛАТИ (грн):</label>
+                    <input type="number" id="today-paid-amount" style="margin-top:5px;">
+                </div>
+                <button class="btn btn-red" onclick="markUnpaid()">Не оплачено</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">🔴 Сьогоднішні боржники</div>
+            <div id="today-debtors-list"></div>
+        </div>
+    </div>
+
+    <!-- ════ ЕКРАН 2: БОРГИ ════ -->
+    <div id="screen-debts" class="screen">
+        <div class="card">
+            <div class="card-title">🔍 Пошук боржника</div>
+            <div class="autocomplete-container">
+                <input type="text" id="debt-search" placeholder="Введіть назву кав'ярні..." autocomplete="off">
+                <div id="debt-suggestions" class="suggestions-list"></div>
+            </div>
+
+            <div id="all-debtors-title" class="card-title" style="color:#e53935;">Всі боржники:</div>
+            <div id="debtors-list"></div>
+        </div>
+    </div>
+
+    <!-- ════ ЕКРАН 3: ІСТОРІЯ/ОПЛАТА ════ -->
+    <div id="screen-client-history" class="screen">
+        <button class="back-btn" onclick="switchTab('debts')">Назад</button>
+        <h3 id="history-client-name"></h3>
+
+        <div class="card" id="history-client-balance-card" style="display:none;">
+            <div class="item-row">
+                <div class="item-name">Баланс клієнта:</div>
+                <div class="item-val" id="history-client-balance">0.00 грн</div>
+            </div>
+        </div>
+
+        <div id="history-orders-list"></div>
+    </div>
+
+    <!-- ════ ЕКРАН 4: ДЕТАЛІЗАЦІЯ ОПЛАТИ ════ -->
+    <div id="screen-order-detail" class="screen">
+        <button class="back-btn" onclick="showScreen('screen-client-history')">Назад</button>
+        <h3 id="detail-title">Оплата замовлення</h3>
+
+        <div class="card">
+            <div class="card-title" id="detail-order-date"></div>
+            <div id="detail-order-items"></div>
+            <div class="item-row" style="border-top: 1px dashed #ccc; padding-top:10px;">
+                <div class="item-name">Сума замовлення:</div>
+                <div class="item-val" id="detail-order-total">0.00 грн</div>
+            </div>
+
+            <div style="margin-top:15px;">
+                <label style="font-size:12px; color:#888; font-weight:600;">СУМА ОПЛАТИ (грн):</label>
+                <input type="number" id="detail-paid-amount" style="margin-top:5px;">
+            </div>
+
+            <div style="margin-top:15px;">
+                <label style="font-size:12px; color:#888; font-weight:600;">📸 КВИТАНЦІЯ (необов'язково):</label>
+                <input type="file" id="detail-photo-input" accept="image/*" style="margin-top:5px;"
+                    onchange="handlePhoto(this)">
+                <div id="detail-photo-preview" style="margin-top:10px; display:none;">
+                    <img src="" id="photo-preview-img" style="max-width:100px; border-radius:8px;">
+                </div>
+            </div>
+
+            <button class="btn btn-green" id="btn-mark-paid" onclick="markPaid()">Оплачено</button>
+        </div>
+    </div>
+
+    <!-- Fullscreen Receipt View -->
+    <div id="screen-receipt" onclick="this.style.display='none'">
+        <img src="" id="receipt-img">
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        const params = new URLSearchParams(window.location.search);
+        const managerId = params.get('manager_id');
+        const apiUrl = decodeURIComponent(params.get('api_url') || '');
+
+        let todayClients = [];
+        let selectedTodayClient = null;
+        let selectedClientName = '';
+        let currentOrderId = null;
+        let base64Photo = null;
+
+        // Tabs
+        function switchTab(tab) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+
+            if (tab === 'today') {
+                document.getElementById('screen-today').classList.add('active');
+                document.getElementById('tab-today').classList.add('active');
+                loadTodayData();
+            } else if (tab === 'debts') {
+                document.getElementById('screen-debts').classList.add('active');
+                document.getElementById('tab-debts').classList.add('active');
+                loadDebtsData();
+            }
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        // ════ ЕКРАН: СЬОГОДНІ ════
+
+        async function loadTodayData() {
+            try {
+                // Clients for autocomplete
+                const respClients = await fetch(`${apiUrl}/api/today-clients`);
+                const dataClients = await respClients.json();
+                todayClients = dataClients.clients || [];
+
+                // Today's Debtors
+                const respDebtors = await fetch(`${apiUrl}/api/today-debtors?manager_id=${managerId}`);
+                const dataDebtors = await respDebtors.json();
+                renderTodayDebtors(dataDebtors.debtors || []);
+            } catch (e) { console.error(e); }
+        }
+
+        function renderTodayDebtors(debtors) {
+            const list = document.getElementById('today-debtors-list');
+            list.innerHTML = '';
+            if (debtors.length === 0) {
+                list.innerHTML = '<div style="color:#aaa; text-align:center; padding:10px;">Боржників на сьогодні немає</div>';
+                return;
+            }
+            debtors.forEach(d => {
+                const row = document.createElement('div');
+                row.className = 'item-row';
+                row.innerHTML = `
+                    <div class="item-name">${d.client_name}</div>
+                    <div class="item-val red">${d.order_total} грн</div>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        // Today Autocomplete
+        const todayInput = document.getElementById('today-search');
+        const todaySugg = document.getElementById('today-suggestions');
+
+        todayInput.addEventListener('input', function () {
+            const val = this.value.toLowerCase().trim();
+            todaySugg.innerHTML = '';
+            if (!val) { todaySugg.style.display = 'none'; return; }
+            const filtered = todayClients.filter(c => c.name.toLowerCase().includes(val));
+            filtered.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.textContent = c.name;
+                div.onclick = () => selectTodayClient(c);
+                todaySugg.appendChild(div);
+            });
+            todaySugg.style.display = filtered.length > 0 ? 'block' : 'none';
+        });
+
+        document.addEventListener('click', e => {
+            if (e.target !== todayInput) todaySugg.style.display = 'none';
+        });
+
+        async function selectTodayClient(client) {
+            selectedTodayClient = client;
+            todayInput.value = client.name;
+            todaySugg.style.display = 'none';
+
+            try {
+                // Fetch order details
+                const resp = await fetch(`${apiUrl}/api/order-detail?order_id=${client.id}`);
+                const data = await resp.json();
+
+                // Fetch balance
+                const respBal = await fetch(`${apiUrl}/api/client-balance?manager_id=${managerId}&client=${encodeURIComponent(client.name)}`);
+                const dataBal = await respBal.json();
+
+                if (dataBal.balance > 0) {
+                    tg.showConfirm(`⚠️ У клієнта є депозит ${dataBal.balance} грн. Врахувати?`, (ok) => {
+                        // Just an alert/confirm as requested
+                    });
+                }
+
+                document.getElementById('today-order-client-name').textContent = client.name;
+                const itemsDiv = document.getElementById('today-order-items');
+                itemsDiv.innerHTML = '';
+                data.items.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'item-row';
+                    row.innerHTML = `<div>${item.name} x${item.qty}</div><div>${item.amount} грн</div>`;
+                    itemsDiv.appendChild(row);
+                });
+                document.getElementById('today-order-total').textContent = `${data.total} грн`;
+                document.getElementById('today-paid-amount').value = data.total;
+                document.getElementById('today-order-card').style.display = 'block';
+            } catch (e) { console.error(e); }
+        }
+
+        async function markUnpaid() {
+            if (!selectedTodayClient) return;
+            const paid = parseFloat(document.getElementById('today-paid-amount').value) || 0;
+
+            try {
+                const resp = await fetch(`${apiUrl}/api/mark-unpaid`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        manager_id: parseInt(managerId),
+                        order_id: selectedTodayClient.id,
+                        paid_amount: paid
+                    })
+                });
+                const res = await resp.json();
+                if (res.status === 'ok') {
+                    tg.showAlert('Відмічено як неоплачено');
+                    document.getElementById('today-order-card').style.display = 'none';
+                    todayInput.value = '';
+                    loadTodayData();
+                } else {
+                    tg.showAlert(`Помилка: ${res.error || res.message}`);
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // ════ ЕКРАН: БОРГИ ════
+
+        async function loadDebtsData() {
+            try {
+                const resp = await fetch(`${apiUrl}/api/debtors?manager_id=${managerId}`);
+                const data = await resp.json();
+                renderAllDebtors(data.debtors || []);
+            } catch (e) { console.error(e); }
+        }
+
+        function renderAllDebtors(debtors) {
+            const list = document.getElementById('debtors-list');
+            list.innerHTML = '';
+            if (debtors.length === 0) {
+                list.innerHTML = '<div style="color:#aaa; text-align:center; padding:10px;">Боржників немає</div>';
+                return;
+            }
+            debtors.forEach(d => {
+                const row = document.createElement('div');
+                row.className = 'item-row';
+                row.style.cursor = 'pointer';
+                row.onclick = () => openClientHistory(d.client_name);
+                row.innerHTML = `
+                    <div class="item-name">${d.client_name}</div>
+                    <div class="item-val red" style="display:flex; align-items:center; gap:8px;">
+                        ${d.total_debt} грн <span class="badge-red">Борг</span>
+                    </div>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        // Debts Autocomplete
+        const debtInput = document.getElementById('debt-search');
+        const debtSugg = document.getElementById('debt-suggestions');
+
+        debtInput.addEventListener('input', async function () {
+            const val = this.value.toLowerCase().trim();
+            if (!val) {
+                document.getElementById('all-debtors-title').style.display = 'block';
+                loadDebtsData();
+                debtSugg.style.display = 'none';
+                return;
+            }
+
+            document.getElementById('all-debtors-title').style.display = 'none';
+            // Search amongst all clients
+            try {
+                const resp = await fetch(`${apiUrl}/api/clients?manager_id=${managerId}`);
+                const data = await resp.json();
+                const filtered = data.clients.filter(c => c.toLowerCase().includes(val));
+
+                debtSugg.innerHTML = '';
+                filtered.forEach(name => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.textContent = name;
+                    div.onclick = () => {
+                        debtInput.value = name;
+                        debtSugg.style.display = 'none';
+                        openClientHistory(name);
+                    };
+                    debtSugg.appendChild(div);
+                });
+                debtSugg.style.display = filtered.length > 0 ? 'block' : 'none';
+            } catch (e) { console.error(e); }
+        });
+
+        document.addEventListener('click', e => {
+            if (e.target !== debtInput) debtSugg.style.display = 'none';
+        });
+
+        async function openClientHistory(clientName) {
+            selectedClientName = clientName;
+            document.getElementById('history-client-name').textContent = clientName;
+            showScreen('screen-client-history');
+
+            try {
+                const resp = await fetch(`${apiUrl}/api/client-payment-history?manager_id=${managerId}&client=${encodeURIComponent(clientName)}`);
+                const data = await resp.json();
+
+                const respBal = await fetch(`${apiUrl}/api/client-balance?manager_id=${managerId}&client=${encodeURIComponent(clientName)}`);
+                const dataBal = await respBal.json();
+
+                const balCard = document.getElementById('history-client-balance-card');
+                const balVal = document.getElementById('history-client-balance');
+                if (dataBal.balance !== 0) {
+                    balCard.style.display = 'block';
+                    balVal.textContent = `${dataBal.balance} грн`;
+                    balVal.className = dataBal.balance > 0 ? 'item-val green' : 'item-val red';
+                } else {
+                    balCard.style.display = 'none';
+                }
+
+                const list = document.getElementById('history-orders-list');
+                list.innerHTML = '';
+                if (data.history.length === 0) {
+                    list.innerHTML = '<div style="color:#aaa; text-align:center; padding:10px;">Замовлень не знайдено</div>';
+                    return;
+                }
+
+                data.history.forEach(o => {
+                    const isPaid = o.payment_status === 'paid';
+                    const row = document.createElement('div');
+                    row.className = 'card';
+
+                    let btnProof = '';
+                    if (o.payment_proof) {
+                        btnProof = `<button class="btn btn-outline" style="padding:8px; margin-top:10px;" onclick="viewReceipt('${o.payment_proof}')">Переглянути квитанцію</button>`;
+                    }
+
+                    let btnAction = '';
+                    if (!isPaid) {
+                        row.style.borderLeft = '4px solid #e53935';
+                        btnAction = `<button class="btn btn-green" style="margin-top:10px;" onclick="openOrderDetail(${o.order_id}, '${o.date}', ${o.order_total})">Оплатити</button>`;
+                    } else {
+                        row.style.borderLeft = '4px solid #43a047';
+                    }
+
+                    row.innerHTML = `
+                        <div class="item-row">
+                            <div class="item-name">${o.date}</div>
+                            <div class="item-val ${isPaid ? 'green' : 'red'}">${isPaid ? 'Оплачено' : 'НЕ ОПЛАЧЕНО'}</div>
+                        </div>
+                        <div class="item-row">
+                            <div>Сума:</div>
+                            <div class="item-val">${o.order_total} грн</div>
+                        </div>
+                        ${isPaid ? `<div class="item-row"><div>Оплачено:</div><div class="item-val green">${o.paid_amount} грн</div></div>` : ''}
+                        ${o.paid_at ? `<div class="item-row"><div>Дата оплати:</div><div class="item-val" style="font-size:12px; color:#888;">${o.paid_at}</div></div>` : ''}
+                        ${btnProof}
+                        ${btnAction}
+                    `;
+                    list.appendChild(row);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        function viewReceipt(url) {
+            const screen = document.getElementById('screen-receipt');
+            const img = document.getElementById('receipt-img');
+            img.src = url;
+            screen.style.display = 'flex';
+        }
+
+        // ════ ЕКРАН: ДЕТАЛІ ОПЛАТИ ════
+
+        async function openOrderDetail(orderId, date, total) {
+            currentOrderId = orderId;
+            base64Photo = null;
+            document.getElementById('detail-title').textContent = `Оплата замовлення від ${date}`;
+            document.getElementById('detail-order-date').textContent = `Замовлення #${orderId}`;
+            document.getElementById('detail-paid-amount').value = total;
+            document.getElementById('detail-order-total').textContent = `${total} грн`;
+            document.getElementById('detail-photo-input').value = '';
+            document.getElementById('detail-photo-preview').style.display = 'none';
+
+            showScreen('screen-order-detail');
+
+            try {
+                const resp = await fetch(`${apiUrl}/api/order-detail?order_id=${orderId}`);
+                const data = await resp.json();
+                const itemsDiv = document.getElementById('detail-order-items');
+                itemsDiv.innerHTML = '';
+                data.items.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'item-row';
+                    row.innerHTML = `<div>${item.name} x${item.qty}</div><div>${item.amount} грн</div>`;
+                    itemsDiv.appendChild(row);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        // Photo Handling with Canvas Compression
+        function handlePhoto(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = new Image();
+                img.onload = function () {
+                    const MAX = 1280;
+                    let w = img.width, h = img.height;
+                    if (w > MAX || h > MAX) {
+                        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+                        else { w = Math.round(w * MAX / h); h = MAX; }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    const compressed = canvas.toDataURL('image/jpeg', 0.82);
+
+                    base64Photo = compressed.split(',')[1];
+                    document.getElementById('photo-preview-img').src = compressed;
+                    document.getElementById('detail-photo-preview').style.display = 'block';
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function markPaid() {
+            const paid = parseFloat(document.getElementById('detail-paid-amount').value);
+            const btn = document.getElementById('btn-mark-paid');
+            btn.disabled = true;
+            btn.textContent = '⏳ Обробка...';
+
+            try {
+                const resp = await fetch(`${apiUrl}/api/mark-paid`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        manager_id: parseInt(managerId),
+                        order_id: currentOrderId,
+                        paid_amount: isNaN(paid) ? null : paid,
+                        payment_proof: base64Photo
+                    })
+                });
+                const res = await resp.json();
+                if (res.status === 'ok') {
+                    tg.showAlert('Оплату успішно внесено!');
+                    openClientHistory(selectedClientName);
+                } else {
+                    tg.showAlert(`Помилка: ${res.error || res.message}`);
+                }
+            } catch (e) {
+                console.error(e);
+                tg.showAlert('Помилка сервера.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Оплачено';
+            }
+        }
+
+        // Init
+        loadTodayData();
+    </script>
+</body>
+
+</html>
