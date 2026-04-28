@@ -276,7 +276,7 @@
             try {
                 const [clientsResp, existingResp] = await Promise.all([
                     fetch(`${apiUrl}/api/today-clients`),
-                    fetch(`${apiUrl}/api/existing-deliveries`)
+                    fetch(`${apiUrl}/api/existing-deliveries?manager_id=${managerId}`)
                 ]);
                 const clientsData = await clientsResp.json();
                 const existingData = await existingResp.json();
