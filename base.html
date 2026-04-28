@@ -405,6 +405,35 @@
         }
 
         // ─── ФОТО ───
+        // Стискаємо фото через canvas: max 1280px, JPEG 0.82
+        function compressPhoto(file) {
+            return new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const MAX = 1280;
+                        let w = img.width, h = img.height;
+                        if (w > MAX || h > MAX) {
+                            if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+                            else { w = Math.round(w * MAX / h); h = MAX; }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        const compressed = canvas.toDataURL('image/jpeg', 0.82);
+                        resolve({
+                            name: file.name.replace(/\.[^.]+$/, '.jpg'),
+                            data: compressed.split(',')[1],
+                            type: 'image/jpeg'
+                        });
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
         function handlePhotos(input) {
             const files = Array.from(input.files);
             files.forEach(file => {
@@ -441,18 +470,8 @@
             btn.disabled = true;
 
             try {
-                // Конвертируем фото в base64
-                const photosBase64 = await Promise.all(
-                    photoFiles.map(file => new Promise(resolve => {
-                        const reader = new FileReader();
-                        reader.onload = e => resolve({
-                            name: file.name,
-                            data: e.target.result.split(',')[1],
-                            type: file.type
-                        });
-                        reader.readAsDataURL(file);
-                    }))
-                );
+                // Стискаємо всі фото перед відправкою
+                const photosBase64 = await Promise.all(photoFiles.map(compressPhoto));
 
                 const payloadStr = JSON.stringify({
                     manager_id: managerId,
