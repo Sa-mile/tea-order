@@ -257,6 +257,7 @@
     <div class="period-btns">
         <button class="period-btn active" id="tab-today" onclick="switchTab('today')">Сьогодні</button>
         <button class="period-btn" id="tab-debts" onclick="switchTab('debts')">Борги</button>
+        <button class="period-btn" id="tab-history" onclick="switchTab('history')">Історія</button>
     </div>
 
     <!-- ════ ЕКРАН 1: СЬОГОДНІ ════ -->
@@ -292,60 +293,65 @@
     <!-- ════ ЕКРАН 2: БОРГИ ════ -->
     <div id="screen-debts" class="screen">
         <div class="card">
-            <div class="card-title">🔍 Пошук боржника</div>
-            <div class="autocomplete-container">
-                <input type="text" id="debt-search" placeholder="Введіть назву кав'ярні..." autocomplete="off">
-                <div id="debt-suggestions" class="suggestions-list"></div>
-            </div>
-
-            <div id="all-debtors-title" class="card-title" style="color:#e53935;">Всі боржники:</div>
-            <div id="debtors-list"></div>
-        </div>
-    </div>
-
-    <!-- ════ ЕКРАН 3: ІСТОРІЯ/ОПЛАТА ════ -->
-    <div id="screen-client-history" class="screen">
-        <button class="back-btn" onclick="switchTab('debts')">Назад</button>
-        <h3 id="history-client-name"></h3>
-
-        <div class="card" id="history-client-balance-card" style="display:none;">
-            <div class="item-row">
-                <div class="item-name">Баланс клієнта:</div>
-                <div class="item-val" id="history-client-balance">0.00 грн</div>
-            </div>
-        </div>
-
-        <div id="history-orders-list"></div>
-    </div>
-
-    <!-- ════ ЕКРАН 4: ДЕТАЛІЗАЦІЯ ОПЛАТИ ════ -->
-    <div id="screen-order-detail" class="screen">
-        <button class="back-btn" onclick="showScreen('screen-client-history')">Назад</button>
-        <h3 id="detail-title">Оплата замовлення</h3>
-
-        <div class="card">
-            <div class="card-title" id="detail-order-date"></div>
-            <div id="detail-order-items"></div>
-            <div class="item-row" style="border-top: 1px dashed #ccc; padding-top:10px;">
-                <div class="item-name">Сума замовлення:</div>
-                <div class="item-val" id="detail-order-total">0.00 грн</div>
-            </div>
-
-            <div style="margin-top:15px;">
-                <label style="font-size:12px; color:#888; font-weight:600;">СУМА ОПЛАТИ (грн):</label>
-                <input type="number" id="detail-paid-amount" style="margin-top:5px;">
-            </div>
-
-            <div style="margin-top:15px;">
-                <label style="font-size:12px; color:#888; font-weight:600;">📸 КВИТАНЦІЯ (необов'язково):</label>
-                <input type="file" id="detail-photo-input" accept="image/*" style="margin-top:5px;"
-                    onchange="handlePhoto(this)">
-                <div id="detail-photo-preview" style="margin-top:10px; display:none;">
-                    <img src="" id="photo-preview-img" style="max-width:100px; border-radius:8px;">
+            <div class="card-title">🔍 Фільтр боргів</div>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
+                <div>
+                    <label style="font-size:12px; color:#888;">Конкретна дата:</label>
+                    <input type="date" id="debts-filter-date" onchange="applyDebtsFilters()"
+                        style="padding:10px; font-size:14px; width:100%; border-radius:10px; border:1px solid #ccc; background:var(--tg-theme-secondary-bg-color); color:var(--tg-theme-text-color);">
                 </div>
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1;">
+                        <label style="font-size:12px; color:#888;">Період від:</label>
+                        <input type="date" id="debts-filter-from" onchange="applyDebtsFilters()"
+                            style="padding:10px; font-size:14px; width:100%; border-radius:10px; border:1px solid #ccc; background:var(--tg-theme-secondary-bg-color); color:var(--tg-theme-text-color);">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size:12px; color:#888;">Період до:</label>
+                        <input type="date" id="debts-filter-to" onchange="applyDebtsFilters()"
+                            style="padding:10px; font-size:14px; width:100%; border-radius:10px; border:1px solid #ccc; background:var(--tg-theme-secondary-bg-color); color:var(--tg-theme-text-color);">
+                    </div>
+                </div>
+                <div class="autocomplete-container">
+                    <label style="font-size:12px; color:#888;">Ім'я клієнта:</label>
+                    <input type="text" id="debts-filter-client" placeholder="Почніть вводити ім'я..."
+                        autocomplete="off">
+                    <div id="debts-client-suggestions" class="suggestions-list"></div>
+                </div>
+                <button class="btn btn-outline" style="margin-top:5px; padding: 10px;"
+                    onclick="resetDebtsFilters()">Скинути фільтри</button>
             </div>
+        </div>
 
-            <button class="btn btn-green" id="btn-mark-paid" onclick="markPaid()">Оплачено</button>
+        <div id="debts-state-1">
+            <div class="card-title" style="color:#e53935;">Дати з боргами:</div>
+            <div id="debts-dates-list"></div>
+        </div>
+
+        <div id="debts-state-2" style="display:none;">
+            <button class="back-btn" onclick="backToState1()">До списку дат</button>
+            <div class="card-title" id="debts-state-2-title" style="color:#e53935;"></div>
+            <div id="debts-debtors-list"></div>
+        </div>
+    </div>
+
+    <!-- ════ ЕКРАН 3: ІСТОРІЯ ════ -->
+    <div id="screen-history" class="screen">
+        <div class="card">
+            <div class="card-title">🔍 Пошук клієнта (Історія)</div>
+            <div class="autocomplete-container">
+                <input type="text" id="history-search-client" placeholder="Введіть ім'я клієнта..." autocomplete="off">
+                <div id="history-client-suggestions" class="suggestions-list"></div>
+            </div>
+        </div>
+
+        <div id="history-placeholder" style="color:#aaa; text-align:center; padding:20px;">
+            Введіть ім'я клієнта
+        </div>
+
+        <div id="history-results" style="display:none;">
+            <h3 id="history-results-client-name" style="margin-bottom:15px;"></h3>
+            <div id="history-orders-grouped"></div>
         </div>
     </div>
 
@@ -368,6 +374,10 @@
         let currentOrderId = null;
         let base64Photo = null;
 
+        let allClientsList = [];
+        let accordionPhotos = {};
+        let activeDateForState2 = null;
+
         // Tabs
         function switchTab(tab) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -380,25 +390,33 @@
             } else if (tab === 'debts') {
                 document.getElementById('screen-debts').classList.add('active');
                 document.getElementById('tab-debts').classList.add('active');
+                backToState1();
                 loadDebtsData();
+                loadClientsList();
+            } else if (tab === 'history') {
+                document.getElementById('screen-history').classList.add('active');
+                document.getElementById('tab-history').classList.add('active');
+                loadClientsList();
             }
         }
 
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+        async function loadClientsList() {
+            if (allClientsList.length > 0) return;
+            try {
+                const resp = await fetch(`${apiUrl}/api/clients?manager_id=${managerId}`);
+                const data = await resp.json();
+                allClientsList = data.clients || [];
+            } catch (e) { console.error(e); }
         }
 
-        // ════ ЕКРАН: СЬОГОДНІ ════
+        // ════ ЕКРАН 1: СЬОГОДНІ ════
 
         async function loadTodayData() {
             try {
-                // Clients for autocomplete
                 const respClients = await fetch(`${apiUrl}/api/today-clients`);
                 const dataClients = await respClients.json();
                 todayClients = dataClients.clients || [];
 
-                // Today's Debtors
                 const respDebtors = await fetch(`${apiUrl}/api/today-debtors?manager_id=${managerId}`);
                 const dataDebtors = await respDebtors.json();
                 renderTodayDebtors(dataDebtors.debtors || []);
@@ -423,7 +441,6 @@
             });
         }
 
-        // Today Autocomplete
         const todayInput = document.getElementById('today-search');
         const todaySugg = document.getElementById('today-suggestions');
 
@@ -452,18 +469,14 @@
             todaySugg.style.display = 'none';
 
             try {
-                // Fetch order details
                 const resp = await fetch(`${apiUrl}/api/order-detail?order_id=${client.id}`);
                 const data = await resp.json();
 
-                // Fetch balance
                 const respBal = await fetch(`${apiUrl}/api/client-balance?manager_id=${managerId}&client=${encodeURIComponent(client.name)}`);
                 const dataBal = await respBal.json();
 
                 if (dataBal.balance > 0) {
-                    tg.showConfirm(`⚠️ У клієнта є депозит ${dataBal.balance} грн. Врахувати?`, (ok) => {
-                        // Just an alert/confirm as requested
-                    });
+                    tg.showConfirm(`⚠️ У клієнта є депозит ${dataBal.balance} грн. Врахувати?`, (ok) => { });
                 }
 
                 document.getElementById('today-order-client-name').textContent = client.name;
@@ -507,184 +520,208 @@
             } catch (e) { console.error(e); }
         }
 
-        // ════ ЕКРАН: БОРГИ ════
+        // ════ ЕКРАН 2: БОРГИ ════
 
         async function loadDebtsData() {
             try {
-                const resp = await fetch(`${apiUrl}/api/debtors?manager_id=${managerId}`);
+                const dateFixed = document.getElementById('debts-filter-date').value;
+                const dateFrom = document.getElementById('debts-filter-from').value;
+                const dateTo = document.getElementById('debts-filter-to').value;
+                const client = document.getElementById('debts-filter-client').value;
+
+                let url = `${apiUrl}/api/debt-dates?manager_id=${managerId}`;
+                if (dateFixed) url += `&date=${fmtIn(dateFixed)}`;
+                if (dateFrom) url += `&date_from=${fmtIn(dateFrom)}`;
+                if (dateTo) url += `&date_to=${fmtIn(dateTo)}`;
+                if (client) url += `&client=${encodeURIComponent(client)}`;
+
+                const resp = await fetch(url);
                 const data = await resp.json();
-                renderAllDebtors(data.debtors || []);
+                renderDebtsDates(data.dates || []);
             } catch (e) { console.error(e); }
         }
 
-        function renderAllDebtors(debtors) {
-            const list = document.getElementById('debtors-list');
+        function fmtIn(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            if (parts.length === 3) return `${parts[2]}.${parts[1]}.${parts[0]}`;
+            return dateStr;
+        }
+
+        function renderDebtsDates(dates) {
+            const list = document.getElementById('debts-dates-list');
             list.innerHTML = '';
-            if (debtors.length === 0) {
-                list.innerHTML = '<div style="color:#aaa; text-align:center; padding:10px;">Боржників немає</div>';
+            if (dates.length === 0) {
+                list.innerHTML = '<div style="color:#aaa; text-align:center; padding:10px;">Боргів за вказаними фільтрами немає</div>';
                 return;
             }
-            debtors.forEach(d => {
+            dates.forEach(d => {
                 const row = document.createElement('div');
-                row.className = 'item-row';
+                row.className = 'card';
                 row.style.cursor = 'pointer';
-                row.onclick = () => openClientHistory(d.client_name);
+                row.style.marginBottom = '10px';
+                row.onclick = () => openDateDebtors(d.date);
                 row.innerHTML = `
-                    <div class="item-name">${d.client_name}</div>
-                    <div class="item-val red" style="display:flex; align-items:center; gap:8px;">
-                        ${d.total_debt} грн <span class="badge-red">Борг</span>
+                    <div class="item-row">
+                        <div class="item-name" style="font-weight:700;">📅 ${d.date}</div>
+                        <div class="item-val red" style="font-weight:700;">${d.total_amount} грн</div>
                     </div>
+                    <div style="font-size:12px; color:#888; margin-top:5px;">Клієнтів-боржників: ${d.debtors_count}</div>
                 `;
                 list.appendChild(row);
             });
         }
 
-        // Debts Autocomplete
-        const debtInput = document.getElementById('debt-search');
-        const debtSugg = document.getElementById('debt-suggestions');
+        function applyDebtsFilters() {
+            backToState1();
+            loadDebtsData();
+        }
 
-        debtInput.addEventListener('input', async function () {
+        function resetDebtsFilters() {
+            document.getElementById('debts-filter-date').value = '';
+            document.getElementById('debts-filter-from').value = '';
+            document.getElementById('debts-filter-to').value = '';
+            document.getElementById('debts-filter-client').value = '';
+            applyDebtsFilters();
+        }
+
+        const debtsFilterInput = document.getElementById('debts-filter-client');
+        const debtsFilterSugg = document.getElementById('debts-client-suggestions');
+
+        debtsFilterInput.addEventListener('input', function () {
             const val = this.value.toLowerCase().trim();
-            if (!val) {
-                document.getElementById('all-debtors-title').style.display = 'block';
-                loadDebtsData();
-                debtSugg.style.display = 'none';
-                return;
-            }
-
-            document.getElementById('all-debtors-title').style.display = 'none';
-            // Search amongst all clients
-            try {
-                const resp = await fetch(`${apiUrl}/api/clients?manager_id=${managerId}`);
-                const data = await resp.json();
-                const filtered = data.clients.filter(c => c.toLowerCase().includes(val));
-
-                debtSugg.innerHTML = '';
-                filtered.forEach(name => {
-                    const div = document.createElement('div');
-                    div.className = 'suggestion-item';
-                    div.textContent = name;
-                    div.onclick = () => {
-                        debtInput.value = name;
-                        debtSugg.style.display = 'none';
-                        openClientHistory(name);
-                    };
-                    debtSugg.appendChild(div);
-                });
-                debtSugg.style.display = filtered.length > 0 ? 'block' : 'none';
-            } catch (e) { console.error(e); }
+            debtsFilterSugg.innerHTML = '';
+            if (!val) { debtsFilterSugg.style.display = 'none'; applyDebtsFilters(); return; }
+            const filtered = allClientsList.filter(c => c.toLowerCase().includes(val));
+            filtered.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.textContent = c;
+                div.onclick = () => {
+                    debtsFilterInput.value = c;
+                    debtsFilterSugg.style.display = 'none';
+                    applyDebtsFilters();
+                };
+                debtsFilterSugg.appendChild(div);
+            });
+            debtsFilterSugg.style.display = filtered.length > 0 ? 'block' : 'none';
         });
 
         document.addEventListener('click', e => {
-            if (e.target !== debtInput) debtSugg.style.display = 'none';
+            if (e.target !== debtsFilterInput) debtsFilterSugg.style.display = 'none';
         });
 
-        async function openClientHistory(clientName) {
-            selectedClientName = clientName;
-            document.getElementById('history-client-name').textContent = clientName;
-            showScreen('screen-client-history');
+        function backToState1() {
+            document.getElementById('debts-state-2').style.display = 'none';
+            document.getElementById('debts-state-1').style.display = 'block';
+            activeDateForState2 = null;
+        }
+
+        async function openDateDebtors(dateString) {
+            activeDateForState2 = dateString;
+            document.getElementById('debts-state-1').style.display = 'none';
+            document.getElementById('debts-state-2').style.display = 'block';
+            document.getElementById('debts-state-2-title').textContent = `Боржники за ${dateString}`;
 
             try {
-                const resp = await fetch(`${apiUrl}/api/client-payment-history?manager_id=${managerId}&client=${encodeURIComponent(clientName)}`);
+                const client = document.getElementById('debts-filter-client').value;
+                const dateFrom = document.getElementById('debts-filter-from').value;
+                const dateTo = document.getElementById('debts-filter-to').value;
+
+                let url = `${apiUrl}/api/date-debtors?manager_id=${managerId}&date=${dateString}`;
+                if (client) url += `&client=${encodeURIComponent(client)}`;
+                if (dateFrom) url += `&date_from=${fmtIn(dateFrom)}`;
+                if (dateTo) url += `&date_to=${fmtIn(dateTo)}`;
+
+                const resp = await fetch(url);
                 const data = await resp.json();
+                renderDateDebtors(data.clients || []);
+            } catch (e) { console.error(e); }
+        }
 
-                const respBal = await fetch(`${apiUrl}/api/client-balance?manager_id=${managerId}&client=${encodeURIComponent(clientName)}`);
-                const dataBal = await respBal.json();
+        function renderDateDebtors(clients) {
+            const list = document.getElementById('debts-debtors-list');
+            list.innerHTML = '';
+            if (clients.length === 0) {
+                list.innerHTML = '<div style="color:#aaa; text-align:center; padding:10px;">Боржників за цією датою немає</div>';
+                return;
+            }
 
-                const balCard = document.getElementById('history-client-balance-card');
-                const balVal = document.getElementById('history-client-balance');
-                if (dataBal.balance !== 0) {
-                    balCard.style.display = 'block';
-                    balVal.textContent = `${dataBal.balance} грн`;
-                    balVal.className = dataBal.balance > 0 ? 'item-val green' : 'item-val red';
-                } else {
-                    balCard.style.display = 'none';
-                }
+            clients.forEach((c, cIdx) => {
+                const cTotal = c.orders.reduce((sum, o) => sum + o.total, 0);
+                const cDiv = document.createElement('div');
+                cDiv.className = 'card';
+                cDiv.style.marginBottom = '10px';
+                cDiv.style.borderLeft = '4px solid #e53935';
 
-                const list = document.getElementById('history-orders-list');
-                list.innerHTML = '';
-                if (data.history.length === 0) {
-                    list.innerHTML = '<div style="color:#aaa; text-align:center; padding:10px;">Замовлень не знайдено</div>';
-                    return;
-                }
+                const accordionId = `collapsible-client-${cIdx}`;
+                cDiv.innerHTML = `
+                    <div class="item-row" style="cursor:pointer;" onclick="toggleCollapse('${accordionId}')">
+                        <div class="item-name" style="font-weight:700;">🏪 ${c.client_name}</div>
+                        <div class="item-val red" style="font-weight:700;">${cTotal} грн <span>▼</span></div>
+                    </div>
+                    <div id="${accordionId}" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.05);">
+                        <button class="btn btn-outline" onclick="jumpToHistory('${encodeURIComponent(c.client_name)}')" style="width:100%; margin-bottom:15px; padding: 10px;">Переглянути всю історію клієнта ➔</button>
+                        <div id="client-orders-${cIdx}"></div>
+                    </div>
+                `;
+                list.appendChild(cDiv);
 
-                data.history.forEach(o => {
-                    const isPaid = o.payment_status === 'paid';
-                    const row = document.createElement('div');
-                    row.className = 'card';
+                const ordersList = cDiv.querySelector(`#client-orders-${cIdx}`);
+                c.orders.forEach((o, oIdx) => {
+                    const oAccordionId = `collapsible-order-${cIdx}-${oIdx}`;
+                    const oDiv = document.createElement('div');
+                    oDiv.style.padding = '10px';
+                    oDiv.style.background = 'rgba(0,0,0,0.02)';
+                    oDiv.style.borderRadius = '8px';
+                    oDiv.style.marginBottom = '8px';
 
-                    let btnProof = '';
-                    if (o.payment_proof) {
-                        btnProof = `<button class="btn btn-outline" style="padding:8px; margin-top:10px;" onclick="viewReceipt('${o.payment_proof}')">Переглянути квитанцію</button>`;
-                    }
-
-                    let btnAction = '';
-                    if (!isPaid) {
-                        row.style.borderLeft = '4px solid #e53935';
-                        btnAction = `<button class="btn btn-green" style="margin-top:10px;" onclick="openOrderDetail(${o.order_id}, '${o.date}', ${o.order_total})">Оплатити</button>`;
-                    } else {
-                        row.style.borderLeft = '4px solid #43a047';
-                    }
-
-                    row.innerHTML = `
-                        <div class="item-row">
-                            <div class="item-name">${o.date}</div>
-                            <div class="item-val ${isPaid ? 'green' : 'red'}">${isPaid ? 'Оплачено' : 'НЕ ОПЛАЧЕНО'}</div>
+                    let itemsHtml = o.items.map(i => `
+                        <div class="item-row" style="font-size:13px; color:#555;">
+                            <div>${i.product_name} x${i.quantity}</div>
+                            <div>${i.amount} грн</div>
                         </div>
-                        <div class="item-row">
-                            <div>Сума:</div>
-                            <div class="item-val">${o.order_total} грн</div>
+                    `).join('');
+
+                    oDiv.innerHTML = `
+                        <div class="item-row" style="cursor:pointer;" onclick="toggleCollapse('${oAccordionId}')">
+                            <div style="font-size:14px; font-weight:600;">📦 Замовлення #${o.order_id}</div>
+                            <div class="red" style="font-size:14px; font-weight:600;">${o.total} грн <span>▼</span></div>
                         </div>
-                        ${isPaid ? `<div class="item-row"><div>Оплачено:</div><div class="item-val green">${o.paid_amount} грн</div></div>` : ''}
-                        ${o.paid_at ? `<div class="item-row"><div>Дата оплати:</div><div class="item-val" style="font-size:12px; color:#888;">${o.paid_at}</div></div>` : ''}
-                        ${btnProof}
-                        ${btnAction}
+                        <div id="${oAccordionId}" style="display:none; margin-top:10px; padding-top:5px; border-top:1px dashed #ccc;">
+                            ${itemsHtml}
+                            <div style="margin-top:10px;">
+                                <label style="font-size:12px; color:#888; font-weight:600;">СУМА ОПЛАТИ (грн):</label>
+                                <input type="number" id="pay-amt-${o.order_id}" value="${o.total}" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; background:var(--tg-theme-secondary-bg-color); color:var(--tg-theme-text-color); margin-top:5px;">
+                            </div>
+                            <div style="margin-top:10px;">
+                                <label style="font-size:12px; color:#888; font-weight:600;">📸 КВИТАНЦІЯ (необов'язково):</label>
+                                <input type="file" accept="image/*" onchange="handleAccordionPhoto(this, ${o.order_id})" style="width:100%; margin-top:5px;">
+                                <div id="accordion-photo-preview-${o.order_id}" style="margin-top:10px; display:none;">
+                                    <img src="" id="accordion-img-${o.order_id}" style="max-width:100px; border-radius:8px;">
+                                </div>
+                            </div>
+                            <button class="btn btn-green" id="btn-pay-${o.order_id}" onclick="accordionMarkPaid(${o.order_id})" style="margin-top:15px; width:100%;">Позначити оплаченим</button>
+                        </div>
                     `;
-                    list.appendChild(row);
+                    ordersList.appendChild(oDiv);
                 });
-            } catch (e) { console.error(e); }
+            });
         }
 
-        function viewReceipt(url) {
-            const screen = document.getElementById('screen-receipt');
-            const img = document.getElementById('receipt-img');
-            img.src = url;
-            screen.style.display = 'flex';
+        function toggleCollapse(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (el.style.display === 'none' || !el.style.display) {
+                el.style.display = 'block';
+            } else {
+                el.style.display = 'none';
+            }
         }
 
-        // ════ ЕКРАН: ДЕТАЛІ ОПЛАТИ ════
-
-        async function openOrderDetail(orderId, date, total) {
-            currentOrderId = orderId;
-            base64Photo = null;
-            document.getElementById('detail-title').textContent = `Оплата замовлення від ${date}`;
-            document.getElementById('detail-order-date').textContent = `Замовлення #${orderId}`;
-            document.getElementById('detail-paid-amount').value = total;
-            document.getElementById('detail-order-total').textContent = `${total} грн`;
-            document.getElementById('detail-photo-input').value = '';
-            document.getElementById('detail-photo-preview').style.display = 'none';
-
-            showScreen('screen-order-detail');
-
-            try {
-                const resp = await fetch(`${apiUrl}/api/order-detail?order_id=${orderId}`);
-                const data = await resp.json();
-                const itemsDiv = document.getElementById('detail-order-items');
-                itemsDiv.innerHTML = '';
-                data.items.forEach(item => {
-                    const row = document.createElement('div');
-                    row.className = 'item-row';
-                    row.innerHTML = `<div>${item.name} x${item.qty}</div><div>${item.amount} грн</div>`;
-                    itemsDiv.appendChild(row);
-                });
-            } catch (e) { console.error(e); }
-        }
-
-        // Photo Handling with Canvas Compression
-        function handlePhoto(input) {
+        function handleAccordionPhoto(input, orderId) {
             const file = input.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function (e) {
                 const img = new Image();
@@ -700,18 +737,20 @@
                     canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                     const compressed = canvas.toDataURL('image/jpeg', 0.82);
 
-                    base64Photo = compressed.split(',')[1];
-                    document.getElementById('photo-preview-img').src = compressed;
-                    document.getElementById('detail-photo-preview').style.display = 'block';
+                    accordionPhotos[orderId] = compressed.split(',')[1];
+                    document.getElementById(`accordion-img-${orderId}`).src = compressed;
+                    document.getElementById(`accordion-photo-preview-${orderId}`).style.display = 'block';
                 };
                 img.src = e.target.result;
             };
             reader.readAsDataURL(file);
         }
 
-        async function markPaid() {
-            const paid = parseFloat(document.getElementById('detail-paid-amount').value);
-            const btn = document.getElementById('btn-mark-paid');
+        async function accordionMarkPaid(orderId) {
+            const paid = parseFloat(document.getElementById(`pay-amt-${orderId}`).value);
+            const btn = document.getElementById(`btn-pay-${orderId}`);
+            const proof = accordionPhotos[orderId] || null;
+
             btn.disabled = true;
             btn.textContent = '⏳ Обробка...';
 
@@ -721,28 +760,123 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         manager_id: parseInt(managerId),
-                        order_id: currentOrderId,
+                        order_id: orderId,
                         paid_amount: isNaN(paid) ? null : paid,
-                        payment_proof: base64Photo
+                        payment_proof: proof
                     })
                 });
                 const res = await resp.json();
                 if (res.status === 'ok') {
-                    tg.showAlert('Оплату успішно внесено!');
-                    openClientHistory(selectedClientName);
+                    tg.showAlert('Оплату успішно зафіксовано!');
+                    if (activeDateForState2) {
+                        openDateDebtors(activeDateForState2);
+                    } else {
+                        loadDebtsData();
+                    }
                 } else {
                     tg.showAlert(`Помилка: ${res.error || res.message}`);
+                    btn.disabled = false;
+                    btn.textContent = 'Позначити оплаченим';
                 }
             } catch (e) {
                 console.error(e);
                 tg.showAlert('Помилка сервера.');
-            } finally {
                 btn.disabled = false;
-                btn.textContent = 'Оплачено';
+                btn.textContent = 'Позначити оплаченим';
             }
         }
 
-        // Init
+        function jumpToHistory(encodedClientName) {
+            const clientName = decodeURIComponent(encodedClientName);
+            document.getElementById('history-search-client').value = clientName;
+            switchTab('history');
+            searchHistoryForClient(clientName);
+        }
+
+        // ════ ЕКРАН 3: ІСТОРІЯ ════
+        const historySearchInput = document.getElementById('history-search-client');
+        const historySugg = document.getElementById('history-client-suggestions');
+
+        historySearchInput.addEventListener('input', function () {
+            const val = this.value.toLowerCase().trim();
+            historySugg.innerHTML = '';
+            if (!val) { historySugg.style.display = 'none'; return; }
+            const filtered = allClientsList.filter(c => c.toLowerCase().includes(val));
+            filtered.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.textContent = c;
+                div.onclick = () => {
+                    historySearchInput.value = c;
+                    historySugg.style.display = 'none';
+                    searchHistoryForClient(c);
+                };
+                historySugg.appendChild(div);
+            });
+            historySugg.style.display = filtered.length > 0 ? 'block' : 'none';
+        });
+
+        document.addEventListener('click', e => {
+            if (e.target !== historySearchInput) historySugg.style.display = 'none';
+        });
+
+        async function searchHistoryForClient(clientName) {
+            document.getElementById('history-placeholder').style.display = 'none';
+            const resultsDiv = document.getElementById('history-results');
+            resultsDiv.style.display = 'block';
+            document.getElementById('history-results-client-name').textContent = `Історія: ${clientName}`;
+
+            try {
+                const resp = await fetch(`${apiUrl}/api/client-history?manager_id=${managerId}&client=${encodeURIComponent(clientName)}`);
+                const data = await resp.json();
+                renderHistoryGrouped(data.orders || []);
+            } catch (e) { console.error(e); }
+        }
+
+        function renderHistoryGrouped(orders) {
+            const list = document.getElementById('history-orders-grouped');
+            list.innerHTML = '';
+            if (orders.length === 0) {
+                list.innerHTML = '<div style="color:#aaa; text-align:center; padding:10px;">Історія замовлень пуста</div>';
+                return;
+            }
+
+            orders.forEach(o => {
+                const isPaid = o.payment_status === 'paid';
+                const row = document.createElement('div');
+                row.className = 'card';
+                row.style.marginBottom = '10px';
+                row.style.borderLeft = isPaid ? '4px solid #43a047' : '4px solid #e53935';
+
+                let proofBtn = '';
+                if (o.payment_proof) {
+                    proofBtn = `<button class="btn btn-outline" style="padding:6px 12px; font-size:12px; margin-top:10px; width:auto;" onclick="viewReceipt('${o.payment_proof}')">Переглянути квитанцію</button>`;
+                }
+
+                row.innerHTML = `
+                    <div class="item-row">
+                        <div style="font-weight:700;">📅 ${o.date}</div>
+                        <div class="${isPaid ? 'green' : 'red'}" style="font-weight:700;">${isPaid ? 'Оплачено' : 'Борг'}</div>
+                    </div>
+                    <div class="item-row" style="margin-top:5px; font-size:13px; color:#555;">
+                        <div>Загальна сума:</div>
+                        <div>${o.total} грн</div>
+                    </div>
+                    ${o.paid_amount > 0 ? `<div class="item-row" style="font-size:13px; color:#555;"><div>Частково оплачено:</div><div class="green">${o.paid_amount} грн</div></div>` : ''}
+                    ${o.paid_at ? `<div class="item-row" style="font-size:12px; color:#888;"><div>Дата оплати:</div><div>${o.paid_at}</div></div>` : ''}
+                    ${proofBtn}
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        function viewReceipt(url) {
+            const screen = document.getElementById('screen-receipt');
+            const img = document.getElementById('receipt-img');
+            img.src = url;
+            screen.style.display = 'flex';
+        }
+
         loadTodayData();
     </script>
 </body>
