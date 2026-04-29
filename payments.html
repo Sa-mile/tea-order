@@ -258,6 +258,25 @@
             color: #31b545;
         }
 
+        .btn-secondary {
+            padding: 7px 16px;
+            font-size: 13px;
+            border-radius: 20px;
+            border: 1px solid #31b545;
+            color: #31b545;
+            background: transparent;
+            width: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-secondary:active {
+            background: rgba(49, 181, 69, 0.1);
+        }
+
         .badge-red {
             background: rgba(229, 57, 53, 0.1);
             color: #e53935;
@@ -356,10 +375,10 @@
                             autocomplete="off">
                         <div id="debts-client-suggestions" class="suggestions-list"></div>
                     </div>
-                    <button class="btn btn-outline" style="margin-top:5px; padding: 10px;"
+                    <button class="btn-secondary" style="margin-top:5px;"
                         onclick="resetDebtsFilters()">Скинути фільтри</button>
                 </div>
-                <button class="btn btn-outline accordion-toggle" id="debts-filter-toggle" style="margin-top:5px;"
+                <button class="btn-secondary accordion-toggle" id="debts-filter-toggle" style="margin-top:5px;"
                     onclick="toggleCollapse('debts-filter-extra', this)">Розгорнути ▼</button>
             </div>
         </div>
@@ -702,11 +721,10 @@
 
                 const accordionId = `collapsible-client-${cIdx}`;
                 cDiv.innerHTML = `
-                    <div class="item-row">
+                    <div class="item-row" style="cursor:pointer;" onclick="toggleCollapse('${accordionId}')">
                         <div class="item-name" style="font-weight:700;">🏪 ${c.client_name}</div>
-                        <div class="item-val red" style="font-weight:700;">${cTotal} грн</div>
+                        <div class="item-val red" style="font-weight:700;">${cTotal} грн <span>▼</span></div>
                     </div>
-                    <button class="btn btn-outline accordion-toggle" onclick="toggleCollapse('${accordionId}', this)" style="margin-top:8px;">Розгорнути ▼</button>
                     <div id="${accordionId}" class="collapse-content" style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.05);">
                         <div id="client-orders-${cIdx}"></div>
                     </div>
@@ -741,17 +759,17 @@
                         <div style="margin-top:10px;">
                             <label style="font-size:12px; color:#888; font-weight:600;">📸 КВИТАНЦІЯ (необов'язково):</label>
                             <input type="file" id="receipt-input-${o.order_id}" accept="image/*" onchange="handleAccordionPhoto(this, ${o.order_id})" style="display:none;">
-                            <button type="button" class="btn btn-outline" onclick="document.getElementById('receipt-input-${o.order_id}').click()" style="padding:14px; margin-top:5px;">Завантажити квитанцію 📎</button>
+                            <button type="button" class="btn-secondary" onclick="document.getElementById('receipt-input-${o.order_id}').click()" style="margin-top:5px;">Завантажити квитанцію 📎</button>
                             <div id="accordion-photo-name-${o.order_id}" style="font-size:13px; color:#888; margin-top:8px;">Файл не обрано</div>
                             <div id="accordion-photo-preview-${o.order_id}" style="margin-top:10px; display:none;">
                                 <img src="" id="accordion-img-${o.order_id}" style="max-width:100px; border-radius:8px;">
                             </div>
                         </div>
                         <button class="btn btn-green" id="btn-pay-${o.order_id}" onclick="accordionMarkPaid(${o.order_id})" style="margin-top:15px; width:100%;">Позначити оплаченим</button>
-                        <button class="btn btn-outline accordion-toggle" onclick="toggleCollapse('${oAccordionId}', this)" style="margin-top:8px;">Розгорнути ▼</button>
+                        <button class="btn-secondary accordion-toggle" onclick="toggleCollapse('${oAccordionId}', this)" style="margin-top:8px;">Розгорнути ▼</button>
                         <div id="${oAccordionId}" class="collapse-content" style="margin-top:10px; padding-top:5px; border-top:1px dashed #ccc;">
                             ${itemsHtml}
-                            <button class="btn btn-outline" onclick="jumpToHistory('${encodeURIComponent(c.client_name)}')" style="width:100%; margin-top:12px; padding: 10px;">Переглянути всю історію клієнта ➔</button>
+                            <button class="btn-secondary" onclick="jumpToHistory('${encodeURIComponent(c.client_name)}')" style="margin-top:12px;">Переглянути всю історію клієнта ➔</button>
                         </div>
                     `;
                     ordersList.appendChild(oDiv);
@@ -953,7 +971,7 @@
                         ${showPartialPayment ? `<div class="item-row" style="font-size:13px; color:#555;"><div>Частково оплачено:</div><div class="green">${paidAmount} грн</div></div>` : ''}
                         ${isPaid && o.paid_at ? `<div class="item-row" style="font-size:12px; color:#888;"><div>Дата оплати:</div><div>${o.paid_at}</div></div>` : ''}
                         ${proofBtn}
-                        <button class="btn btn-outline accordion-toggle" onclick="toggleCollapse('${detailsId}', this)" style="margin-top:10px;">Розгорнути ▼</button>
+                        <button class="btn-secondary accordion-toggle" onclick="toggleCollapse('${detailsId}', this)" style="margin-top:10px;">Розгорнути ▼</button>
                         <div id="${detailsId}" class="collapse-content" style="margin-top:10px; padding-top:5px; border-top:1px dashed #ccc;">
                             ${itemsHtml || '<div style="color:#888; font-size:13px;">Позицій немає</div>'}
                         </div>
