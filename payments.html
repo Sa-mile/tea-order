@@ -305,6 +305,30 @@
             max-height: 95%;
             object-fit: contain;
         }
+
+        .skeleton {
+            background: linear-gradient(90deg, 
+                var(--tg-theme-secondary-bg-color) 25%, 
+                rgba(255,255,255,0.1) 50%, 
+                var(--tg-theme-secondary-bg-color) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.2s infinite;
+            border-radius: 10px;
+            height: 60px;
+            margin-bottom: 10px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--tg-theme-hint-color);
+            font-size: 15px;
+        }
     </style>
 </head>
 
@@ -405,8 +429,8 @@
             </div>
         </div>
 
-        <div id="history-placeholder" style="color:#aaa; text-align:center; padding:20px;">
-            Введіть ім'я клієнта
+        <div id="history-placeholder" class="empty-state">
+            🔍 Введіть ім'я клієнта
         </div>
 
         <div id="history-results" style="display:none;">
@@ -439,8 +463,31 @@
         let activeDateForState2 = null;
         let debtsLoaded = false;
 
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 30px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${type === 'success' ? '#31b545' : '#e53935'};
+                color: white;
+                padding: 12px 24px;
+                border-radius: 20px;
+                font-size: 14px;
+                font-weight: 600;
+                z-index: 9999;
+                animation: fadeIn 0.2s ease;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
+        }
+
         // Tabs
         function switchTab(tab) {
+            tg.HapticFeedback.impactOccurred('light');
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
 
@@ -489,7 +536,7 @@
             const list = document.getElementById('today-debtors-list');
             list.innerHTML = '';
             if (debtors.length === 0) {
-                list.innerHTML = '<div style="color:#aaa; text-align:center; padding:10px;">Боржників на сьогодні немає</div>';
+                list.innerHTML = '<div class="empty-state">🎉 Сьогодні боржників немає</div>';
                 return;
             }
             debtors.forEach(d => {
@@ -572,12 +619,12 @@
                 });
                 const res = await resp.json();
                 if (res.status === 'ok') {
-                    tg.showAlert('Відмічено як неоплачено');
+                    showToast('Відмічено як неоплачено');
                     document.getElementById('today-order-card').style.display = 'none';
                     todayInput.value = '';
                     loadTodayData();
                 } else {
-                    tg.showAlert(`Помилка: ${res.error || res.message}`);
+                    showToast(`Помилка: ${res.error || res.message}`, 'error');
                 }
             } catch (e) { console.error(e); }
         }
@@ -586,6 +633,9 @@
 
         async function loadDebtsData() {
             try {
+                const list = document.getElementById('debts-dates-list');
+                list.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
+
                 const dateFixed = document.getElementById('debts-filter-date').value;
                 const dateFrom = document.getElementById('debts-filter-from').value;
                 const dateTo = document.getElementById('debts-filter-to').value;
@@ -615,7 +665,7 @@
             const list = document.getElementById('debts-dates-list');
             list.innerHTML = '';
             if (dates.length === 0) {
-                list.innerHTML = '<div style="color:#aaa; text-align:center; padding:10px;">Боргів за вказаними фільтрами немає</div>';
+                list.innerHTML = '<div class="empty-state">✅ Боргів за вказаними фільтрами немає</div>';
                 return;
             }
             dates.forEach(d => {
@@ -689,6 +739,9 @@
             document.getElementById('debts-state-2-title').textContent = `Боржники за ${dateString}`;
 
             try {
+                const list = document.getElementById('debts-debtors-list');
+                list.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
+
                 const client = document.getElementById('debts-filter-client').value;
                 const dateFrom = document.getElementById('debts-filter-from').value;
                 const dateTo = document.getElementById('debts-filter-to').value;
@@ -708,7 +761,7 @@
             const list = document.getElementById('debts-debtors-list');
             list.innerHTML = '';
             if (clients.length === 0) {
-                list.innerHTML = '<div style="color:#aaa; text-align:center; padding:10px;">Боржників за цією датою немає</div>';
+                list.innerHTML = '<div class="empty-state">✅ За цією датою боржників немає</div>';
                 return;
             }
 
@@ -844,19 +897,22 @@
                 });
                 const res = await resp.json();
                 if (res.status === 'ok') {
-                    tg.showAlert('Оплату успішно зафіксовано!');
+                    tg.HapticFeedback.notificationOccurred('success');
+                    showToast('Оплату успішно зафіксовано!');
                     loadDebtsData();
                     if (activeDateForState2) {
                         openDateDebtors(activeDateForState2);
                     }
                 } else {
-                    tg.showAlert(`Помилка: ${res.error || res.message}`);
+                    tg.HapticFeedback.notificationOccurred('error');
+                    showToast(`Помилка: ${res.error || res.message}`, 'error');
                     btn.disabled = false;
                     btn.textContent = 'Позначити оплаченим';
                 }
             } catch (e) {
                 console.error(e);
-                tg.showAlert('Помилка сервера.');
+                tg.HapticFeedback.notificationOccurred('error');
+                showToast('Помилка сервера.', 'error');
                 btn.disabled = false;
                 btn.textContent = 'Позначити оплаченим';
             }
@@ -908,6 +964,9 @@
             document.getElementById('history-results-client-name').textContent = `Історія: ${clientName}`;
 
             try {
+                const list = document.getElementById('history-orders-grouped');
+                list.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
+
                 const resp = await fetch(`${apiUrl}/api/client-history?manager_id=${managerId}&client=${encodeURIComponent(clientName)}`);
                 const data = await resp.json();
                 renderHistoryGrouped(data.orders || []);
@@ -918,7 +977,7 @@
             const list = document.getElementById('history-orders-grouped');
             list.innerHTML = '';
             if (orders.length === 0) {
-                list.innerHTML = '<div style="color:#aaa; text-align:center; padding:10px;">Історія замовлень пуста</div>';
+                list.innerHTML = '<div class="empty-state">📭 Історія замовлень порожня</div>';
                 return;
             }
 
