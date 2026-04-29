@@ -169,17 +169,20 @@
                     var(--tg-theme-bg-color) 100%);
         }
 
-        .debts-filter-extra {
+        .collapse-content {
             max-height: 0;
             overflow: hidden;
-            opacity: 0;
-            transition: max-height 0.25s ease, opacity 0.2s ease;
+            transition: max-height 0.2s ease;
         }
 
-        .debts-filter-extra.expanded {
-            max-height: 420px;
+        .collapse-content.expanded {
+            max-height: 5000px;
             overflow: visible;
-            opacity: 1;
+        }
+
+        .accordion-toggle {
+            padding: 9px;
+            font-size: 13px;
         }
 
         /* Картка */
@@ -334,7 +337,7 @@
                     <input type="date" id="debts-filter-date" onchange="applyDebtsFilters()"
                         style="padding:10px; font-size:14px; width:100%; border-radius:10px; border:1px solid #ccc; background:var(--tg-theme-secondary-bg-color); color:var(--tg-theme-text-color);">
                 </div>
-                <div class="debts-filter-extra" id="debts-filter-extra">
+                <div class="collapse-content" id="debts-filter-extra">
                     <div style="display: flex; gap: 10px;">
                         <div style="flex: 1;">
                             <label style="font-size:12px; color:#888;">Період від:</label>
@@ -356,8 +359,8 @@
                     <button class="btn btn-outline" style="margin-top:5px; padding: 10px;"
                         onclick="resetDebtsFilters()">Скинути фільтри</button>
                 </div>
-                <button class="btn btn-outline" id="debts-filter-toggle" style="margin-top:5px; padding: 9px;"
-                    onclick="toggleDebtsFilters()">Розгорнути фільтри ▼</button>
+                <button class="btn btn-outline accordion-toggle" id="debts-filter-toggle" style="margin-top:5px;"
+                    onclick="toggleCollapse('debts-filter-extra', this)">Розгорнути ▼</button>
             </div>
         </div>
 
@@ -619,15 +622,6 @@
             loadDebtsData();
         }
 
-        function toggleDebtsFilters() {
-            const card = document.getElementById('debts-filter-card');
-            const extra = document.getElementById('debts-filter-extra');
-            const toggle = document.getElementById('debts-filter-toggle');
-            const expanded = extra.classList.toggle('expanded');
-            card.classList.toggle('collapsed', !expanded);
-            toggle.textContent = expanded ? 'Згорнути ▲' : 'Розгорнути фільтри ▼';
-        }
-
         function resetDebtsFilters() {
             document.getElementById('debts-filter-date').value = '';
             document.getElementById('debts-filter-from').value = '';
@@ -708,11 +702,12 @@
 
                 const accordionId = `collapsible-client-${cIdx}`;
                 cDiv.innerHTML = `
-                    <div class="item-row" style="cursor:pointer;" onclick="toggleCollapse('${accordionId}')">
+                    <div class="item-row">
                         <div class="item-name" style="font-weight:700;">🏪 ${c.client_name}</div>
-                        <div class="item-val red" style="font-weight:700;">${cTotal} грн <span>▼</span></div>
+                        <div class="item-val red" style="font-weight:700;">${cTotal} грн</div>
                     </div>
-                    <div id="${accordionId}" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.05);">
+                    <button class="btn btn-outline accordion-toggle" onclick="toggleCollapse('${accordionId}', this)" style="margin-top:8px;">Розгорнути ▼</button>
+                    <div id="${accordionId}" class="collapse-content" style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.05);">
                         <div id="client-orders-${cIdx}"></div>
                     </div>
                 `;
@@ -753,8 +748,8 @@
                             </div>
                         </div>
                         <button class="btn btn-green" id="btn-pay-${o.order_id}" onclick="accordionMarkPaid(${o.order_id})" style="margin-top:15px; width:100%;">Позначити оплаченим</button>
-                        <button class="btn btn-outline" onclick="toggleCollapse('${oAccordionId}')" style="padding:8px 12px; font-size:13px; margin-top:8px;">Більше</button>
-                        <div id="${oAccordionId}" style="display:none; margin-top:10px; padding-top:5px; border-top:1px dashed #ccc;">
+                        <button class="btn btn-outline accordion-toggle" onclick="toggleCollapse('${oAccordionId}', this)" style="margin-top:8px;">Розгорнути ▼</button>
+                        <div id="${oAccordionId}" class="collapse-content" style="margin-top:10px; padding-top:5px; border-top:1px dashed #ccc;">
                             ${itemsHtml}
                             <button class="btn btn-outline" onclick="jumpToHistory('${encodeURIComponent(c.client_name)}')" style="width:100%; margin-top:12px; padding: 10px;">Переглянути всю історію клієнта ➔</button>
                         </div>
@@ -764,13 +759,18 @@
             });
         }
 
-        function toggleCollapse(id) {
+        function toggleCollapse(id, button) {
             const el = document.getElementById(id);
             if (!el) return;
-            if (el.style.display === 'none' || !el.style.display) {
-                el.style.display = 'block';
-            } else {
-                el.style.display = 'none';
+            const expanded = el.classList.toggle('expanded');
+
+            if (id === 'debts-filter-extra') {
+                const card = document.getElementById('debts-filter-card');
+                if (card) card.classList.toggle('collapsed', !expanded);
+            }
+
+            if (button) {
+                button.textContent = expanded ? 'Згорнути ▲' : 'Розгорнути ▼';
             }
         }
 
@@ -953,8 +953,8 @@
                         ${showPartialPayment ? `<div class="item-row" style="font-size:13px; color:#555;"><div>Частково оплачено:</div><div class="green">${paidAmount} грн</div></div>` : ''}
                         ${isPaid && o.paid_at ? `<div class="item-row" style="font-size:12px; color:#888;"><div>Дата оплати:</div><div>${o.paid_at}</div></div>` : ''}
                         ${proofBtn}
-                        <button class="btn btn-outline" onclick="toggleCollapse('${detailsId}')" style="padding:8px 12px; font-size:13px; margin-top:10px;">Більше</button>
-                        <div id="${detailsId}" style="display:none; margin-top:10px; padding-top:5px; border-top:1px dashed #ccc;">
+                        <button class="btn btn-outline accordion-toggle" onclick="toggleCollapse('${detailsId}', this)" style="margin-top:10px;">Розгорнути ▼</button>
+                        <div id="${detailsId}" class="collapse-content" style="margin-top:10px; padding-top:5px; border-top:1px dashed #ccc;">
                             ${itemsHtml || '<div style="color:#888; font-size:13px;">Позицій немає</div>'}
                         </div>
                     `;
