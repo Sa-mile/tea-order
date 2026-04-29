@@ -377,6 +377,7 @@
         let allClientsList = [];
         let accordionPhotos = {};
         let activeDateForState2 = null;
+        let debtsLoaded = false;
 
         // Tabs
         function switchTab(tab) {
@@ -390,9 +391,10 @@
             } else if (tab === 'debts') {
                 document.getElementById('screen-debts').classList.add('active');
                 document.getElementById('tab-debts').classList.add('active');
-                backToState1();
-                loadDebtsData();
                 loadClientsList();
+                if (!debtsLoaded) {
+                    loadDebtsData();
+                }
             } else if (tab === 'history') {
                 document.getElementById('screen-history').classList.add('active');
                 document.getElementById('tab-history').classList.add('active');
@@ -538,6 +540,7 @@
                 const resp = await fetch(url);
                 const data = await resp.json();
                 renderDebtsDates(data.dates || []);
+                debtsLoaded = true;
             } catch (e) { console.error(e); }
         }
 
@@ -573,6 +576,7 @@
         }
 
         function applyDebtsFilters() {
+            debtsLoaded = false;
             backToState1();
             loadDebtsData();
         }
@@ -582,6 +586,7 @@
             document.getElementById('debts-filter-from').value = '';
             document.getElementById('debts-filter-to').value = '';
             document.getElementById('debts-filter-client').value = '';
+            debtsLoaded = false;
             applyDebtsFilters();
         }
 
@@ -684,10 +689,11 @@
                     `).join('');
 
                     oDiv.innerHTML = `
-                        <div class="item-row" style="cursor:pointer;" onclick="toggleCollapse('${oAccordionId}')">
+                        <div class="item-row">
                             <div style="font-size:14px; font-weight:600;">📦 Замовлення #${o.order_id}</div>
-                            <div class="red" style="font-size:14px; font-weight:600;">${o.total} грн <span>▼</span></div>
+                            <div class="red" style="font-size:14px; font-weight:600;">${o.total} грн</div>
                         </div>
+                        <button class="btn btn-outline" onclick="toggleCollapse('${oAccordionId}')" style="padding:8px 12px; font-size:13px; margin-top:8px;">Більше</button>
                         <div id="${oAccordionId}" style="display:none; margin-top:10px; padding-top:5px; border-top:1px dashed #ccc;">
                             ${itemsHtml}
                             <div style="margin-top:10px;">
@@ -768,10 +774,9 @@
                 const res = await resp.json();
                 if (res.status === 'ok') {
                     tg.showAlert('Оплату успішно зафіксовано!');
+                    loadDebtsData();
                     if (activeDateForState2) {
                         openDateDebtors(activeDateForState2);
-                    } else {
-                        loadDebtsData();
                     }
                 } else {
                     tg.showAlert(`Помилка: ${res.error || res.message}`);
@@ -800,7 +805,12 @@
         historySearchInput.addEventListener('input', function () {
             const val = this.value.toLowerCase().trim();
             historySugg.innerHTML = '';
-            if (!val) { historySugg.style.display = 'none'; return; }
+            if (!val) {
+                historySugg.style.display = 'none';
+                document.getElementById('history-results').style.display = 'none';
+                document.getElementById('history-placeholder').style.display = 'block';
+                return;
+            }
             const filtered = allClientsList.filter(c => c.toLowerCase().includes(val));
             filtered.forEach(c => {
                 const div = document.createElement('div');
@@ -841,32 +851,57 @@
                 return;
             }
 
+            const grouped = {};
             orders.forEach(o => {
-                const isPaid = o.payment_status === 'paid';
-                const row = document.createElement('div');
-                row.className = 'card';
-                row.style.marginBottom = '10px';
-                row.style.borderLeft = isPaid ? '4px solid #43a047' : '4px solid #e53935';
+                if (!grouped[o.date]) grouped[o.date] = [];
+                grouped[o.date].push(o);
+            });
 
-                let proofBtn = '';
-                if (o.payment_proof) {
-                    proofBtn = `<button class="btn btn-outline" style="padding:6px 12px; font-size:12px; margin-top:10px; width:auto;" onclick="viewReceipt('${o.payment_proof}')">Переглянути квитанцію</button>`;
-                }
+            Object.keys(grouped).forEach(date => {
+                const group = document.createElement('div');
+                group.style.marginBottom = '16px';
+                group.innerHTML = `<div class="card-title" style="color:var(--tg-theme-text-color); margin:8px 0;">📅 ${date}</div>`;
+                list.appendChild(group);
 
-                row.innerHTML = `
-                    <div class="item-row">
-                        <div style="font-weight:700;">📅 ${o.date}</div>
-                        <div class="${isPaid ? 'green' : 'red'}" style="font-weight:700;">${isPaid ? 'Оплачено' : 'Борг'}</div>
-                    </div>
-                    <div class="item-row" style="margin-top:5px; font-size:13px; color:#555;">
-                        <div>Загальна сума:</div>
-                        <div>${o.total} грн</div>
-                    </div>
-                    ${o.paid_amount > 0 ? `<div class="item-row" style="font-size:13px; color:#555;"><div>Частково оплачено:</div><div class="green">${o.paid_amount} грн</div></div>` : ''}
-                    ${o.paid_at ? `<div class="item-row" style="font-size:12px; color:#888;"><div>Дата оплати:</div><div>${o.paid_at}</div></div>` : ''}
-                    ${proofBtn}
-                `;
-                list.appendChild(row);
+                grouped[date].forEach(o => {
+                    const isPaid = o.payment_status === 'paid';
+                    const row = document.createElement('div');
+                    row.className = 'card';
+                    row.style.marginBottom = '10px';
+                    row.style.borderLeft = isPaid ? '4px solid #43a047' : '4px solid #e53935';
+
+                    const detailsId = `history-order-${o.order_id}`;
+                    const itemsHtml = (o.items || []).map(i => `
+                        <div class="item-row" style="font-size:13px; color:#555;">
+                            <div>${i.product_name} x${i.quantity}</div>
+                            <div>${i.amount} грн</div>
+                        </div>
+                    `).join('');
+
+                    let proofBtn = '';
+                    if (o.payment_proof) {
+                        proofBtn = `<button class="btn btn-outline" style="padding:8px 12px; font-size:13px; margin-top:10px;" onclick="viewReceipt('${o.payment_proof}')">Переглянути квитанцію</button>`;
+                    }
+
+                    row.innerHTML = `
+                        <div class="item-row">
+                            <div style="font-weight:700;">Замовлення #${o.order_id}</div>
+                            <div class="${isPaid ? 'green' : 'red'}" style="font-weight:700;">${isPaid ? 'Оплачено' : 'Не оплачено'}</div>
+                        </div>
+                        <div class="item-row" style="margin-top:5px; font-size:13px; color:#555;">
+                            <div>Сума замовлення:</div>
+                            <div>${o.total} грн</div>
+                        </div>
+                        ${isPaid ? `<div class="item-row" style="font-size:13px; color:#555;"><div>Сума оплати:</div><div class="green">${o.paid_amount} грн</div></div>` : ''}
+                        ${isPaid && o.paid_at ? `<div class="item-row" style="font-size:12px; color:#888;"><div>Дата оплати:</div><div>${o.paid_at}</div></div>` : ''}
+                        ${proofBtn}
+                        <button class="btn btn-outline" onclick="toggleCollapse('${detailsId}')" style="padding:8px 12px; font-size:13px; margin-top:10px;">Більше</button>
+                        <div id="${detailsId}" style="display:none; margin-top:10px; padding-top:5px; border-top:1px dashed #ccc;">
+                            ${itemsHtml || '<div style="color:#888; font-size:13px;">Позицій немає</div>'}
+                        </div>
+                    `;
+                    group.appendChild(row);
+                });
             });
         }
 
