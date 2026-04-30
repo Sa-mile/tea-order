@@ -287,6 +287,80 @@
             color: var(--tg-theme-hint-color);
             font-size: 15px;
         }
+
+        /* Бейдж часу */
+        .time-badge {
+            background: #31b545;
+            color: white;
+            border-radius: 12px;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+            align-self: flex-start;
+            margin-left: 8px;
+        }
+
+        /* Іконка фото */
+        .photo-icon {
+            font-size: 14px;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 4px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Контейнер для свайпу */
+        .point-card {
+            position: relative;
+            overflow: hidden;
+            /* решта існуючих стилів залишаються */
+        }
+
+        /* Зелена підкладка що з'являється при свайпі вправо */
+        .swipe-action {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+            background: #31b545;
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            padding-left: 20px;
+            transform: translateX(-100%);
+            transition: transform 0.15s ease;
+            pointer-events: none;
+            border-radius: 12px;
+            z-index: 0;
+        }
+
+        /* Вміст картки над підкладкою */
+        .point-card .point-head {
+            position: relative;
+            z-index: 1;
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 8px;
+            transition: transform 0.15s ease;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.5);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(33, 150, 243, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(33, 150, 243, 0);
+            }
+        }
+
     </style>
 </head>
 
@@ -345,6 +419,10 @@
         <div class="card" style="margin-top:15px;">
             <div class="card-title" id="action-title"></div>
             <div id="action-comment" class="point-meta"></div>
+
+            <!-- Фото -->
+            <div id="action-photos" style="display:none;"></div>
+
             <button class="btn btn-outline" id="waze-btn" onclick="openWaze()">🧭 Їхати (Waze)</button>
             <div id="status-actions">
                 <button class="btn btn-green" onclick="setStatus('delivered')">✅ Доставлено</button>
@@ -371,6 +449,8 @@
         let routeKm = 0;
         let routeStarted = false;
         let map = null;
+        let myLocationMarker = null;
+        let watchId = null;
 
         let adminMap = null;
         let markersLayer = null;
@@ -477,6 +557,44 @@
             return m;
         }
 
+        function startWatchingPosition(targetMap) {
+            if (!navigator.geolocation || watchId) return;
+
+            const myIcon = L.divIcon({
+                html: `<div style="
+                    width: 16px; height: 16px;
+                    background: #2196F3;
+                    border: 3px solid white;
+                    border-radius: 50%;
+                    box-shadow: 0 0 0 4px rgba(33,150,243,0.3);
+                    animation: pulse 1.5s infinite;
+                "></div>`,
+                className: '',
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+            });
+
+            watchId = navigator.geolocation.watchPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    if (!myLocationMarker) {
+                        myLocationMarker = L.marker([lat, lng], { icon: myIcon, zIndexOffset: 1000 })
+                            .bindPopup('📍 Моя позиція')
+                            .addTo(targetMap);
+                    } else {
+                        myLocationMarker.setLatLng([lat, lng]);
+                    }
+                },
+                () => { },
+                { enableHighAccuracy: true, maximumAge: 15000, timeout: 10000 }
+            );
+        }
+
+        window.addEventListener('beforeunload', () => {
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+        });
+
         function renderMarkers(targetMap, layer, list) {
             if (layer) layer.remove();
             layer = L.layerGroup().addTo(targetMap);
@@ -486,9 +604,23 @@
                 const lat = Number(p.lat_to);
                 const lng = Number(p.lng_to);
                 const status = pointStatus(p);
-                L.marker([lat, lng], {
+                const duration = p.duration_min != null ? `<br><b>~${p.duration_min} хв</b>` : '';
+                const wazeBtn = `<br><a href="https://waze.com/ul?ll=${lat},${lng}&navigate=yes" 
+                    target="_blank" 
+                    style="display:inline-block;margin-top:6px;padding:5px 12px;
+                           background:#31b545;color:white;border-radius:12px;
+                           font-size:12px;font-weight:700;text-decoration:none;">
+                    🧭 Waze
+                </a>`;
+
+                const marker = L.marker([lat, lng], {
                     icon: makeIcon(p.visit_order || i + 1, markerColor(status, p.driver_id))
-                }).bindPopup(`<b>${escapeHtml(p.client_name)}</b><br>${statusText(status)}`).addTo(layer);
+                });
+                marker.bindPopup(
+                    `<b>${escapeHtml(p.client_name)}</b><br>${statusText(status)}${duration}${wazeBtn}`,
+                    { maxWidth: 200 }
+                );
+                marker.addTo(layer);
                 bounds.push([lat, lng]);
             });
             if (bounds.length) targetMap.fitBounds(bounds, { padding: [25, 25] });
@@ -564,6 +696,7 @@
             if (withCoords.length) {
                 map = initMap('map', map);
                 markersLayer = renderMarkers(map, markersLayer, points);
+                startWatchingPosition(map);
                 setTimeout(() => map.invalidateSize(), 50);
             } else {
                 document.getElementById('map').style.display = 'none';
@@ -576,28 +709,42 @@
             }
             list.innerHTML = points.map((p, i) => {
                 const status = pointStatus(p);
-                const duration = p.duration_min ? ` • ${p.duration_min} хв` : '';
-                const noCoords = !p.lat_to && !p.lng_to ? ' • 📍 немає координат' : '';
+                const noCoords = !p.lat_to && !p.lng_to ? '📍' : '';
+                const hasPhotos = p.photos && p.photos.length > 0;
 
-                const durationText = p.duration_min != null
-                    ? `<span style="opacity: 0.8; font-size: 11px;">~${p.duration_min} хв</span>`
+                // Бейдж часу/км — правий верхній кут
+                let badge = '';
+                if (p.duration_min != null) {
+                    badge = `<div class="time-badge">~${p.duration_min} хв</div>`;
+                }
+
+                // Іконка фото
+                const photoIcon = hasPhotos
+                    ? `<span class="photo-icon" onclick="event.stopPropagation(); openPhotos(${p.order_id})">📷</span>`
                     : '';
 
                 return `
-                    <div class="point-card ${status}" onclick="openPoint(${p.order_id})">
+                    <div class="point-card ${status}" 
+                         data-order-id="${p.order_id}"
+                         data-lat="${p.lat_to || ''}"
+                         data-lng="${p.lng_to || ''}">
                         <div class="point-head">
-                            <div class="point-num">${p.visit_order || i + 1}</div>
-                            <div>
-                                <div class="point-name">${escapeHtml(p.client_name)}</div>
-                                <div class="point-meta">${statusText(status)}${duration}${noCoords}</div>
-                                <div class="point-meta">${durationText}</div>
+                            <div class="point-num" onclick="event.stopPropagation(); focusOnMap(${p.order_id})">${p.visit_order || i + 1}</div>
+                            <div style="flex:1;">
+                                <div class="point-name">${escapeHtml(p.client_name)} ${noCoords} ${photoIcon}</div>
+                                <div class="point-meta">${statusText(status)}</div>
                             </div>
+                            ${badge}
                         </div>
+                        <!-- Swipe overlay (показується при свайпі) -->
+                        <div class="swipe-action" id="swipe-${p.order_id}">🧭 Waze</div>
                     </div>
                 `;
             }).join('');
 
+            attachCardHandlers();
         }
+
 
         async function startRoute() {
             try {
@@ -627,11 +774,103 @@
             document.getElementById('action-comment').textContent = selectedPoint.comment || '';
             document.getElementById('waze-btn').style.display = selectedPoint.lat_to && selectedPoint.lng_to ? 'block' : 'none';
             document.getElementById('status-actions').style.display = status === 'pending' || status === 'not_found' ? 'block' : 'none';
+
+            // Фото
+            const photosContainer = document.getElementById('action-photos');
+            const photos = selectedPoint.photos || [];
+            if (photos.length > 0) {
+                photosContainer.innerHTML = photos.map((url, idx) => `
+                    <button class="btn btn-outline" 
+                            style="margin-top:8px; font-size:13px; padding:9px 14px;"
+                            onclick="window.open('${url}', '_blank')">
+                        📷 Фото ${idx + 1}
+                    </button>
+                `).join('');
+                photosContainer.style.display = 'block';
+            } else {
+                photosContainer.style.display = 'none';
+            }
+
             showScreen('screen-action');
         }
 
         function backToDriver() {
             showScreen('screen-driver');
+        }
+
+        function attachCardHandlers() {
+            document.querySelectorAll('.point-card').forEach(card => {
+                const orderId = Number(card.dataset.orderId);
+                const lat = card.dataset.lat;
+                const lng = card.dataset.lng;
+                const swipeEl = card.querySelector('.swipe-action');
+                const contentEl = card.querySelector('.point-head');
+
+                let startX = 0;
+                let currentX = 0;
+                let isSwiping = false;
+                const THRESHOLD = 80;
+
+                card.addEventListener('touchstart', (e) => {
+                    startX = e.touches[0].clientX;
+                    isSwiping = false;
+                }, { passive: true });
+
+                card.addEventListener('touchmove', (e) => {
+                    const dx = e.touches[0].clientX - startX;
+                    if (dx < 10) return;
+                    isSwiping = true;
+                    currentX = Math.min(dx, 120);
+                    contentEl.style.transform = `translateX(${currentX}px)`;
+                    swipeEl.style.transform = `translateX(${currentX - 100}%)`;
+                }, { passive: true });
+
+                card.addEventListener('touchend', () => {
+                    if (isSwiping && currentX >= THRESHOLD && lat && lng) {
+                        tg.HapticFeedback.impactOccurred('medium');
+                        window.open(`https://waze.com/ul?ll=${lat},${lng}&navigate=yes`, '_blank');
+                    }
+                    contentEl.style.transform = '';
+                    swipeEl.style.transform = '';
+                    currentX = 0;
+                    isSwiping = false;
+                });
+
+                card.addEventListener('click', (e) => {
+                    if (e.target.closest('.point-num') || e.target.closest('.photo-icon')) return;
+                    openPoint(orderId);
+                });
+            });
+        }
+
+        function focusOnMap(orderId) {
+            const p = points.find(pt => Number(pt.order_id) === Number(orderId));
+            if (!p || !p.lat_to || !p.lng_to) {
+                showToast('Координат немає', 'error');
+                return;
+            }
+            tg.HapticFeedback.impactOccurred('light');
+            document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            map.setView([Number(p.lat_to), Number(p.lng_to)], 15, { animate: true });
+            markersLayer.eachLayer(layer => {
+                const latlng = layer.getLatLng();
+                if (
+                    Math.abs(latlng.lat - Number(p.lat_to)) < 0.0001 &&
+                    Math.abs(latlng.lng - Number(p.lng_to)) < 0.0001
+                ) {
+                    layer.openPopup();
+                }
+            });
+        }
+
+        function openPhotos(orderId) {
+            const p = points.find(pt => Number(pt.order_id) === Number(orderId));
+            if (!p || !p.photos || !p.photos.length) return;
+            if (p.photos.length === 1) {
+                window.open(p.photos[0], '_blank');
+                return;
+            }
+            openPoint(orderId);
         }
 
         function openWaze() {
