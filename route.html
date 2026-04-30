@@ -38,8 +38,13 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         .card {
@@ -256,9 +261,9 @@
 
         .skeleton {
             background: linear-gradient(90deg,
-                var(--tg-theme-secondary-bg-color) 25%,
-                rgba(255, 255, 255, 0.1) 50%,
-                var(--tg-theme-secondary-bg-color) 75%);
+                    var(--tg-theme-secondary-bg-color) 25%,
+                    rgba(255, 255, 255, 0.1) 50%,
+                    var(--tg-theme-secondary-bg-color) 75%);
             background-size: 200% 100%;
             animation: shimmer 1.2s infinite;
             border-radius: 10px;
@@ -267,8 +272,13 @@
         }
 
         @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
         }
 
         .empty-state {
@@ -304,7 +314,8 @@
         </div>
         <div id="map"></div>
         <div id="driver-list"></div>
-        <button class="btn btn-green" id="finish-route-btn" style="display:none;" onclick="confirmFinish()">Завершити маршрут</button>
+        <button class="btn btn-green" id="finish-route-btn" style="display:none;" onclick="confirmFinish()">Завершити
+            маршрут</button>
     </div>
 
     <div id="screen-admin" class="screen">
@@ -358,7 +369,9 @@
         let drivers = [];
         let selectedPoint = null;
         let routeKm = 0;
+        let routeStarted = false;
         let map = null;
+
         let adminMap = null;
         let markersLayer = null;
         let adminMarkersLayer = null;
@@ -406,7 +419,7 @@
         async function apiGet(path) {
             const resp = await fetch(`${apiUrl}${path}`);
             let data = {};
-            try { data = await resp.json(); } catch (e) {}
+            try { data = await resp.json(); } catch (e) { }
             return { resp, data };
         }
 
@@ -417,7 +430,7 @@
                 body: JSON.stringify(body)
             });
             let data = {};
-            try { data = await resp.json(); } catch (e) {}
+            try { data = await resp.json(); } catch (e) { }
             if (!resp.ok) throw new Error(data.error || 'Помилка запиту');
             return data;
         }
@@ -485,14 +498,15 @@
         async function bootstrap() {
             try {
                 const admin = await apiGet(`/api/all-driver-points?manager_id=${managerId}&date=${currentDate}`);
-                if (admin.resp.ok && admin.data.drivers && admin.data.drivers.length) {
+                if (admin.resp.ok && !admin.data.error) {
                     mode = 'admin';
+
                     drivers = admin.data.drivers;
                     points = admin.data.points || [];
                     renderAdmin();
                     return;
                 }
-            } catch (e) {}
+            } catch (e) { }
             mode = 'driver';
             await loadDriver();
         }
@@ -502,9 +516,19 @@
                 showScreen('screen-driver');
                 document.getElementById('driver-title').textContent = `🚗 Мій маршрут на ${currentDate}`;
                 document.getElementById('driver-list').innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
-                const res = await apiGet(`/api/driver-points?manager_id=${managerId}&date=${currentDate}`);
+
+                // Паралельно завантажуємо точки і статус маршруту
+                const [res, statusRes] = await Promise.all([
+                    apiGet(`/api/driver-points?manager_id=${managerId}&date=${currentDate}`),
+                    apiGet(`/api/driver-route-status?manager_id=${managerId}&date=${currentDate}`)
+                ]);
+
                 if (!res.resp.ok) throw new Error(res.data.error || 'Помилка завантаження');
+
                 points = res.data.points || [];
+                routeStarted = statusRes.data.started || false;
+                routeKm = statusRes.data.total_km || 0;
+
                 await loadOptimized();
                 renderDriver();
             } catch (e) {
@@ -519,7 +543,7 @@
                 if (!res.resp.ok) return;
                 const byId = new Map((res.data.route || []).map(r => [String(r.order_id), r]));
                 points = points.map((p, i) => ({ ...p, ...(byId.get(String(p.order_id)) || {}), visit_order: p.visit_order || i + 1 }));
-            } catch (e) {}
+            } catch (e) { }
         }
 
         function renderDriver() {
@@ -527,6 +551,14 @@
             document.getElementById('driver-progress').textContent = `${done} з ${points.length}`;
             document.getElementById('driver-km').textContent = `${routeKm.toFixed(1)} км`;
             document.getElementById('finish-route-btn').style.display = points.length && done === points.length ? 'block' : 'none';
+
+            // Кнопка старту
+            const startBtn = document.getElementById('start-route-btn');
+            if (routeStarted) {
+                startBtn.style.display = 'none';
+            } else {
+                startBtn.style.display = 'block';
+            }
 
             const withCoords = points.filter(p => p.lat_to && p.lng_to);
             if (withCoords.length) {
@@ -545,19 +577,26 @@
             list.innerHTML = points.map((p, i) => {
                 const status = pointStatus(p);
                 const duration = p.duration_min ? ` • ${p.duration_min} хв` : '';
-                const coords = p.lat_to && p.lng_to ? ' • є координати' : '';
+                const noCoords = !p.lat_to && !p.lng_to ? ' • 📍 немає координат' : '';
+
+                const durationText = p.duration_min != null
+                    ? `<span style="opacity: 0.8; font-size: 11px;">~${p.duration_min} хв</span>`
+                    : '';
+
                 return `
                     <div class="point-card ${status}" onclick="openPoint(${p.order_id})">
                         <div class="point-head">
                             <div class="point-num">${p.visit_order || i + 1}</div>
                             <div>
                                 <div class="point-name">${escapeHtml(p.client_name)}</div>
-                                <div class="point-meta">${statusText(status)}${duration}${coords}</div>
+                                <div class="point-meta">${statusText(status)}${duration}${noCoords}</div>
+                                <div class="point-meta">${durationText}</div>
                             </div>
                         </div>
                     </div>
                 `;
             }).join('');
+
         }
 
         async function startRoute() {
@@ -569,12 +608,15 @@
                     lat: pos.coords.latitude,
                     lng: pos.coords.longitude
                 });
+                routeStarted = true;
+                document.getElementById('start-route-btn').style.display = 'none';
                 tg.HapticFeedback.notificationOccurred('success');
-                showToast('Маршрут стартував');
+                showToast('Маршрут стартував 🚗');
             } catch (e) {
                 showToast(e.message, 'error');
             }
         }
+
 
         function openPoint(orderId) {
             selectedPoint = points.find(p => Number(p.order_id) === Number(orderId));
@@ -703,24 +745,31 @@
                 return;
             }
             list.innerHTML = points.map((p, i) => {
+
                 const status = pointStatus(p);
+                const isStarted = p.route_started;
+                const assignHtml = isStarted
+                    ? `<div class="point-meta">🚗 В дорозі — зміни заблоковано</div>`
+                    : `<div class="assign-box" id="assign-${p.order_id}" onclick="event.stopPropagation()">
+                           <select id="driver-${p.order_id}">${driverOptions(p.driver_id)}</select>
+                           <button class="btn btn-green" onclick="assignOne(${p.order_id})">Призначити</button>
+                       </div>`;
+
                 return `
                     <div class="point-card ${status}">
                         <div class="admin-row">
-                            <input type="checkbox" class="bulk-check" value="${p.order_id}">
-                            <div onclick="toggleAssign(${p.order_id})">
+                            <input type="checkbox" class="bulk-check" value="${p.order_id}" ${isStarted ? 'disabled' : ''}>
+                            <div onclick="${isStarted ? '' : `toggleAssign(${p.order_id})`}">
                                 <div class="point-name">${escapeHtml(p.client_name)}</div>
                                 <div class="point-meta">${statusText(status)} • ${escapeHtml(p.driver_name || 'без водія')}</div>
-                                <div class="assign-box" id="assign-${p.order_id}" onclick="event.stopPropagation()">
-                                    <select id="driver-${p.order_id}">${driverOptions(p.driver_id)}</select>
-                                    <button class="btn btn-green" onclick="assignOne(${p.order_id})">Призначити</button>
-                                </div>
+                                ${assignHtml}
                             </div>
                         </div>
                     </div>
                 `;
             }).join('');
         }
+
 
         function driverOptions(currentId) {
             return `<option value="">Оберіть водія</option>` + drivers.map(d => {
@@ -760,18 +809,27 @@
 
         async function saveAssignments(assignments) {
             try {
-                await apiPost('/api/driver-assign', {
+                const result = await apiPost('/api/driver-assign', {
                     manager_id: Number(managerId),
                     date: currentDate,
                     assignments
                 });
                 tg.HapticFeedback.notificationOccurred('success');
-                showToast('Призначено');
+
+                if (result.skipped > 0) {
+                    showToast(
+                        `Призначено: ${result.assigned}. Пропущено (водій вже в дорозі): ${result.skipped}`,
+                        'error'
+                    );
+                } else {
+                    showToast(`Призначено: ${result.assigned}`);
+                }
                 await loadAdmin();
             } catch (e) {
                 showToast(e.message, 'error');
             }
         }
+
 
         function escapeHtml(value) {
             return String(value ?? '').replace(/[&<>"']/g, ch => ({
