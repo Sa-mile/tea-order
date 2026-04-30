@@ -94,38 +94,42 @@
         }
 
         .point-card {
-            background: var(--tg-theme-secondary-bg-color);
+            position: relative;
+            overflow: hidden;
             border-radius: 12px;
-            padding: 13px 13px 13px 11px;
             margin-bottom: 10px;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            border-left: 4px solid #4a90e2;
             cursor: pointer;
-            transition: transform 0.1s, opacity 0.15s;
-        }
-
-        .point-card:active {
-            transform: scale(0.98);
-        }
-
-        .point-card.delivered {
-            border-left-color: #31b545;
-        }
-
-        .point-card.not_found {
-            border-left-color: #f5a623;
         }
 
         .point-card.rescheduled {
-            border-left-color: #9e9e9e;
             opacity: 0.65;
             text-decoration: line-through;
         }
 
         .point-head {
+            position: relative;
+            z-index: 1;
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 12px;
+            padding: 12px;
             display: flex;
-            gap: 10px;
             align-items: flex-start;
+            gap: 10px;
+            will-change: transform;
+            border-left: 4px solid #4a90e2;
+            transition: transform 0.1s, opacity 0.15s;
+        }
+
+        .point-card.delivered .point-head {
+            border-left-color: #31b545;
+        }
+
+        .point-card.not_found .point-head {
+            border-left-color: #f5a623;
+        }
+
+        .point-card.rescheduled .point-head {
+            border-left-color: #9e9e9e;
         }
 
         .point-num {
@@ -310,41 +314,62 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Контейнер для свайпу */
-        .point-card {
-            position: relative;
-            overflow: hidden;
-            /* решта існуючих стилів залишаються */
-        }
-
-        /* Зелена підкладка що з'являється при свайпі вправо */
-        .swipe-action {
+        /* Права підкладка (Waze — зелена) */
+        .swipe-right-action {
             position: absolute;
             left: 0;
             top: 0;
             bottom: 0;
-            width: 100%;
+            right: 0;
             background: #31b545;
             color: white;
             font-weight: 700;
-            font-size: 16px;
+            font-size: 15px;
             display: flex;
             align-items: center;
             padding-left: 20px;
-            transform: translateX(-100%);
-            transition: transform 0.15s ease;
-            pointer-events: none;
             border-radius: 12px;
-            z-index: 0;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.1s;
         }
 
-        /* Вміст картки над підкладкою */
-        .point-card .point-head {
-            position: relative;
-            z-index: 1;
-            background: var(--tg-theme-secondary-bg-color);
-            border-radius: 8px;
-            transition: transform 0.15s ease;
+        /* Ліва підкладка (Оплата — синя) */
+        .swipe-left-action {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            background: #1976D2;
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 20px;
+            border-radius: 12px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.1s;
+        }
+
+        .point-comment {
+            font-size: 12px;
+            color: var(--tg-theme-hint-color);
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+        }
+
+        .point-price {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--tg-theme-text-color);
+            margin-top: 2px;
         }
 
         @keyframes pulse {
@@ -360,7 +385,6 @@
                 box-shadow: 0 0 0 0 rgba(33, 150, 243, 0);
             }
         }
-
     </style>
 </head>
 
@@ -604,21 +628,25 @@
                 const lat = Number(p.lat_to);
                 const lng = Number(p.lng_to);
                 const status = pointStatus(p);
-                const duration = p.duration_min != null ? `<br><b>~${p.duration_min} хв</b>` : '';
-                const wazeBtn = `<br><a href="https://waze.com/ul?ll=${lat},${lng}&navigate=yes" 
-                    target="_blank" 
-                    style="display:inline-block;margin-top:6px;padding:5px 12px;
-                           background:#31b545;color:white;border-radius:12px;
-                           font-size:12px;font-weight:700;text-decoration:none;">
-                    🧭 Waze
-                </a>`;
+                const comment = p.comment ? `<br><span style="font-size:11px;color:#666">${escapeHtml(p.comment)}</span>` : '';
+                const price = p.order_total ? `<br><b style="color:#31b545">${p.order_total} грн</b>` : '';
+                const duration = p.duration_min != null ? `<br><span style="font-size:11px">~${p.duration_min} хв</span>` : '';
+                const wazeBtn = (p.lat_to && p.lng_to)
+                    ? `<br><a href="https://waze.com/ul?ll=${lat},${lng}&navigate=yes"
+                              target="_blank"
+                              style="display:inline-block;margin-top:6px;padding:5px 14px;
+                                     background:#31b545;color:white;border-radius:12px;
+                                     font-size:12px;font-weight:700;text-decoration:none;">
+                          🧭 Waze
+                       </a>`
+                    : '';
 
                 const marker = L.marker([lat, lng], {
                     icon: makeIcon(p.visit_order || i + 1, markerColor(status, p.driver_id))
                 });
                 marker.bindPopup(
-                    `<b>${escapeHtml(p.client_name)}</b><br>${statusText(status)}${duration}${wazeBtn}`,
-                    { maxWidth: 200 }
+                    `<b>${escapeHtml(p.client_name)}</b>${comment}${price}${duration}${wazeBtn}`,
+                    { maxWidth: 220 }
                 );
                 marker.addTo(layer);
                 bounds.push([lat, lng]);
@@ -724,20 +752,26 @@
                     : '';
 
                 return `
-                    <div class="point-card ${status}" 
+                    <div class="point-card ${status}"
                          data-order-id="${p.order_id}"
                          data-lat="${p.lat_to || ''}"
                          data-lng="${p.lng_to || ''}">
+                        <!-- Права підкладка (Waze) -->
+                        <div class="swipe-right-action">🧭 Waze</div>
+                        <!-- Ліва підкладка (Оплата) -->
+                        <div class="swipe-left-action">💳 Оплата</div>
+                        <!-- Вміст картки -->
                         <div class="point-head">
-                            <div class="point-num" onclick="event.stopPropagation(); focusOnMap(${p.order_id})">${p.visit_order || i + 1}</div>
-                            <div style="flex:1;">
+                            <div class="point-num"
+                                 onclick="event.stopPropagation(); focusOnMap(${p.order_id})">${p.visit_order || i + 1}</div>
+                            <div style="flex:1">
                                 <div class="point-name">${escapeHtml(p.client_name)} ${noCoords} ${photoIcon}</div>
                                 <div class="point-meta">${statusText(status)}</div>
+                                ${p.comment ? `<div class="point-comment">${escapeHtml(p.comment)}</div>` : ''}
+                                ${p.order_total ? `<div class="point-price">💰 ${p.order_total} грн</div>` : ''}
                             </div>
                             ${badge}
                         </div>
-                        <!-- Swipe overlay (показується при свайпі) -->
-                        <div class="swipe-action" id="swipe-${p.order_id}">🧭 Waze</div>
                     </div>
                 `;
             }).join('');
@@ -803,44 +837,109 @@
                 const orderId = Number(card.dataset.orderId);
                 const lat = card.dataset.lat;
                 const lng = card.dataset.lng;
-                const swipeEl = card.querySelector('.swipe-action');
                 const contentEl = card.querySelector('.point-head');
+                const swipeRightEl = card.querySelector('.swipe-right-action');
+                const swipeLeftEl = card.querySelector('.swipe-left-action');
 
                 let startX = 0;
+                let startY = 0;
                 let currentX = 0;
-                let isSwiping = false;
-                const THRESHOLD = 80;
+                let isDragging = false;
+                let isHorizontal = null; // визначаємо напрям після першого руху
+
+                const THRESHOLD_RIGHT = 90;   // px для відкриття Waze
+                const THRESHOLD_LEFT = 90;   // px для підтвердження оплати
+                const MAX_DRAG = 110;         // максимальне зміщення
 
                 card.addEventListener('touchstart', (e) => {
                     startX = e.touches[0].clientX;
-                    isSwiping = false;
+                    startY = e.touches[0].clientY;
+                    isDragging = false;
+                    isHorizontal = null;
+                    currentX = 0;
                 }, { passive: true });
 
                 card.addEventListener('touchmove', (e) => {
                     const dx = e.touches[0].clientX - startX;
-                    if (dx < 10) return;
-                    isSwiping = true;
-                    currentX = Math.min(dx, 120);
+                    const dy = e.touches[0].clientY - startY;
+
+                    // Визначаємо напрям тільки один раз на початку жесту
+                    if (isHorizontal === null) {
+                        if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+                        isHorizontal = Math.abs(dx) > Math.abs(dy);
+                    }
+
+                    // Якщо вертикальний скрол — ігноруємо
+                    if (!isHorizontal) return;
+
+                    e.preventDefault(); // блокуємо скрол сторінки під час свайпу
+                    isDragging = true;
+
+                    // Обмежуємо діапазон з пружинним ефектом за межею MAX_DRAG
+                    let clamped;
+                    if (Math.abs(dx) <= MAX_DRAG) {
+                        clamped = dx;
+                    } else {
+                        const overflow = Math.abs(dx) - MAX_DRAG;
+                        clamped = (MAX_DRAG + overflow * 0.2) * Math.sign(dx);
+                    }
+                    currentX = clamped;
+
+                    // Плавно переміщуємо вміст (без transition під час руху)
+                    contentEl.style.transition = 'none';
                     contentEl.style.transform = `translateX(${currentX}px)`;
-                    swipeEl.style.transform = `translateX(${currentX - 100}%)`;
-                }, { passive: true });
+
+                    // Показуємо підкладку відповідного напряму
+                    if (currentX > 0 && lat && lng) {
+                        // Вправо → Waze
+                        const pct = Math.min(currentX / MAX_DRAG, 1);
+                        swipeRightEl.style.opacity = pct;
+                        swipeLeftEl.style.opacity = 0;
+                    } else if (currentX < 0) {
+                        // Вліво → Оплата
+                        const pct = Math.min(Math.abs(currentX) / MAX_DRAG, 1);
+                        swipeLeftEl.style.opacity = pct;
+                        swipeRightEl.style.opacity = 0;
+                    } else {
+                        swipeRightEl.style.opacity = 0;
+                        swipeLeftEl.style.opacity = 0;
+                    }
+                }, { passive: false });
 
                 card.addEventListener('touchend', () => {
-                    if (isSwiping && currentX >= THRESHOLD && lat && lng) {
+                    // Вмикаємо плавне повернення
+                    contentEl.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                    contentEl.style.transform = '';
+                    swipeRightEl.style.opacity = 0;
+                    swipeLeftEl.style.opacity = 0;
+
+                    if (!isDragging) return;
+
+                    if (currentX >= THRESHOLD_RIGHT && lat && lng) {
+                        // Свайп вправо — Waze
                         tg.HapticFeedback.impactOccurred('medium');
                         window.open(`https://waze.com/ul?ll=${lat},${lng}&navigate=yes`, '_blank');
+                    } else if (currentX <= -THRESHOLD_LEFT) {
+                        // Свайп вліво — підтвердження оплати/доставки
+                        const p = points.find(pt => Number(pt.order_id) === orderId);
+                        if (p) confirmDeliveryOrPayment(p);
                     }
-                    contentEl.style.transform = '';
-                    swipeEl.style.transform = '';
+
                     currentX = 0;
-                    isSwiping = false;
+                    isDragging = false;
                 });
 
+                // Клік → openPoint (тільки якщо не було свайпу)
                 card.addEventListener('click', (e) => {
+                    if (isDragging) return;
                     if (e.target.closest('.point-num') || e.target.closest('.photo-icon')) return;
                     openPoint(orderId);
                 });
             });
+        }
+
+        function confirmDeliveryOrPayment(p) {
+            openPoint(p.order_id);
         }
 
         function focusOnMap(orderId) {
