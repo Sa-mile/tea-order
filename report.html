@@ -594,6 +594,35 @@
             padding: 30px;
             color: #888;
         }
+
+        .skeleton {
+            background: linear-gradient(90deg,
+                    var(--tg-theme-secondary-bg-color) 25%,
+                    rgba(255, 255, 255, 0.1) 50%,
+                    var(--tg-theme-secondary-bg-color) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.2s infinite;
+            border-radius: 10px;
+            height: 60px;
+            margin-bottom: 10px;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--tg-theme-hint-color);
+            font-size: 15px;
+        }
     </style>
 </head>
 
@@ -746,6 +775,28 @@
 
         let mainScrollY = 0; // Зберігаємо позицію прокрутки головного екрану
 
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 30px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${type === 'success' ? '#31b545' : '#e53935'};
+                color: white;
+                padding: 12px 24px;
+                border-radius: 20px;
+                font-size: 14px;
+                font-weight: 600;
+                z-index: 9999;
+                animation: fadeIn 0.2s ease;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
+        }
+
         // ─── НАВИГАЦИЯ ───
         function showScreen(id) {
             // Якщо виходимо з головного — запам'ятовуємо де були
@@ -829,7 +880,11 @@
                 const resp = await fetch(`${apiUrl}/api/clients?manager_id=${managerId}`);
                 const data = await resp.json();
                 allClients = data.clients || [];
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error(e);
+                tg.HapticFeedback.notificationOccurred('error');
+                showToast('Помилка завантаження клієнтів', 'error');
+            }
         }
 
         const searchInput = document.getElementById('client-search');
@@ -966,6 +1021,13 @@
                 return;
             }
 
+            // Skeletons
+            document.getElementById('main-results').style.display = 'block';
+            document.getElementById('summary-grid').innerHTML = '<div class="skeleton" style="grid-column: 1/-1"></div><div class="skeleton"></div><div class="skeleton"></div>';
+            document.getElementById('clients-list').innerHTML = '<div class="skeleton"></div><div class="skeleton"></div>';
+            document.getElementById('days-list').innerHTML = '<div class="skeleton"></div><div class="skeleton"></div>';
+            document.getElementById('products-list').innerHTML = '<div class="skeleton"></div><div class="skeleton"></div>';
+
             const fmtDate = iso => iso.split('-').reverse().join('.');
             let url = `${apiUrl}/api/report?manager_id=${managerId}&date_from=${fmtDate(dateFrom)}&date_to=${fmtDate(dateTo)}`;
             selectedClients.forEach(c => url += `&client=${encodeURIComponent(c)}`);
@@ -979,10 +1041,10 @@
                 clientsExpanded = false;
                 daysExpanded = false;
                 renderReport(data);
-                document.getElementById('main-results').style.display = 'block';
                 setTimeout(() => document.getElementById('main-results').scrollIntoView({ behavior: 'smooth' }), 100);
             } catch (e) {
-                tg.showAlert('Помилка завантаження звіту');
+                tg.HapticFeedback.notificationOccurred('error');
+                showToast('Помилка завантаження звіту', 'error');
                 console.error(e);
             }
 
@@ -994,6 +1056,14 @@
             const total = data.categories.reduce((s, c) => s + c.amount, 0);
             const dateFrom = lastReport.dateFrom;
             const dateTo = lastReport.dateTo;
+
+            if (!data.categories || data.categories.length === 0) {
+                document.getElementById('summary-grid').innerHTML = '<div class="empty-state" style="grid-column: 1/-1">📭 Замовлень за цей період не знайдено</div>';
+                document.getElementById('clients-list').innerHTML = '';
+                document.getElementById('days-list').innerHTML = '';
+                document.getElementById('products-list').innerHTML = '';
+                return;
+            }
 
             // Итоги
             document.getElementById('summary-grid').innerHTML = `
@@ -1032,7 +1102,7 @@
             const data = lastReport.top_clients;
 
             if (!data || data.length === 0) {
-                list.innerHTML = '<div class="empty">Немає даних</div>';
+                list.innerHTML = '<div class="empty-state">🔍 Оберіть клієнта щоб побачити деталі</div>';
                 toggle.style.display = 'none';
                 return;
             }
@@ -1071,7 +1141,7 @@
             const data = lastReport.by_day;
 
             if (!data || data.length === 0) {
-                list.innerHTML = '<div class="empty">Немає даних</div>';
+                list.innerHTML = '<div class="empty-state">📭 Замовлень за цей період не знайдено</div>';
                 toggle.style.display = 'none';
                 return;
             }
@@ -1109,7 +1179,7 @@
             const toggle = document.getElementById('prod-toggle');
 
             if (allProductsList.length === 0) {
-                list.innerHTML = '<div class="empty">Немає даних</div>';
+                list.innerHTML = '<div class="empty-state">📭 Замовлень за цей період не знайдено</div>';
                 toggle.style.display = 'none';
                 return;
             }
@@ -1143,13 +1213,20 @@
         // ─── ЭКРАН 2А: ЗАКАЗЫ КЛИЕНТА ───
         // fromScreen — звідки прийшли (screen-main або screen-day)
         async function openClientOrders(clientName, dateFrom, dateTo, fromScreen = 'screen-main') {
+            showScreen('screen-client');
+            document.getElementById('client-screen-title').textContent = clientName;
+            document.getElementById('client-screen-sub').textContent = 'Завантаження...';
+            const list = document.getElementById('client-orders-list');
+            list.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
+
             try {
                 const url = `${apiUrl}/api/client-orders?manager_id=${managerId}&client=${encodeURIComponent(clientName)}&date_from=${dateFrom}&date_to=${dateTo}`;
                 const resp = await fetch(url);
                 const data = await resp.json();
 
                 if (!data.orders || data.orders.length === 0) {
-                    tg.showAlert('Немає замовлень');
+                    showToast('Немає замовлень');
+                    goBack(fromScreen);
                     return;
                 }
 
@@ -1197,7 +1274,8 @@
             `;
                 showScreen('screen-client');
             } catch (e) {
-                tg.showAlert('Помилка завантаження замовлень');
+                tg.HapticFeedback.notificationOccurred('error');
+                showToast('Помилка завантаження замовлень', 'error');
                 console.error(e);
             }
         }
@@ -1211,13 +1289,20 @@
                 return;
             }
 
+            showScreen('screen-day');
+            document.getElementById('day-screen-title').textContent = `📅 ${dateStr}`;
+            document.getElementById('day-screen-sub').textContent = 'Завантаження...';
+            const list = document.getElementById('day-clients-list');
+            list.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
+
             try {
                 const url = `${apiUrl}/api/day-clients?manager_id=${managerId}&date=${dateStr}`;
                 const resp = await fetch(url);
                 const data = await resp.json();
 
                 if (!data.clients || data.clients.length === 0) {
-                    tg.showAlert('За цей день замовлень не знайдено');
+                    showToast('За цей день замовлень не знайдено');
+                    goBack('screen-main');
                     return;
                 }
 
@@ -1264,7 +1349,8 @@
             `;
                 showScreen('screen-day');
             } catch (e) {
-                tg.showAlert('Помилка завантаження замовлень');
+                tg.HapticFeedback.notificationOccurred('error');
+                showToast('Помилка завантаження замовлень', 'error');
                 console.error(e);
             }
         }
@@ -1275,8 +1361,8 @@
             document.getElementById('order-back-btn').onclick = () => goBack(backScreen);
             document.getElementById('order-screen-title').textContent = clientName;
             document.getElementById('order-screen-sub').textContent = dateStr;
-            document.getElementById('order-summary').innerHTML = '<div class="loader">⏳ Завантаження...</div>';
-            document.getElementById('order-items-list').innerHTML = '';
+            document.getElementById('order-summary').innerHTML = '<div class="skeleton"></div>';
+            document.getElementById('order-items-list').innerHTML = '<div class="skeleton"></div><div class="skeleton"></div>';
             showScreen('screen-order');
 
             try {
@@ -1317,7 +1403,9 @@
 
                 document.getElementById('order-items-list').innerHTML = html;
             } catch (e) {
-                document.getElementById('order-summary').innerHTML = '<div class="empty">Помилка завантаження</div>';
+                tg.HapticFeedback.notificationOccurred('error');
+                showToast('Помилка завантаження деталей', 'error');
+                document.getElementById('order-summary').innerHTML = '<div class="empty-state">❌ Помилка завантаження</div>';
                 console.error(e);
             }
         }
@@ -1352,7 +1440,7 @@
                 });
             }
 
-            navigator.clipboard.writeText(text).then(() => tg.showAlert('Скопійовано!'));
+            navigator.clipboard.writeText(text).then(() => showToast('Скопійовано!'));
         }
 
         loadClients();
