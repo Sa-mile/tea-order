@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            padding: 15px;
+            font-size: 14px;
+        }
+
+        h3 {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.18s ease both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .card {
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .card-title {
+            font-weight: bold;
+            font-size: 15px;
+            color: #31b545;
+            margin-bottom: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat-box {
+            border-radius: 12px;
+            background: rgba(49, 181, 69, 0.10);
+            padding: 12px;
+        }
+
+        .stat-label {
+            color: var(--tg-theme-hint-color);
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        #map {
+            height: 350px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .point-card {
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 12px;
+            padding: 13px 13px 13px 11px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #4a90e2;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.15s;
+        }
+
+        .point-card:active {
+            transform: scale(0.98);
+        }
+
+        .point-card.delivered {
+            border-left-color: #31b545;
+        }
+
+        .point-card.not_found {
+            border-left-color: #f5a623;
+        }
+
+        .point-card.rescheduled {
+            border-left-color: #9e9e9e;
+            opacity: 0.65;
+            text-decoration: line-through;
+        }
+
+        .point-head {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .point-num {
+            min-width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #31b545;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 12px;
+        }
+
+        .point-name {
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .point-meta {
+            color: var(--tg-theme-hint-color);
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .btn-green {
+            background: #31b545;
+            color: white;
+            border-radius: 20px;
+        }
+
+        .btn-red {
+            background: #e53935;
+            color: white;
+        }
+
+        .btn-yellow {
+            background: #f5a623;
+            color: white;
+        }
+
+        .btn-gray {
+            background: #757575;
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid #31b545;
+            color: #31b545;
+        }
+
+        .btn-secondary {
+            padding: 9px 16px;
+            font-size: 13px;
+            border-radius: 20px;
+            border: 1px solid #31b545;
+            color: #31b545;
+            background: transparent;
+            width: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        input[type=date],
+        select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            background: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+            font-size: 16px;
+        }
+
+        .admin-row {
+            display: grid;
+            grid-template-columns: 28px 1fr;
+            gap: 8px;
+            align-items: start;
+        }
+
+        .assign-box {
+            display: none;
+            margin-top: 10px;
+        }
+
+        .driver-chip {
+            display: inline-flex;
+            padding: 6px 10px;
+            margin: 0 6px 6px 0;
+            border-radius: 16px;
+            background: rgba(49, 181, 69, 0.10);
+            color: #31b545;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .marker-pin {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg,
+                var(--tg-theme-secondary-bg-color) 25%,
+                rgba(255, 255, 255, 0.1) 50%,
+                var(--tg-theme-secondary-bg-color) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.2s infinite;
+            border-radius: 10px;
+            height: 60px;
+            margin-bottom: 10px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--tg-theme-hint-color);
+            font-size: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="screen-loading" class="screen active">
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+    </div>
+
+    <div id="screen-driver" class="screen">
+        <h3 id="driver-title"></h3>
+        <div class="card">
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-label">Виконано</div>
+                    <div class="stat-value" id="driver-progress">0 з 0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Пробіг</div>
+                    <div class="stat-value" id="driver-km">0.0 км</div>
+                </div>
+            </div>
+            <button class="btn btn-outline" id="start-route-btn" onclick="startRoute()">Старт маршруту</button>
+        </div>
+        <div id="map"></div>
+        <div id="driver-list"></div>
+        <button class="btn btn-green" id="finish-route-btn" style="display:none;" onclick="confirmFinish()">Завершити маршрут</button>
+    </div>
+
+    <div id="screen-admin" class="screen">
+        <h3 id="admin-title"></h3>
+        <div class="card">
+            <div class="card-title">Дата маршруту</div>
+            <input type="date" id="route-date" onchange="loadAdmin()">
+        </div>
+        <div class="toolbar">
+            <button class="btn-secondary" onclick="loadAdmin()">🔄 Оновити</button>
+            <button class="btn-secondary" onclick="assignSelected()">Призначити всі обрані</button>
+        </div>
+        <div class="card">
+            <div class="card-title">Масове призначення</div>
+            <select id="bulk-driver"></select>
+        </div>
+        <div id="admin-map"></div>
+        <div class="card">
+            <div class="card-title">Водії</div>
+            <div id="drivers-summary"></div>
+        </div>
+        <div id="admin-list"></div>
+    </div>
+
+    <div id="screen-action" class="screen">
+        <button class="btn-secondary" onclick="backToDriver()">‹ До маршруту</button>
+        <div class="card" style="margin-top:15px;">
+            <div class="card-title" id="action-title"></div>
+            <div id="action-comment" class="point-meta"></div>
+            <button class="btn btn-outline" id="waze-btn" onclick="openWaze()">🧭 Їхати (Waze)</button>
+            <div id="status-actions">
+                <button class="btn btn-green" onclick="setStatus('delivered')">✅ Доставлено</button>
+                <button class="btn btn-yellow" onclick="setStatus('not_found')">❌ Не застав</button>
+                <button class="btn btn-gray" onclick="setStatus('rescheduled')">📅 Перенести на завтра</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        const params = new URLSearchParams(window.location.search);
+        const managerId = params.get('manager_id');
+        const apiUrl = decodeURIComponent(params.get('api_url') || '');
+        const today = new Date();
+        let currentDate = formatDate(today);
+        let isoDate = today.toISOString().slice(0, 10);
+        let mode = 'driver';
+        let points = [];
+        let drivers = [];
+        let selectedPoint = null;
+        let routeKm = 0;
+        let map = null;
+        let adminMap = null;
+        let markersLayer = null;
+        let adminMarkersLayer = null;
+
+        document.getElementById('route-date').value = isoDate;
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 30px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${type === 'success' ? '#31b545' : '#e53935'};
+                color: white;
+                padding: 12px 24px;
+                border-radius: 20px;
+                font-size: 14px;
+                font-weight: 600;
+                z-index: 9999;
+                animation: fadeIn 0.2s ease;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                max-width: calc(100vw - 30px);
+                text-align: center;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
+        }
+
+        function formatDate(date) {
+            return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`;
+        }
+
+        function isoToDisplay(value) {
+            const [y, m, d] = value.split('-');
+            return `${d}.${m}.${y}`;
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        async function apiGet(path) {
+            const resp = await fetch(`${apiUrl}${path}`);
+            let data = {};
+            try { data = await resp.json(); } catch (e) {}
+            return { resp, data };
+        }
+
+        async function apiPost(path, body) {
+            const resp = await fetch(`${apiUrl}${path}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            let data = {};
+            try { data = await resp.json(); } catch (e) {}
+            if (!resp.ok) throw new Error(data.error || 'Помилка запиту');
+            return data;
+        }
+
+        function pointStatus(p) {
+            return p.delivery_status || p.point_status || 'pending';
+        }
+
+        function statusText(status) {
+            return {
+                pending: 'Очікує',
+                delivered: 'Доставлено',
+                not_found: 'Не застав',
+                rescheduled: 'Перенесено'
+            }[status] || status;
+        }
+
+        function markerColor(status, driverId) {
+            if (status === 'delivered') return '#31b545';
+            if (status === 'not_found') return '#f5a623';
+            if (status === 'rescheduled') return '#9e9e9e';
+            const palette = ['#4a90e2', '#8e44ad', '#00a6a6', '#d35400', '#c0392b', '#2c7a7b'];
+            return palette[Math.abs(Number(driverId || 0)) % palette.length];
+        }
+
+        function makeIcon(number, color) {
+            return L.divIcon({
+                html: `<div class="marker-pin" style="background:${color}">${number}</div>`,
+                className: '',
+                iconSize: [28, 28],
+                iconAnchor: [14, 14]
+            });
+        }
+
+        function initMap(target, existing) {
+            const el = document.getElementById(target);
+            el.style.display = 'block';
+            const m = existing || L.map(target).setView([50.45, 30.52], 11);
+            if (!existing) {
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(m);
+            }
+            return m;
+        }
+
+        function renderMarkers(targetMap, layer, list) {
+            if (layer) layer.remove();
+            layer = L.layerGroup().addTo(targetMap);
+            const bounds = [];
+            list.forEach((p, i) => {
+                if (!p.lat_to || !p.lng_to) return;
+                const lat = Number(p.lat_to);
+                const lng = Number(p.lng_to);
+                const status = pointStatus(p);
+                L.marker([lat, lng], {
+                    icon: makeIcon(p.visit_order || i + 1, markerColor(status, p.driver_id))
+                }).bindPopup(`<b>${escapeHtml(p.client_name)}</b><br>${statusText(status)}`).addTo(layer);
+                bounds.push([lat, lng]);
+            });
+            if (bounds.length) targetMap.fitBounds(bounds, { padding: [25, 25] });
+            return layer;
+        }
+
+        async function bootstrap() {
+            try {
+                const admin = await apiGet(`/api/all-driver-points?manager_id=${managerId}&date=${currentDate}`);
+                if (admin.resp.ok && admin.data.drivers && admin.data.drivers.length) {
+                    mode = 'admin';
+                    drivers = admin.data.drivers;
+                    points = admin.data.points || [];
+                    renderAdmin();
+                    return;
+                }
+            } catch (e) {}
+            mode = 'driver';
+            await loadDriver();
+        }
+
+        async function loadDriver() {
+            try {
+                showScreen('screen-driver');
+                document.getElementById('driver-title').textContent = `🚗 Мій маршрут на ${currentDate}`;
+                document.getElementById('driver-list').innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
+                const res = await apiGet(`/api/driver-points?manager_id=${managerId}&date=${currentDate}`);
+                if (!res.resp.ok) throw new Error(res.data.error || 'Помилка завантаження');
+                points = res.data.points || [];
+                await loadOptimized();
+                renderDriver();
+            } catch (e) {
+                showToast(e.message, 'error');
+                document.getElementById('driver-list').innerHTML = '<div class="empty-state">Маршрут недоступний</div>';
+            }
+        }
+
+        async function loadOptimized() {
+            try {
+                const res = await apiGet(`/api/route-optimized?manager_id=${managerId}&date=${currentDate}`);
+                if (!res.resp.ok) return;
+                const byId = new Map((res.data.route || []).map(r => [String(r.order_id), r]));
+                points = points.map((p, i) => ({ ...p, ...(byId.get(String(p.order_id)) || {}), visit_order: p.visit_order || i + 1 }));
+            } catch (e) {}
+        }
+
+        function renderDriver() {
+            const done = points.filter(p => pointStatus(p) !== 'pending').length;
+            document.getElementById('driver-progress').textContent = `${done} з ${points.length}`;
+            document.getElementById('driver-km').textContent = `${routeKm.toFixed(1)} км`;
+            document.getElementById('finish-route-btn').style.display = points.length && done === points.length ? 'block' : 'none';
+
+            const withCoords = points.filter(p => p.lat_to && p.lng_to);
+            if (withCoords.length) {
+                map = initMap('map', map);
+                markersLayer = renderMarkers(map, markersLayer, points);
+                setTimeout(() => map.invalidateSize(), 50);
+            } else {
+                document.getElementById('map').style.display = 'none';
+            }
+
+            const list = document.getElementById('driver-list');
+            if (!points.length) {
+                list.innerHTML = '<div class="empty-state">На цю дату точок немає</div>';
+                return;
+            }
+            list.innerHTML = points.map((p, i) => {
+                const status = pointStatus(p);
+                const duration = p.duration_min ? ` • ${p.duration_min} хв` : '';
+                const coords = p.lat_to && p.lng_to ? ' • є координати' : '';
+                return `
+                    <div class="point-card ${status}" onclick="openPoint(${p.order_id})">
+                        <div class="point-head">
+                            <div class="point-num">${p.visit_order || i + 1}</div>
+                            <div>
+                                <div class="point-name">${escapeHtml(p.client_name)}</div>
+                                <div class="point-meta">${statusText(status)}${duration}${coords}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function startRoute() {
+            try {
+                const pos = await getPosition();
+                await apiPost('/api/driver-start', {
+                    manager_id: Number(managerId),
+                    date: currentDate,
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude
+                });
+                tg.HapticFeedback.notificationOccurred('success');
+                showToast('Маршрут стартував');
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        function openPoint(orderId) {
+            selectedPoint = points.find(p => Number(p.order_id) === Number(orderId));
+            if (!selectedPoint) return;
+            tg.HapticFeedback.impactOccurred('light');
+            const status = pointStatus(selectedPoint);
+            document.getElementById('action-title').textContent = selectedPoint.client_name;
+            document.getElementById('action-comment').textContent = selectedPoint.comment || '';
+            document.getElementById('waze-btn').style.display = selectedPoint.lat_to && selectedPoint.lng_to ? 'block' : 'none';
+            document.getElementById('status-actions').style.display = status === 'pending' || status === 'not_found' ? 'block' : 'none';
+            showScreen('screen-action');
+        }
+
+        function backToDriver() {
+            showScreen('screen-driver');
+        }
+
+        function openWaze() {
+            if (!selectedPoint || !selectedPoint.lat_to || !selectedPoint.lng_to) {
+                showToast('Координат ще немає', 'error');
+                return;
+            }
+            window.open(`https://waze.com/ul?ll=${selectedPoint.lat_to},${selectedPoint.lng_to}&navigate=yes`, '_blank');
+        }
+
+        async function setStatus(status) {
+            if (!selectedPoint) return;
+            try {
+                const pos = await getPosition();
+                const data = await apiPost('/api/update-delivery-status', {
+                    manager_id: Number(managerId),
+                    order_id: Number(selectedPoint.order_id),
+                    status,
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude
+                });
+                routeKm = Number(data.total_km || routeKm || 0);
+                tg.HapticFeedback.notificationOccurred('success');
+                showToast('Статус оновлено');
+                await loadDriver();
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        function getPosition() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error('Геолокація недоступна'));
+                    return;
+                }
+                navigator.geolocation.getCurrentPosition(resolve, () => reject(new Error('Не вдалось отримати геолокацію')), {
+                    enableHighAccuracy: true,
+                    timeout: 12000,
+                    maximumAge: 30000
+                });
+            });
+        }
+
+        function confirmFinish() {
+            showToast('Натисніть ще раз для завершення');
+            const btn = document.getElementById('finish-route-btn');
+            btn.textContent = 'Підтвердити завершення';
+            btn.onclick = finishRoute;
+            setTimeout(() => {
+                btn.textContent = 'Завершити маршрут';
+                btn.onclick = confirmFinish;
+            }, 3000);
+        }
+
+        async function finishRoute() {
+            try {
+                const stats = await apiPost('/api/driver-finish', { manager_id: Number(managerId) });
+                document.getElementById('driver-list').innerHTML = `
+                    <div class="card">
+                        <div class="card-title">Маршрут завершено</div>
+                        <div class="point-meta">Доставлено: ${stats.delivered} з ${stats.total}</div>
+                        <div class="point-meta">Пробіг: ${Number(stats.total_km || 0).toFixed(1)} км</div>
+                        <div class="point-meta">Час у дорозі: ${stats.duration}</div>
+                    </div>
+                `;
+                document.getElementById('finish-route-btn').style.display = 'none';
+                tg.HapticFeedback.notificationOccurred('success');
+                setTimeout(() => tg.close(), 1800);
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        async function loadAdmin() {
+            currentDate = isoToDisplay(document.getElementById('route-date').value);
+            try {
+                const res = await apiGet(`/api/all-driver-points?manager_id=${managerId}&date=${currentDate}`);
+                if (!res.resp.ok) throw new Error(res.data.error || 'Помилка завантаження');
+                points = res.data.points || [];
+                drivers = res.data.drivers || [];
+                renderAdmin();
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        function renderAdmin() {
+            showScreen('screen-admin');
+            document.getElementById('admin-title').textContent = `📋 Маршрути на ${currentDate}`;
+            const mapEl = document.getElementById('admin-map');
+            mapEl.id = 'admin-map';
+            mapEl.style.height = '350px';
+            mapEl.style.borderRadius = '12px';
+            mapEl.style.overflow = 'hidden';
+            mapEl.style.marginBottom = '15px';
+            adminMap = initMap('admin-map', adminMap);
+            adminMarkersLayer = renderMarkers(adminMap, adminMarkersLayer, points);
+            setTimeout(() => adminMap.invalidateSize(), 50);
+
+            const counts = new Map();
+            points.forEach(p => counts.set(String(p.driver_id || 0), (counts.get(String(p.driver_id || 0)) || 0) + 1));
+            document.getElementById('drivers-summary').innerHTML = drivers.length
+                ? drivers.map(d => `<span class="driver-chip">${escapeHtml(d.name)}: ${counts.get(String(d.id)) || 0}</span>`).join('')
+                : '<div class="empty-state">Водіїв з правом driver немає</div>';
+            document.getElementById('bulk-driver').innerHTML = driverOptions('');
+
+            const list = document.getElementById('admin-list');
+            if (!points.length) {
+                list.innerHTML = '<div class="empty-state">На цю дату точок немає</div>';
+                return;
+            }
+            list.innerHTML = points.map((p, i) => {
+                const status = pointStatus(p);
+                return `
+                    <div class="point-card ${status}">
+                        <div class="admin-row">
+                            <input type="checkbox" class="bulk-check" value="${p.order_id}">
+                            <div onclick="toggleAssign(${p.order_id})">
+                                <div class="point-name">${escapeHtml(p.client_name)}</div>
+                                <div class="point-meta">${statusText(status)} • ${escapeHtml(p.driver_name || 'без водія')}</div>
+                                <div class="assign-box" id="assign-${p.order_id}" onclick="event.stopPropagation()">
+                                    <select id="driver-${p.order_id}">${driverOptions(p.driver_id)}</select>
+                                    <button class="btn btn-green" onclick="assignOne(${p.order_id})">Призначити</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function driverOptions(currentId) {
+            return `<option value="">Оберіть водія</option>` + drivers.map(d => {
+                const selected = String(d.id) === String(currentId) ? 'selected' : '';
+                return `<option value="${d.id}" ${selected}>${escapeHtml(d.name)}</option>`;
+            }).join('');
+        }
+
+        function toggleAssign(orderId) {
+            tg.HapticFeedback.impactOccurred('light');
+            const box = document.getElementById(`assign-${orderId}`);
+            box.style.display = box.style.display === 'block' ? 'none' : 'block';
+        }
+
+        async function assignOne(orderId) {
+            const driverId = document.getElementById(`driver-${orderId}`).value;
+            if (!driverId) {
+                showToast('Оберіть водія', 'error');
+                return;
+            }
+            await saveAssignments([{ order_id: Number(orderId), driver_id: Number(driverId) }]);
+        }
+
+        async function assignSelected() {
+            const selected = [...document.querySelectorAll('.bulk-check:checked')].map(c => Number(c.value));
+            if (!selected.length) {
+                showToast('Оберіть точки', 'error');
+                return;
+            }
+            const driverId = document.getElementById('bulk-driver').value;
+            if (!driverId) {
+                showToast('Оберіть водія', 'error');
+                return;
+            }
+            await saveAssignments(selected.map(orderId => ({ order_id: orderId, driver_id: Number(driverId) })));
+        }
+
+        async function saveAssignments(assignments) {
+            try {
+                await apiPost('/api/driver-assign', {
+                    manager_id: Number(managerId),
+                    date: currentDate,
+                    assignments
+                });
+                tg.HapticFeedback.notificationOccurred('success');
+                showToast('Призначено');
+                await loadAdmin();
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[ch]));
+        }
+
+        bootstrap();
+    </script>
+</body>
+
+</html>
