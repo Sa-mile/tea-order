@@ -115,9 +115,13 @@
             transition: transform 0.1s, opacity 0.15s;
         }
 
-        .point-card.delivered .point-head  { border-left-color: #31b545; }
-        .point-card.not_found .point-head  { border-left-color: #f5a623; }
-        .point-card.rescheduled .point-head { border-left-color: #9e9e9e; }
+        .point-card.delivered .point-head   { border-left-color: #2196F3; }
+        .point-card.not_found .point-head   { border-left-color: #e53935; }
+        .point-card.rescheduled .point-head { border-left-color: #f5a623; }
+
+        .point-card.delivered .point-num   { background: #2196F3; }
+        .point-card.not_found .point-num   { background: #e53935; }
+        .point-card.rescheduled .point-num { background: #f5a623; }
 
         .point-num {
             min-width: 26px;
@@ -1232,7 +1236,10 @@
                     💳 Оплата: <b>${p.payment_status === 'paid' ? 'Оплачено ✅' : 'Не оплачено ⚠️'}</b>
                 </div>
             `;
-            document.getElementById('delivery-modal-btn').dataset.orderId = p.order_id;
+            const btn = document.getElementById('delivery-modal-btn');
+            btn.dataset.orderId = p.order_id;
+            btn.disabled = false;
+            btn.textContent = '✅ Підтвердити доставку';
             document.getElementById('delivery-modal').style.display = 'flex';
             tg.HapticFeedback.impactOccurred('medium');
         }
@@ -1488,7 +1495,13 @@
                 const wazeBtn  = `<br><a href="https://waze.com/ul?ll=${lat},${lng}&navigate=yes" target="_blank"
                     style="display:inline-block;margin-top:6px;padding:5px 14px;background:#31b545;color:white;
                            border-radius:12px;font-size:12px;font-weight:700;text-decoration:none;">🧭 Waze</a>`;
-                const marker = L.marker([lat, lng], { icon: makeIcon(p.visit_order || i + 1, markerColor(status, p.driver_id)) });
+                const isDelivered = status === 'delivered';
+                const markerCol = isDelivered ? '#9e9e9e'
+                    : status === 'not_found'  ? '#e53935'
+                    : status === 'rescheduled' ? '#f5a623'
+                    : markerColor(status, p.driver_id);
+                const markerLabel = isDelivered ? '✓' : String(p.visit_order || '');
+                const marker = L.marker([lat, lng], { icon: makeIcon(markerLabel, markerCol) });
                 marker.bindPopup(`<b>${escapeHtml(p.client_name)}</b>${comment}${price}${duration}${wazeBtn}`, { maxWidth: 220 });
                 marker.addTo(layer);
                 bounds.push([lat, lng]);
