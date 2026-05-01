@@ -386,6 +386,19 @@
             }
         }
 
+        .drag-handle {
+            font-size: 18px;
+            color: var(--tg-theme-hint-color);
+            padding: 0 6px;
+            cursor: grab;
+            align-self: center;
+            flex-shrink: 0;
+        }
+
+        .draggable-card.drag-over {
+            border: 2px dashed #31b545;
+        }
+
         @keyframes slideUp {
             from {
                 transform: translateY(100%);
@@ -761,8 +774,11 @@
                     ? `<span class="photo-icon" onclick="event.stopPropagation(); openPhotos(${p.order_id})">📷</span>`
                     : '';
 
+                const draggableAttr = !routeStarted ? 'draggable="true"' : '';
+
                 return `
-                    <div class="point-card ${status}"
+                    <div class="point-card ${status} ${!routeStarted ? 'draggable-card' : ''}"
+                         ${draggableAttr}
                          data-order-id="${p.order_id}"
                          data-lat="${p.lat_to || ''}"
                          data-lng="${p.lng_to || ''}">
@@ -772,6 +788,7 @@
                         <div class="swipe-left-action">💳 Оплата</div>
                         <!-- Вміст картки -->
                         <div class="point-head">
+                            ${!routeStarted ? '<div class="drag-handle">⠿</div>' : ''}
                             <div class="point-num"
                                  onclick="event.stopPropagation(); focusOnMap(${p.order_id})">${p.visit_order || i + 1}</div>
                             <div style="flex:1">
@@ -787,6 +804,7 @@
             }).join('');
 
             attachCardHandlers();
+            initDragAndDrop();
         }
 
 
@@ -861,15 +879,23 @@
                 const THRESHOLD_LEFT = 90;   // px для підтвердження оплати
                 const MAX_DRAG = 110;         // максимальне зміщення
 
+                let longTapTimer = null;
+
                 card.addEventListener('touchstart', (e) => {
                     startX = e.touches[0].clientX;
                     startY = e.touches[0].clientY;
                     isDragging = false;
                     isHorizontal = null;
                     currentX = 0;
+
+                    longTapTimer = setTimeout(() => {
+                        const p = points.find(pt => Number(pt.order_id) === orderId);
+                        if (p) confirmDelivery(p);
+                    }, 600); // 600мс = довгий тап
                 }, { passive: true });
 
                 card.addEventListener('touchmove', (e) => {
+                    clearTimeout(longTapTimer); // скасовуємо довгий тап при русі
                     const dx = e.touches[0].clientX - startX;
                     const dy = e.touches[0].clientY - startY;
 
@@ -917,6 +943,7 @@
                 }, { passive: false });
 
                 card.addEventListener('touchend', () => {
+                    clearTimeout(longTapTimer);
                     // Вмикаємо плавне повернення
                     contentEl.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
                     contentEl.style.transform = '';
@@ -1261,6 +1288,127 @@
             document.getElementById('unpaid-modal').style.display = 'none';
         }
 
+        // --- Drag & Drop ---
+        let dragSrcOrderId = null;
+
+        function initDragAndDrop() {
+            if (routeStarted) return; // після старту — вимкнено
+
+            document.querySelectorAll('.point-card[draggable="true"]').forEach(card => {
+                card.addEventListener('dragstart', (e) => {
+                    dragSrcOrderId = Number(card.dataset.orderId);
+                    card.style.opacity = '0.5';
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+                card.addEventListener('dragend', () => {
+                    card.style.opacity = '';
+                    document.querySelectorAll('.point-card').forEach(c => c.classList.remove('drag-over'));
+                });
+                card.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    card.classList.add('drag-over');
+                });
+                card.addEventListener('dragleave', () => {
+                    card.classList.remove('drag-over');
+                });
+                card.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    card.classList.remove('drag-over');
+                    const targetOrderId = Number(card.dataset.orderId);
+                    if (dragSrcOrderId === targetOrderId) return;
+                    reorderPoints(dragSrcOrderId, targetOrderId);
+                });
+            });
+        }
+
+        function reorderPoints(fromOrderId, toOrderId) {
+            const fromIdx = points.findIndex(p => Number(p.order_id) === fromOrderId);
+            const toIdx = points.findIndex(p => Number(p.order_id) === toOrderId);
+            if (fromIdx === -1 || toIdx === -1) return;
+
+            // Переставляємо в масиві
+            const [moved] = points.splice(fromIdx, 1);
+            points.splice(toIdx, 0, moved);
+
+            // Перенумеровуємо visit_order
+            points.forEach((p, i) => { p.visit_order = i + 1; });
+
+            // Зберігаємо новий порядок на сервері
+            saveNewOrder();
+
+            // Перемальовуємо список (без перезавантаження з сервера)
+            tg.HapticFeedback.impactOccurred('light');
+            renderDriver(); // Використовуємо існуючу renderDriver
+        }
+
+        async function saveNewOrder() {
+            try {
+                const sequence = points.map(p => ({
+                    order_id: p.order_id,
+                    visit_order: p.visit_order,
+                    duration_min: p.duration_min || null
+                }));
+                await apiPost('/api/save-visit-order', {
+                    manager_id: Number(managerId),
+                    date: currentDate,
+                    sequence
+                });
+            } catch (e) {
+                // Тихо ігноруємо — порядок вже оновлено локально
+                console.warn('saveNewOrder failed:', e);
+            }
+        }
+
+        // --- Довгий тап -> Доставка ---
+        function confirmDelivery(p) {
+            const status = pointStatus(p);
+            if (status === 'delivered') return; // вже доставлено
+
+            document.getElementById('delivery-modal-title').textContent = p.client_name;
+            document.getElementById('delivery-modal-info').innerHTML = `
+                <div style="margin:8px 0; font-size:14px;">
+                    ${p.comment ? `📝 ${escapeHtml(p.comment)}<br>` : ''}
+                    ${p.order_total ? `💰 Сума: <b>${p.order_total} грн</b><br>` : ''}
+                    💳 Оплата: <b>${p.payment_status === 'paid' ? 'Оплачено ✅' : 'Не оплачено ⚠️'}</b>
+                </div>
+            `;
+            document.getElementById('delivery-modal-btn').dataset.orderId = p.order_id;
+            document.getElementById('delivery-modal').style.display = 'flex';
+            tg.HapticFeedback.impactOccurred('medium');
+        }
+
+        async function submitDelivery() {
+            const btn = document.getElementById('delivery-modal-btn');
+            const orderId = Number(btn.dataset.orderId);
+            btn.disabled = true;
+            btn.textContent = '...';
+            try {
+                const pos = await getPosition();
+                await apiPost('/api/update-delivery-status', {
+                    manager_id: Number(managerId),
+                    order_id: orderId,
+                    status: 'delivered',
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude
+                });
+                const p = points.find(pt => Number(pt.order_id) === orderId);
+                if (p) p.delivery_status = 'delivered';
+                tg.HapticFeedback.notificationOccurred('success');
+                showToast('Доставлено ✅');
+                closeDeliveryModal();
+                renderDriver();
+            } catch (e) {
+                showToast(e.message || 'Помилка', 'error');
+                btn.disabled = false;
+                btn.textContent = '✅ Підтвердити доставку';
+            }
+        }
+
+        function closeDeliveryModal() {
+            document.getElementById('delivery-modal').style.display = 'none';
+        }
+
         bootstrap();
     </script>
     <!-- Bottom sheet: форма "Не оплачено" (свайп вліво) -->
@@ -1311,6 +1459,28 @@
                        color:white; border:none; border-radius:12px;
                        font-size:15px; font-weight:700; cursor:pointer;">
                 Не оплачено
+            </button>
+        </div>
+    </div>
+    <!-- Модалка підтвердження доставки (довгий тап) -->
+    <div id="delivery-modal" style="display:none; position:fixed; inset:0;
+     background:rgba(0,0,0,0.5); z-index:1000; align-items:flex-end;"
+         onclick="if(event.target===this) closeDeliveryModal()">
+        <div style="background:var(--tg-theme-bg-color); border-radius:20px 20px 0 0;
+                padding:20px; width:100%; max-width:480px; margin:0 auto;
+                animation: slideUp 0.25s ease;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <b id="delivery-modal-title" style="font-size:16px"></b>
+                <button onclick="closeDeliveryModal()"
+                        style="background:none;border:none;font-size:20px;cursor:pointer;
+                           color:var(--tg-theme-hint-color)">✕</button>
+            </div>
+            <div id="delivery-modal-info"></div>
+            <button id="delivery-modal-btn" onclick="submitDelivery()"
+                    style="width:100%; padding:13px; background:#31b545;
+                       color:white; border:none; border-radius:12px;
+                       font-size:15px; font-weight:700; cursor:pointer; margin-top:8px;">
+                ✅ Підтвердити доставку
             </button>
         </div>
     </div>
