@@ -401,8 +401,15 @@
             cursor: grabbing;
         }
 
+        .point-card.reorder-active * {
+            pointer-events: none; /* блокуємо всі кліки всередині */
+        }
+        .point-card.reorder-active .drag-handle {
+            pointer-events: auto; /* крім самого handle */
+        }
         .point-card.reorder-active {
-            cursor: default;
+            pointer-events: auto; /* сама картка має реагувати на drag */
+            cursor: grab;
         }
 
         .point-card.drag-over {
@@ -529,10 +536,55 @@
 
         let reorderMode = false;
 
-        function toggleReorderMode(enabled) {
+        async function toggleReorderMode(enabled) {
             reorderMode = enabled;
             tg.HapticFeedback.impactOccurred('light');
-            renderDriverList(); // перемальовує список з/без drag handle
+
+            if (!enabled) {
+                // Галочка знята — зберігаємо і перераховуємо
+                renderDriverList(); // відразу показуємо skeleton в бейджах
+                await recalculateAfterReorder();
+            } else {
+                renderDriverList();
+            }
+        }
+
+        async function recalculateAfterReorder() {
+            // 1. Показуємо skeleton в бейджах часу
+            document.querySelectorAll('.time-badge').forEach(b => {
+                b.textContent = '...';
+                b.style.background = 'var(--tg-theme-hint-color)';
+            });
+
+            try {
+                // 2. Зберігаємо новий порядок
+                await saveNewOrder();
+
+                // 3. Запитуємо перерахунок через ORS
+                const res = await apiGet(
+                    `/api/route-optimized?manager_id=${managerId}&date=${currentDate}&force=1`
+                );
+                // force=1 — сигнал серверу ігнорувати кеш і перерахувати
+
+                if (res.resp.ok && res.data.route) {
+                    // 4. Оновлюємо duration_min в локальному масиві points
+                    const routeMap = {};
+                    res.data.route.forEach(r => { routeMap[r.order_id] = r; });
+                    points.forEach(p => {
+                        if (routeMap[p.order_id]) {
+                            p.duration_min = routeMap[p.order_id].duration_min;
+                            // visit_order НЕ змінюємо — зберігаємо порядок водія
+                        }
+                    });
+                }
+            } catch (e) {
+                console.warn('recalculate failed:', e);
+                // Тихо ігноруємо — бейджі просто не оновляться
+            }
+
+            // 5. Перемальовуємо список і маркери з новими даними
+            renderDriverList();
+            markersLayer = renderMarkers(map, markersLayer, points);
         }
 
         let adminMap = null;
@@ -822,11 +874,6 @@
                     badge = `<div class="time-badge">~${p.duration_min} хв</div>`;
                 }
 
-                // Іконка фото
-                const photoIcon = hasPhotos
-                    ? `<span class="photo-icon" onclick="event.stopPropagation(); openPhotos(${p.order_id})">📷</span>`
-                    : '';
-
                 // Drag handle — тільки в режимі перетягування
                 const dragHandle = reorderMode
                     ? `<div class="drag-handle" title="Перетягнути">⠿</div>`
@@ -835,21 +882,37 @@
                 // draggable тільки в режимі перетягування
                 const draggableAttr = reorderMode ? 'draggable="true"' : '';
 
+                // Динамічний свайп вправо
+                const rightActionText = (p.lat_to && p.lng_to) ? '🧭 Waze' : '📍 + База';
+                const rightActionColor = (p.lat_to && p.lng_to) ? '#31b545' : '#FF9800';
+
+                // Onclick тільки якщо НЕ в режимі перетягування
+                const numOnclick = reorderMode
+                    ? ''
+                    : `onclick="event.stopPropagation(); focusOnMap(${p.order_id})"`;
+
+                const photoOnclick = reorderMode
+                    ? ''
+                    : `onclick="event.stopPropagation(); openPhotos(${p.order_id})"`;
+
+                const photoIcon = hasPhotos
+                    ? `<span class="photo-icon" ${photoOnclick}>📷</span>`
+                    : '';
+
                 return `
                     <div class="point-card ${status} ${reorderMode ? 'reorder-active' : ''}"
                          ${draggableAttr}
                          data-order-id="${p.order_id}"
                          data-lat="${p.lat_to || ''}"
                          data-lng="${p.lng_to || ''}">
-                        <!-- Права підкладка (Waze) -->
-                        <div class="swipe-right-action">🧭 Waze</div>
+                        <!-- Права підкладка (Waze або База) -->
+                        <div class="swipe-right-action" style="background:${rightActionColor};">${rightActionText}</div>
                         <!-- Ліва підкладка (Борг) -->
                         <div class="swipe-left-action">🔴 Борг</div>
                         <!-- Вміст картки -->
                         <div class="point-head">
                             ${dragHandle}
-                            <div class="point-num"
-                                 onclick="event.stopPropagation(); focusOnMap(${p.order_id})">${p.visit_order || i + 1}</div>
+                            <div class="point-num" ${numOnclick}>${p.visit_order || i + 1}</div>
                             <div style="flex:1; min-width:0;">
                                 <div class="point-name">${escapeHtml(p.client_name)}${noCoords} ${photoIcon}</div>
                                 <div class="point-meta">${statusText(status)}</div>
@@ -1016,10 +1079,16 @@
 
                     if (!isDragging) return;
 
-                    if (currentX >= THRESHOLD_RIGHT && lat && lng) {
-                        // Свайп вправо — Waze
-                        tg.HapticFeedback.impactOccurred('medium');
-                        window.open(`https://waze.com/ul?ll=${lat},${lng}&navigate=yes`, '_blank');
+                    if (currentX >= THRESHOLD_RIGHT) {
+                        const p = points.find(pt => Number(pt.order_id) === orderId);
+                        if (p && p.lat_to && p.lng_to) {
+                            // Є координати → Waze
+                            tg.HapticFeedback.impactOccurred('medium');
+                            window.open(`https://waze.com/ul?ll=${p.lat_to},${p.lng_to}&navigate=yes`, '_blank');
+                        } else if (p) {
+                            // Немає координат → форма Бази
+                            openBaseModal(p);
+                        }
                     } else if (currentX <= -THRESHOLD_LEFT) {
                         // Свайп вліво — форма "Не оплачено"
                         const p = points.find(pt => Number(pt.order_id) === orderId);
@@ -1409,8 +1478,9 @@
             // Зберігаємо на сервері (тихо, без блокування UI)
             saveNewOrder().catch(() => {});
 
-            // Перемальовуємо список
+            // Перемальовуємо список і маркери
             renderDriverList();
+            markersLayer = renderMarkers(map, markersLayer, points);
         }
 
         async function saveNewOrder() {
@@ -1480,6 +1550,190 @@
             document.getElementById('delivery-modal').style.display = 'none';
         }
 
+        // ─── СТАН BASE MODAL ───
+        let baseModalPoint = null;      // поточна точка
+        let baseModalCoords = '';       // "lat, lng"
+        let baseModalPhotoFiles = [];   // File[]
+
+        function openBaseModal(p) {
+            baseModalPoint = p;
+            baseModalCoords = '';
+            baseModalPhotoFiles = [];
+
+            // Заповнюємо поля
+            document.getElementById('base-modal-client-name').textContent = p.client_name;
+            document.getElementById('base-modal-fixed').value = p.client_name;
+            document.getElementById('base-modal-coords-btn').textContent = '📍 Додати координати';
+            document.getElementById('base-modal-coords-btn').style.color = '';
+            document.getElementById('base-modal-coords-btn').disabled = false;
+            document.getElementById('base-modal-coords-result').textContent = '';
+            document.getElementById('base-modal-photo-grid').innerHTML = '';
+            document.getElementById('base-modal-send-btn').disabled = true;
+            document.getElementById('base-modal-send-btn').style.opacity = '0.5';
+
+            document.getElementById('base-modal').style.display = 'flex';
+            tg.HapticFeedback.impactOccurred('light');
+        }
+
+        function closeBaseModal() {
+            document.getElementById('base-modal').style.display = 'none';
+            baseModalPoint = null;
+            baseModalCoords = '';
+            baseModalPhotoFiles = [];
+        }
+
+        function baseModalCheckCanSend() {
+            const ready = baseModalCoords !== '';
+            const btn = document.getElementById('base-modal-send-btn');
+            btn.disabled = !ready;
+            btn.style.opacity = ready ? '1' : '0.5';
+        }
+
+        function baseModalGetCoords() {
+            const btn = document.getElementById('base-modal-coords-btn');
+            btn.textContent = '⏳ Визначаємо...';
+            btn.disabled = true;
+
+            if (!navigator.geolocation) {
+                showToast('Геолокація не підтримується', 'error');
+                btn.textContent = '📍 Додати координати';
+                btn.disabled = false;
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                pos => {
+                    const lat = pos.coords.latitude.toFixed(6);
+                    const lng = pos.coords.longitude.toFixed(6);
+                    baseModalCoords = `${lat}, ${lng}`;
+
+                    btn.textContent = '✅ Координати додано';
+                    btn.style.color = '#31b545';
+                    btn.disabled = false;
+
+                    document.getElementById('base-modal-coords-result').textContent =
+                        `📌 ${baseModalCoords}`;
+
+                    // Оновлюємо точку локально одразу — маркер з'явиться після збереження
+                    baseModalCheckCanSend();
+                },
+                () => {
+                    showToast('Не вдалось отримати геолокацію', 'error');
+                    btn.textContent = '📍 Спробувати ще раз';
+                    btn.disabled = false;
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+
+        // Стискання фото — та сама логіка що в base.html
+        function baseModalCompressPhoto(file) {
+            return new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const MAX = 1280;
+                        let w = img.width, h = img.height;
+                        if (w > MAX || h > MAX) {
+                            if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+                            else { w = Math.round(w * MAX / h); h = MAX; }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        const compressed = canvas.toDataURL('image/jpeg', 0.82);
+                        resolve({
+                            name: file.name.replace(/\.[^.]+$/, '.jpg'),
+                            data: compressed.split(',')[1],
+                            type: 'image/jpeg'
+                        });
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function baseModalHandlePhotos(input) {
+            const files = Array.from(input.files);
+            const grid = document.getElementById('base-modal-photo-grid');
+
+            files.forEach(file => {
+                baseModalPhotoFiles.push(file);
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.cssText = `
+                        width:72px; height:72px; object-fit:cover;
+                        border-radius:8px; cursor:pointer;
+                    `;
+                    img.onclick = () => {
+                        // Клік на превью → видалити фото
+                        baseModalPhotoFiles = baseModalPhotoFiles.filter(f => f !== file);
+                        img.remove();
+                    };
+                    grid.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+            input.value = '';
+        }
+
+        async function baseModalSend() {
+            if (!baseModalCoords || !baseModalPoint) return;
+
+            const btn = document.getElementById('base-modal-send-btn');
+            btn.textContent = '⏳ Зберігаємо...';
+            btn.disabled = true;
+
+            try {
+                const clientFixed = document.getElementById('base-modal-fixed').value.trim()
+                    || baseModalPoint.client_name;
+
+                // Стискаємо фото
+                const photosBase64 = await Promise.all(
+                    baseModalPhotoFiles.map(baseModalCompressPhoto)
+                );
+
+                const payload = JSON.stringify({
+                    manager_id: managerId,
+                    type: 'delivery',
+                    client_id: baseModalPoint.order_id,   // order_id як client_id
+                    client_db_name: baseModalPoint.client_name,
+                    client_fixed: clientFixed,
+                    coords: baseModalCoords,
+                    photos: photosBase64
+                });
+
+                const resp = await fetch(`${apiUrl}/api/delivery`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: payload
+                });
+
+                if (!resp.ok) throw new Error('Помилка сервера');
+
+                // Оновлюємо точку локально
+                const parts = baseModalCoords.replace(' ', '').split(',');
+                baseModalPoint.lat_to = parseFloat(parts[0]);
+                baseModalPoint.lng_to = parseFloat(parts[1]);
+
+                tg.HapticFeedback.notificationOccurred('success');
+                showToast('Збережено в Базу ✅');
+                closeBaseModal();
+
+                // Оновлюємо маркери на карті — тепер точка має координати
+                markersLayer = renderMarkers(map, markersLayer, points);
+                renderDriverList(); // оновлюємо іконку підкладки (тепер Waze замість + База)
+
+            } catch (e) {
+                showToast(e.message || 'Помилка', 'error');
+                btn.textContent = 'Зберегти в Базу';
+                btn.disabled = false;
+            }
+        }
         bootstrap();
     </script>
     <!-- Bottom sheet: форма "Не оплачено" (свайп вліво) -->
@@ -1552,6 +1806,101 @@
                        color:white; border:none; border-radius:12px;
                        font-size:15px; font-weight:700; cursor:pointer; margin-top:8px;">
                 ✅ Підтвердити доставку
+            </button>
+        </div>
+    </div>
+    <!-- Bottom sheet: додавання в Базу (свайп вправо без координат) -->
+    <div id="base-modal" style="display:none; position:fixed; inset:0;
+         background:rgba(0,0,0,0.5); z-index:1000; align-items:flex-end;"
+         onclick="if(event.target===this) closeBaseModal()">
+        <div style="background:var(--tg-theme-bg-color); border-radius:20px 20px 0 0;
+                    padding:20px; width:100%; max-width:480px; margin:0 auto;
+                    max-height:85vh; overflow-y:auto; animation: slideUp 0.25s ease;">
+
+            <!-- Заголовок -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <b style="font-size:16px;">📍 Додати в Базу</b>
+                <button onclick="closeBaseModal()"
+                        style="background:none;border:none;font-size:22px;cursor:pointer;
+                               color:var(--tg-theme-hint-color);">✕</button>
+            </div>
+
+            <!-- Ім'я клієнта (нередаговане) -->
+            <div style="font-size:12px; color:var(--tg-theme-hint-color);
+                        font-weight:600; text-transform:uppercase; margin-bottom:6px;">
+                🏪 Клієнт
+            </div>
+            <div id="base-modal-client-name"
+                 style="padding:12px; border-radius:10px; font-size:15px; font-weight:600;
+                        background:var(--tg-theme-secondary-bg-color); margin-bottom:16px;"></div>
+
+            <!-- Скоректована назва / адреса -->
+            <div style="font-size:12px; color:var(--tg-theme-hint-color);
+                        font-weight:600; text-transform:uppercase; margin-bottom:6px;">
+                ✏️ Скоректована назва / адреса
+            </div>
+            <textarea id="base-modal-fixed" rows="2"
+                      style="width:100%; padding:12px; border-radius:10px;
+                             border:1px solid var(--tg-theme-hint-color);
+                             background:var(--tg-theme-secondary-bg-color);
+                             color:var(--tg-theme-text-color); font-size:15px;
+                             font-family:inherit; resize:none; margin-bottom:16px;
+                             box-sizing:border-box;"></textarea>
+
+            <!-- Координати -->
+            <div style="font-size:12px; color:var(--tg-theme-hint-color);
+                        font-weight:600; text-transform:uppercase; margin-bottom:8px;">
+                📌 Координати
+            </div>
+            <button id="base-modal-coords-btn" onclick="baseModalGetCoords()"
+                    style="width:100%; padding:12px; border-radius:10px;
+                           border:none; background:var(--tg-theme-secondary-bg-color);
+                           color:var(--tg-theme-text-color); font-size:15px;
+                           cursor:pointer; margin-bottom:6px; text-align:left;">
+                📍 Додати координати
+            </button>
+            <div id="base-modal-coords-result"
+                 style="font-size:13px; color:#31b545; margin-bottom:16px; min-height:16px;"></div>
+
+            <!-- Фото — два варіанти -->
+            <div style="font-size:12px; color:var(--tg-theme-hint-color);
+                        font-weight:600; text-transform:uppercase; margin-bottom:8px;">
+                📸 Фото (необов'язково)
+            </div>
+            <div style="display:flex; gap:10px; margin-bottom:12px;">
+                <button onclick="document.getElementById('base-modal-camera').click()"
+                        style="flex:1; padding:11px; border-radius:10px; border:none;
+                               background:var(--tg-theme-secondary-bg-color);
+                               color:var(--tg-theme-text-color); font-size:14px; cursor:pointer;">
+                    📷 Камера
+                </button>
+                <button onclick="document.getElementById('base-modal-gallery').click()"
+                        style="flex:1; padding:11px; border-radius:10px; border:none;
+                               background:var(--tg-theme-secondary-bg-color);
+                               color:var(--tg-theme-text-color); font-size:14px; cursor:pointer;">
+                    🖼 Галерея
+                </button>
+            </div>
+            <!-- Камера (capture відкриває камеру напряму) -->
+            <input type="file" id="base-modal-camera"
+                   accept="image/*" capture="environment"
+                   onchange="baseModalHandlePhotos(this)" style="display:none;">
+            <!-- Галерея (multiple — можна вибрати кілька) -->
+            <input type="file" id="base-modal-gallery"
+                   accept="image/*" multiple
+                   onchange="baseModalHandlePhotos(this)" style="display:none;">
+
+            <!-- Превью фото -->
+            <div id="base-modal-photo-grid"
+                 style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;"></div>
+
+            <!-- Кнопка відправки -->
+            <button id="base-modal-send-btn" onclick="baseModalSend()" disabled
+                    style="width:100%; padding:14px; background:#31b545;
+                           color:white; border:none; border-radius:12px;
+                           font-size:15px; font-weight:700; cursor:pointer;
+                           opacity:0.5;">
+                Зберегти в Базу
             </button>
         </div>
     </div>
