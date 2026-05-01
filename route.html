@@ -593,15 +593,6 @@
 
         document.getElementById('route-date').value = isoDate;
 
-        function escapeHtml(text) {
-            if (!text) return "";
-            return text.toString()
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
 
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
@@ -1063,7 +1054,7 @@
                     contentEl.style.transform = `translateX(${currentX}px)`;
 
                     // Показуємо підкладку відповідного напряму
-                    if (currentX > 0 && lat && lng) {
+                    if (currentX > 0) {
                         // Вправо → Waze
                         const pct = Math.min(currentX / MAX_DRAG, 1);
                         swipeRightEl.style.opacity = pct;
@@ -1881,26 +1872,14 @@
                         font-weight:600; text-transform:uppercase; margin-bottom:8px;">
                 📸 Фото (необов'язково)
             </div>
-            <div style="display:flex; gap:10px; margin-bottom:12px;">
-                <button onclick="document.getElementById('base-modal-camera').click()"
-                        style="flex:1; padding:11px; border-radius:10px; border:none;
-                               background:var(--tg-theme-secondary-bg-color);
-                               color:var(--tg-theme-text-color); font-size:14px; cursor:pointer;">
-                    📷 Камера
-                </button>
-                <button onclick="document.getElementById('base-modal-gallery').click()"
-                        style="flex:1; padding:11px; border-radius:10px; border:none;
-                               background:var(--tg-theme-secondary-bg-color);
-                               color:var(--tg-theme-text-color); font-size:14px; cursor:pointer;">
-                    🖼 Галерея
-                </button>
-            </div>
-            <!-- Камера (capture відкриває камеру напряму) -->
-            <input type="file" id="base-modal-camera"
-                   accept="image/*" capture="camera"
-                   onchange="baseModalHandlePhotos(this)" style="display:none;">
-            <!-- Галерея (multiple — можна вибрати кілька) -->
-            <input type="file" id="base-modal-gallery"
+            <button onclick="document.getElementById('base-modal-photo').click()"
+                    style="width:100%; padding:12px; border-radius:10px; border:none;
+                           background:var(--tg-theme-secondary-bg-color);
+                           color:var(--tg-theme-text-color); font-size:15px;
+                           cursor:pointer; margin-bottom:12px; text-align:left;">
+                📷 Додати фото
+            </button>
+            <input type="file" id="base-modal-photo"
                    accept="image/*" multiple
                    onchange="baseModalHandlePhotos(this)" style="display:none;">
 
