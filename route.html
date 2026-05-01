@@ -385,6 +385,16 @@
                 box-shadow: 0 0 0 0 rgba(33, 150, 243, 0);
             }
         }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
     </style>
 </head>
 
@@ -920,9 +930,9 @@
                         tg.HapticFeedback.impactOccurred('medium');
                         window.open(`https://waze.com/ul?ll=${lat},${lng}&navigate=yes`, '_blank');
                     } else if (currentX <= -THRESHOLD_LEFT) {
-                        // Свайп вліво — підтвердження оплати/доставки
+                        // Свайп вліво — форма "Не оплачено"
                         const p = points.find(pt => Number(pt.order_id) === orderId);
-                        if (p) confirmDeliveryOrPayment(p);
+                        if (p) openUnpaidModal(p);
                     }
 
                     currentX = 0;
@@ -1179,8 +1189,131 @@
             }[ch]));
         }
 
+        async function openUnpaidModal(p) {
+            // Наповнюємо даними
+            document.getElementById('unpaid-modal-title').textContent = p.client_name;
+            document.getElementById('unpaid-modal-comment').textContent = p.comment || '';
+            document.getElementById('unpaid-modal-total').textContent = `${p.order_total || 0} грн`;
+            document.getElementById('unpaid-modal-amount').value = p.order_total || '';
+            document.getElementById('unpaid-modal-btn').dataset.orderId = p.order_id;
+            document.getElementById('unpaid-modal-btn').disabled = false;
+            document.getElementById('unpaid-modal-btn').textContent = 'Не оплачено';
+
+            // Перевіряємо депозит — як в payments.html selectTodayClient()
+            const depositEl = document.getElementById('unpaid-modal-deposit');
+            depositEl.style.display = 'none';
+            try {
+                const resp = await fetch(
+                    `${apiUrl}/api/client-balance?manager_id=${managerId}&client=${encodeURIComponent(p.client_name)}`
+                );
+                const data = await resp.json();
+                if (data.balance > 0) {
+                    depositEl.textContent = `⚠️ У клієнта є депозит ${data.balance} грн`;
+                    depositEl.style.display = 'block';
+                }
+            } catch (e) { /* ігноруємо */ }
+
+            // Показуємо модалку
+            document.getElementById('unpaid-modal').style.display = 'flex';
+            tg.HapticFeedback.impactOccurred('light');
+        }
+
+        async function submitUnpaid() {
+            const btn = document.getElementById('unpaid-modal-btn');
+            const orderId = Number(btn.dataset.orderId);
+            const paid = parseFloat(document.getElementById('unpaid-modal-amount').value) || 0;
+
+            btn.disabled = true;
+            btn.textContent = '...';
+
+            try {
+                const resp = await fetch(`${apiUrl}/api/mark-unpaid`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        manager_id: Number(managerId),
+                        order_id: orderId,
+                        paid_amount: paid
+                    })
+                });
+                const res = await resp.json();
+
+                if (res.status === 'ok') {
+                    tg.HapticFeedback.notificationOccurred('success');
+                    showToast('Відмічено як неоплачено ⚠️');
+                    closeUnpaidModal();
+                    // Оновлюємо статус локально щоб не перезавантажувати весь список
+                    const p = points.find(pt => Number(pt.order_id) === orderId);
+                    if (p) p.payment_status = 'unpaid';
+                } else {
+                    showToast(res.error || res.message || 'Помилка', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Не оплачено';
+                }
+            } catch (e) {
+                showToast('Помилка мережі', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Не оплачено';
+            }
+        }
+
+        function closeUnpaidModal() {
+            document.getElementById('unpaid-modal').style.display = 'none';
+        }
+
         bootstrap();
     </script>
+    <!-- Bottom sheet: форма "Не оплачено" (свайп вліво) -->
+    <div id="unpaid-modal" style="display:none; position:fixed; inset:0;
+     background:rgba(0,0,0,0.5); z-index:1000; align-items:flex-end;"
+        onclick="if(event.target===this) closeUnpaidModal()">
+        <div style="background:var(--tg-theme-bg-color); border-radius:20px 20px 0 0;
+                padding:20px; width:100%; max-width:480px; margin:0 auto;
+                animation: slideUp 0.25s ease;">
+
+            <!-- Заголовок -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <b style="font-size:16px;" id="unpaid-modal-title"></b>
+                <button onclick="closeUnpaidModal()" style="background:none;border:none;font-size:22px;cursor:pointer;
+                           color:var(--tg-theme-hint-color); line-height:1;">✕</button>
+            </div>
+
+            <!-- Коментар -->
+            <div id="unpaid-modal-comment"
+                style="font-size:13px; color:var(--tg-theme-hint-color); margin-bottom:12px;"></div>
+
+            <!-- Депозит (показується якщо є) -->
+            <div id="unpaid-modal-deposit" style="display:none; margin-bottom:10px;
+             padding:8px 12px; background:rgba(49,181,69,0.1);
+             border-radius:10px; font-size:13px; color:#31b545; font-weight:600;"></div>
+
+            <!-- Разом -->
+            <div style="display:flex; justify-content:space-between;
+                    border-top:1px dashed var(--tg-theme-hint-color);
+                    padding-top:10px; margin-bottom:12px;">
+                <span style="font-size:14px;">Разом:</span>
+                <span style="font-size:14px; font-weight:700;" id="unpaid-modal-total"></span>
+            </div>
+
+            <!-- Сума оплати -->
+            <label style="font-size:12px; color:var(--tg-theme-hint-color);
+                      font-weight:600; text-transform:uppercase;">
+                Сума оплати (грн):
+            </label>
+            <input id="unpaid-modal-amount" type="number" step="0.01" style="width:100%; padding:10px; margin:6px 0 16px;
+                      border:1px solid var(--tg-theme-hint-color);
+                      border-radius:10px; font-size:16px;
+                      background:var(--tg-theme-secondary-bg-color);
+                      color:var(--tg-theme-text-color); box-sizing:border-box;" />
+
+            <!-- Кнопка -->
+            <button id="unpaid-modal-btn" onclick="submitUnpaid()" style="width:100%; padding:14px; background:#e53935;
+                       color:white; border:none; border-radius:12px;
+                       font-size:15px; font-weight:700; cursor:pointer;">
+                Не оплачено
+            </button>
+        </div>
+    </div>
 </body>
 
 </html>
