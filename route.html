@@ -430,6 +430,16 @@
                 transform: translateY(0);
             }
         }
+
+        /* Стартова точка — зелена рамка зліва */
+        .point-card.lock-first .point-head {
+            border-left: 3px solid #31b545;
+        }
+
+        /* Фінальна точка — червона рамка зліва */
+        .point-card.lock-last .point-head {
+            border-left: 3px solid #e53935;
+        }
     </style>
 </head>
 
@@ -467,6 +477,12 @@
                        style="width:18px; height:18px; cursor:pointer; accent-color:#31b545;">
                 Змінити порядок
             </label>
+            <!-- Підказка -->
+            <div style="font-size:12px; color:var(--tg-theme-hint-color);
+                        padding:6px 14px 0; line-height:1.4;">
+                Перший і останній адрес 🔒 фіксуються.<br>
+                Решта перебудовується автоматично.
+            </div>
         </div>
 
         <div id="driver-list"></div>
@@ -535,6 +551,7 @@
         let watchId = null;
 
         let reorderMode = false;
+        let driverLocation = null; // {lat, lng} — поточна позиція водія
 
         async function toggleReorderMode(enabled) {
             reorderMode = enabled;
@@ -549,40 +566,69 @@
             }
         }
 
+        function requestDriverLocation() {
+            return new Promise((resolve) => {
+                if (!navigator.geolocation) {
+                    resolve(null);
+                    return;
+                }
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        driverLocation = {
+                            lat: pos.coords.latitude,
+                            lng: pos.coords.longitude
+                        };
+                        resolve(driverLocation);
+                    },
+                    () => resolve(null), // якщо відмовив — продовжуємо без геолокації
+                    { enableHighAccuracy: true, timeout: 8000 }
+                );
+            });
+        }
+
         async function recalculateAfterReorder() {
-            // 1. Показуємо skeleton в бейджах часу
+            // skeleton в бейджах
             document.querySelectorAll('.time-badge').forEach(b => {
                 b.textContent = '...';
                 b.style.background = 'var(--tg-theme-hint-color)';
             });
 
             try {
-                // 2. Зберігаємо новий порядок
                 await saveNewOrder();
 
-                // 3. Запитуємо перерахунок через ORS
-                const res = await apiGet(
-                    `/api/route-optimized?manager_id=${managerId}&date=${currentDate}&force=1`
-                );
-                // force=1 — сигнал серверу ігнорувати кеш і перерахувати
+                // Збираємо locked точки
+                const lockedFirst = points.find(p => p.lock === 'first');
+                const lockedLast  = points.find(p => p.lock === 'last');
 
+                let url = `/api/route-optimized?manager_id=${managerId}&date=${currentDate}&force=1`;
+                if (driverLocation) {
+                    url += `&driver_lat=${driverLocation.lat}&driver_lng=${driverLocation.lng}`;
+                }
+                if (lockedFirst) {
+                    url += `&locked_first=${lockedFirst.order_id}`;
+                }
+                if (lockedLast) {
+                    url += `&locked_last=${lockedLast.order_id}`;
+                }
+
+                const res = await apiGet(url);
                 if (res.resp.ok && res.data.route) {
-                    // 4. Оновлюємо duration_min в локальному масиві points
                     const routeMap = {};
                     res.data.route.forEach(r => { routeMap[r.order_id] = r; });
                     points.forEach(p => {
                         if (routeMap[p.order_id]) {
+                            // visit_order оновлюємо тільки для free точок
+                            if (!p.lock) p.visit_order = routeMap[p.order_id].visit_order;
                             p.duration_min = routeMap[p.order_id].duration_min;
-                            // visit_order НЕ змінюємо — зберігаємо порядок водія
                         }
                     });
+                    // Сортуємо з урахуванням locked
+                    sortPointsWithLocks();
                 }
             } catch (e) {
                 console.warn('recalculate failed:', e);
-                // Тихо ігноруємо — бейджі просто не оновляться
             }
 
-            // 5. Перемальовуємо список і маркери з новими даними
             renderDriverList();
             markersLayer = renderMarkers(map, markersLayer, points);
         }
@@ -789,10 +835,11 @@
                 document.getElementById('driver-title').textContent = `🚗 Мій маршрут на ${currentDate}`;
                 document.getElementById('driver-list').innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
 
-                // Паралельно завантажуємо точки і статус маршруту
+                // Паралельно: точки + статус маршруту + геолокація
                 const [res, statusRes] = await Promise.all([
                     apiGet(`/api/driver-points?manager_id=${managerId}&date=${currentDate}`),
-                    apiGet(`/api/driver-route-status?manager_id=${managerId}&date=${currentDate}`)
+                    apiGet(`/api/driver-route-status?manager_id=${managerId}&date=${currentDate}`),
+                    requestDriverLocation()  // не чекаємо окремо — вже в Promise.all
                 ]);
 
                 if (!res.resp.ok) throw new Error(res.data.error || 'Помилка завантаження');
@@ -801,7 +848,7 @@
                 routeStarted = statusRes.data.started || false;
                 routeKm = statusRes.data.total_km || 0;
 
-                await loadOptimized();
+                await loadOptimized(); // тепер має driverLocation
                 renderDriver();
             } catch (e) {
                 showToast(e.message, 'error');
@@ -811,11 +858,27 @@
 
         async function loadOptimized() {
             try {
-                const res = await apiGet(`/api/route-optimized?manager_id=${managerId}&date=${currentDate}`);
-                if (!res.resp.ok) return;
-                const byId = new Map((res.data.route || []).map(r => [String(r.order_id), r]));
-                points = points.map((p, i) => ({ ...p, ...(byId.get(String(p.order_id)) || {}), visit_order: p.visit_order || i + 1 }));
-            } catch (e) { }
+                let url = `/api/route-optimized?manager_id=${managerId}&date=${currentDate}`;
+                if (driverLocation) {
+                    url += `&driver_lat=${driverLocation.lat}&driver_lng=${driverLocation.lng}`;
+                }
+                const res = await apiGet(url);
+                if (res.resp.ok && res.data.route) {
+                    const routeMap = {};
+                    res.data.route.forEach(r => { routeMap[r.order_id] = r; });
+                    points.forEach(p => {
+                        if (routeMap[p.order_id]) {
+                            p.visit_order   = routeMap[p.order_id].visit_order;
+                            p.duration_min  = routeMap[p.order_id].duration_min;
+                            if (!p.lat_to && routeMap[p.order_id].lat) p.lat_to = routeMap[p.order_id].lat;
+                            if (!p.lng_to && routeMap[p.order_id].lng) p.lng_to = routeMap[p.order_id].lng;
+                        }
+                    });
+                    points.sort((a, b) => (a.visit_order || 999) - (b.visit_order || 999));
+                }
+            } catch (e) {
+                console.warn('loadOptimized failed:', e);
+            }
         }
 
         function renderDriver() {
@@ -900,8 +963,11 @@
                     ? `<span class="photo-icon" ${photoOnclick}>📷</span>`
                     : '';
 
+                const lockIcon = p.lock === 'first' ? ' 🔒' : p.lock === 'last' ? ' 🏁' : '';
+                const lockClass = p.lock ? `lock-${p.lock}` : '';
+
                 return `
-                    <div class="point-card ${status} ${reorderMode ? 'reorder-active' : ''}"
+                    <div class="point-card ${status} ${reorderMode ? 'reorder-active' : ''} ${lockClass}"
                          ${draggableAttr}
                          data-order-id="${p.order_id}"
                          data-lat="${p.lat_to || ''}"
@@ -915,7 +981,7 @@
                             ${dragHandle}
                             <div class="point-num" ${numOnclick}>${p.visit_order || i + 1}</div>
                             <div style="flex:1; min-width:0;">
-                                <div class="point-name">${escapeHtml(p.client_name)}${noCoords} ${photoIcon}</div>
+                                <div class="point-name">${escapeHtml(p.client_name)}${lockIcon}${noCoords} ${photoIcon}</div>
                                 <div class="point-meta">${statusText(status)}</div>
                                 ${p.comment ? `<div class="point-comment">${escapeHtml(p.comment)}</div>` : ''}
                                 ${p.order_total ? `<div class="point-price">💰 ${p.order_total} грн</div>` : ''}
@@ -1467,21 +1533,52 @@
             const toIdx   = points.findIndex(p => Number(p.order_id) === toOrderId);
             if (fromIdx === -1 || toIdx === -1) return;
 
-            // Переставляємо в масиві
             const [moved] = points.splice(fromIdx, 1);
             points.splice(toIdx, 0, moved);
+
+            // Визначаємо нову позицію після вставки
+            const newIdx = points.findIndex(p => Number(p.order_id) === fromOrderId);
+
+            // Скидаємо старі locks з усіх точок
+            points.forEach(p => { p.lock = null; });
+
+            // Виставляємо lock для переміщеної точки
+            if (newIdx === 0) {
+                moved.lock = 'first';
+            } else if (newIdx === points.length - 1) {
+                moved.lock = 'last';
+            }
+            // На будь-якій іншій позиції — lock = null (вже скинули вище)
 
             // Перенумеровуємо visit_order
             points.forEach((p, i) => { p.visit_order = i + 1; });
 
             tg.HapticFeedback.impactOccurred('light');
-
-            // Зберігаємо на сервері (тихо, без блокування UI)
             saveNewOrder().catch(() => {});
-
-            // Перемальовуємо список і маркери
             renderDriverList();
             markersLayer = renderMarkers(map, markersLayer, points);
+        }
+
+        function sortPointsWithLocks() {
+            const lockedFirst = points.find(p => p.lock === 'first');
+            const lockedLast  = points.find(p => p.lock === 'last');
+            const free = points.filter(p => !p.lock);
+
+            // Сортуємо free за visit_order що прийшов від ORS
+            free.sort((a, b) => (a.visit_order || 999) - (b.visit_order || 999));
+
+            // Збираємо фінальний порядок
+            const sorted = [];
+            if (lockedFirst) sorted.push(lockedFirst);
+            sorted.push(...free);
+            if (lockedLast) sorted.push(lockedLast);
+
+            // Перенумеровуємо
+            sorted.forEach((p, i) => { p.visit_order = i + 1; });
+
+            // Замінюємо масив points
+            points.length = 0;
+            sorted.forEach(p => points.push(p));
         }
 
         async function saveNewOrder() {
