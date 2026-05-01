@@ -38,13 +38,8 @@
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
-            }
+            from { opacity: 0; }
+            to   { opacity: 1; }
         }
 
         .card {
@@ -120,17 +115,9 @@
             transition: transform 0.1s, opacity 0.15s;
         }
 
-        .point-card.delivered .point-head {
-            border-left-color: #31b545;
-        }
-
-        .point-card.not_found .point-head {
-            border-left-color: #f5a623;
-        }
-
-        .point-card.rescheduled .point-head {
-            border-left-color: #9e9e9e;
-        }
+        .point-card.delivered .point-head  { border-left-color: #31b545; }
+        .point-card.not_found .point-head  { border-left-color: #f5a623; }
+        .point-card.rescheduled .point-head { border-left-color: #9e9e9e; }
 
         .point-num {
             min-width: 26px;
@@ -167,27 +154,10 @@
             margin-top: 10px;
         }
 
-        .btn-green {
-            background: #31b545;
-            color: white;
-            border-radius: 20px;
-        }
-
-        .btn-red {
-            background: #e53935;
-            color: white;
-        }
-
-        .btn-yellow {
-            background: #f5a623;
-            color: white;
-        }
-
-        .btn-gray {
-            background: #757575;
-            color: white;
-        }
-
+        .btn-green  { background: #31b545; color: white; border-radius: 20px; }
+        .btn-red    { background: #e53935; color: white; }
+        .btn-yellow { background: #f5a623; color: white; }
+        .btn-gray   { background: #757575; color: white; }
         .btn-outline {
             background: transparent;
             border: 1.5px solid #31b545;
@@ -216,8 +186,7 @@
             margin-bottom: 15px;
         }
 
-        input[type=date],
-        select {
+        input[type=date], select {
             width: 100%;
             padding: 12px;
             border-radius: 10px;
@@ -265,9 +234,9 @@
 
         .skeleton {
             background: linear-gradient(90deg,
-                    var(--tg-theme-secondary-bg-color) 25%,
-                    rgba(255, 255, 255, 0.1) 50%,
-                    var(--tg-theme-secondary-bg-color) 75%);
+                var(--tg-theme-secondary-bg-color) 25%,
+                rgba(255, 255, 255, 0.1) 50%,
+                var(--tg-theme-secondary-bg-color) 75%);
             background-size: 200% 100%;
             animation: shimmer 1.2s infinite;
             border-radius: 10px;
@@ -276,13 +245,8 @@
         }
 
         @keyframes shimmer {
-            0% {
-                background-position: 200% 0;
-            }
-
-            100% {
-                background-position: -200% 0;
-            }
+            0%   { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
 
         .empty-state {
@@ -292,7 +256,6 @@
             font-size: 15px;
         }
 
-        /* Бейдж часу */
         .time-badge {
             background: #31b545;
             color: white;
@@ -305,7 +268,6 @@
             margin-left: 8px;
         }
 
-        /* Іконка фото */
         .photo-icon {
             font-size: 14px;
             cursor: pointer;
@@ -314,13 +276,9 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Права підкладка (Waze — зелена) */
         .swipe-right-action {
             position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            right: 0;
+            left: 0; top: 0; bottom: 0; right: 0;
             background: #31b545;
             color: white;
             font-weight: 700;
@@ -334,14 +292,10 @@
             transition: opacity 0.1s;
         }
 
-        /* Ліва підкладка (Оплата — синя) */
         .swipe-left-action {
             position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            right: 0;
-            background: #e53935; /* червоний */
+            left: 0; top: 0; bottom: 0; right: 0;
+            background: #e53935;
             color: white;
             font-weight: 700;
             font-size: 15px;
@@ -373,17 +327,9 @@
         }
 
         @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.5);
-            }
-
-            70% {
-                box-shadow: 0 0 0 10px rgba(33, 150, 243, 0);
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(33, 150, 243, 0);
-            }
+            0%   { box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.5); }
+            70%  { box-shadow: 0 0 0 10px rgba(33, 150, 243, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(33, 150, 243, 0); }
         }
 
         .drag-handle {
@@ -397,53 +343,72 @@
             -webkit-user-select: none;
         }
 
-        .drag-handle:active {
-            cursor: grabbing;
-        }
+        .drag-handle:active { cursor: grabbing; }
 
-        .point-card.reorder-active * {
-            pointer-events: none; /* блокуємо всі кліки всередині */
-        }
-        .point-card.reorder-active .drag-handle {
-            pointer-events: auto; /* крім самого handle */
-        }
-        .point-card.reorder-active {
-            pointer-events: auto; /* сама картка має реагувати на drag */
-            cursor: grab;
-        }
+        .point-card.reorder-active * { pointer-events: none; }
+        .point-card.reorder-active .drag-handle { pointer-events: auto; }
+        .point-card.reorder-active { pointer-events: auto; cursor: grab; }
 
         .point-card.drag-over {
             border: 2px dashed #31b545;
             background: rgba(49, 181, 69, 0.05);
         }
 
-        .point-card.dragging {
-            opacity: 0.4;
-        }
+        .point-card.dragging { opacity: 0.4; }
 
         @keyframes slideUp {
-            from {
-                transform: translateY(100%);
-            }
-
-            to {
-                transform: translateY(0);
-            }
+            from { transform: translateY(100%); }
+            to   { transform: translateY(0); }
         }
 
-        /* Стартова точка — зелена рамка зліва */
-        .point-card.lock-first .point-head {
-            border-left: 3px solid #31b545;
+        .point-card.lock-first .point-head { border-left: 3px solid #31b545; }
+        .point-card.lock-last  .point-head { border-left: 3px solid #e53935; }
+
+        /* Tab bar */
+        .tab-bar {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 15px;
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 12px;
+            padding: 4px;
         }
 
-        /* Фінальна точка — червона рамка зліва */
-        .point-card.lock-last .point-head {
-            border-left: 3px solid #e53935;
+        .tab-btn {
+            flex: 1;
+            padding: 8px 4px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--tg-theme-hint-color);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
         }
+
+        .tab-btn.active {
+            background: #31b545;
+            color: white;
+        }
+
+        /* Final screen */
+        .final-stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-size: 14px;
+        }
+
+        .final-stat-row:last-child { border-bottom: none; }
     </style>
 </head>
 
 <body>
+    <!-- Tab bar (shown only when 2+ tabs available) -->
+    <div id="tab-bar" class="tab-bar" style="display:none;"></div>
+
     <div id="screen-loading" class="screen active">
         <div class="skeleton"></div>
         <div class="skeleton"></div>
@@ -467,7 +432,6 @@
         </div>
         <div id="map"></div>
 
-        <!-- Перемикач режиму перетягування — показується тільки до старту -->
         <div id="reorder-toggle-block" style="display:none; margin-bottom:10px;">
             <label style="display:flex; align-items:center; gap:10px; cursor:pointer;
                           padding:10px 14px; background:var(--tg-theme-secondary-bg-color);
@@ -477,7 +441,6 @@
                        style="width:18px; height:18px; cursor:pointer; accent-color:#31b545;">
                 Змінити порядок
             </label>
-            <!-- Підказка -->
             <div style="font-size:12px; color:var(--tg-theme-hint-color);
                         padding:6px 14px 0; line-height:1.4;">
                 Перший і останній адрес 🔒 фіксуються.<br>
@@ -486,8 +449,7 @@
         </div>
 
         <div id="driver-list"></div>
-        <button class="btn btn-green" id="finish-route-btn" style="display:none;" onclick="confirmFinish()">Завершити
-            маршрут</button>
+        <button class="btn btn-green" id="finish-route-btn" style="display:none;" onclick="finishRoute()">Завершити маршрут</button>
     </div>
 
     <div id="screen-admin" class="screen">
@@ -517,17 +479,39 @@
         <div class="card" style="margin-top:15px;">
             <div class="card-title" id="action-title"></div>
             <div id="action-comment" class="point-meta"></div>
-
-            <!-- Фото -->
             <div id="action-photos" style="display:none;"></div>
-
             <button class="btn btn-outline" id="waze-btn" onclick="openWaze()">🧭 Їхати (Waze)</button>
             <div id="status-actions">
-                <button class="btn btn-green" onclick="setStatus('delivered')">✅ Доставлено</button>
+                <button class="btn btn-green"  onclick="setStatus('delivered')">✅ Доставлено</button>
                 <button class="btn btn-yellow" onclick="setStatus('not_found')">❌ Не застав</button>
-                <button class="btn btn-gray" onclick="setStatus('rescheduled')">📅 Перенести на завтра</button>
+                <button class="btn btn-gray"   onclick="setStatus('rescheduled')">📅 Перенести на завтра</button>
             </div>
         </div>
+    </div>
+
+    <!-- Archive tab screen -->
+    <div id="screen-archive" class="screen">
+        <h3>🗃 Архів маршрутів</h3>
+        <div class="card">
+            <div class="card-title">Фільтр</div>
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+                <input type="date" id="archive-from" style="flex:1; font-size:14px; padding:8px;">
+                <span style="color:var(--tg-theme-hint-color);">—</span>
+                <input type="date" id="archive-to" style="flex:1; font-size:14px; padding:8px;">
+            </div>
+            <button class="btn btn-outline" onclick="loadArchive()">🔄 Оновити</button>
+        </div>
+        <div id="archive-list"></div>
+    </div>
+
+    <!-- Final screen after route finish -->
+    <div id="screen-final" class="screen">
+        <div style="text-align:center; padding:20px 0 16px;">
+            <div style="font-size:48px;">✅</div>
+            <h3 style="margin-top:8px; font-size:20px;">Маршрут завершено!</h3>
+        </div>
+        <div class="card" id="final-content"></div>
+        <button class="btn btn-green" style="margin-top:4px;" onclick="tg.close()">Закрити</button>
     </div>
 
     <script>
@@ -549,89 +533,13 @@
         let map = null;
         let myLocationMarker = null;
         let watchId = null;
-
         let reorderMode = false;
-        let driverLocation = null; // {lat, lng} — поточна позиція водія
+        let driverLocation = null;
+        let currentTab = null;
 
-        async function toggleReorderMode(enabled) {
-            reorderMode = enabled;
-            tg.HapticFeedback.impactOccurred('light');
-
-            if (!enabled) {
-                // Галочка знята — зберігаємо і перераховуємо
-                renderDriverList(); // відразу показуємо skeleton в бейджах
-                await recalculateAfterReorder();
-            } else {
-                renderDriverList();
-            }
-        }
-
-        function requestDriverLocation() {
-            return new Promise((resolve) => {
-                if (!navigator.geolocation) {
-                    resolve(null);
-                    return;
-                }
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        driverLocation = {
-                            lat: pos.coords.latitude,
-                            lng: pos.coords.longitude
-                        };
-                        resolve(driverLocation);
-                    },
-                    () => resolve(null), // якщо відмовив — продовжуємо без геолокації
-                    { enableHighAccuracy: true, timeout: 8000 }
-                );
-            });
-        }
-
-        async function recalculateAfterReorder() {
-            // skeleton в бейджах
-            document.querySelectorAll('.time-badge').forEach(b => {
-                b.textContent = '...';
-                b.style.background = 'var(--tg-theme-hint-color)';
-            });
-
-            try {
-                await saveNewOrder();
-
-                // Збираємо locked точки
-                const lockedFirst = points.find(p => p.lock === 'first');
-                const lockedLast  = points.find(p => p.lock === 'last');
-
-                let url = `/api/route-optimized?manager_id=${managerId}&date=${currentDate}&force=1`;
-                if (driverLocation) {
-                    url += `&driver_lat=${driverLocation.lat}&driver_lng=${driverLocation.lng}`;
-                }
-                if (lockedFirst) {
-                    url += `&locked_first=${lockedFirst.order_id}`;
-                }
-                if (lockedLast) {
-                    url += `&locked_last=${lockedLast.order_id}`;
-                }
-
-                const res = await apiGet(url);
-                if (res.resp.ok && res.data.route) {
-                    const routeMap = {};
-                    res.data.route.forEach(r => { routeMap[r.order_id] = r; });
-                    points.forEach(p => {
-                        if (routeMap[p.order_id]) {
-                            // visit_order оновлюємо тільки для free точок
-                            if (!p.lock) p.visit_order = routeMap[p.order_id].visit_order;
-                            p.duration_min = routeMap[p.order_id].duration_min;
-                        }
-                    });
-                    // Сортуємо з урахуванням locked
-                    sortPointsWithLocks();
-                }
-            } catch (e) {
-                console.warn('recalculate failed:', e);
-            }
-
-            renderDriverList();
-            markersLayer = renderMarkers(map, markersLayer, points);
-        }
+        let hasDriver = false;
+        let hasRouteAdmin = false;
+        let hasArchive = false;
 
         let adminMap = null;
         let markersLayer = null;
@@ -639,33 +547,22 @@
 
         document.getElementById('route-date').value = isoDate;
 
+        // Set archive defaults to last 30 days
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        document.getElementById('archive-from').value = thirtyDaysAgo.toISOString().slice(0, 10);
+        document.getElementById('archive-to').value = isoDate;
 
-        function showToast(message, type = 'success') {
-            const toast = document.createElement('div');
-            toast.style.cssText = `
-                position: fixed;
-                bottom: 30px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: ${type === 'success' ? '#31b545' : '#e53935'};
-                color: white;
-                padding: 12px 24px;
-                border-radius: 20px;
-                font-size: 14px;
-                font-weight: 600;
-                z-index: 9999;
-                animation: fadeIn 0.2s ease;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-                max-width: calc(100vw - 30px);
-                text-align: center;
-            `;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 2500);
+        // ── Utilities ─────────────────────────────────────────────────────────
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+            }[ch]));
         }
 
         function formatDate(date) {
-            return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`;
+            return `${String(date.getDate()).padStart(2,'0')}.${String(date.getMonth()+1).padStart(2,'0')}.${date.getFullYear()}`;
         }
 
         function isoToDisplay(value) {
@@ -678,10 +575,25 @@
             document.getElementById(id).classList.add('active');
         }
 
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position:fixed; bottom:30px; left:50%; transform:translateX(-50%);
+                background:${type === 'success' ? '#31b545' : '#e53935'};
+                color:white; padding:12px 24px; border-radius:20px;
+                font-size:14px; font-weight:600; z-index:9999;
+                animation:fadeIn 0.2s ease; box-shadow:0 4px 12px rgba(0,0,0,0.2);
+                max-width:calc(100vw - 30px); text-align:center;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
+        }
+
         async function apiGet(path) {
             const resp = await fetch(`${apiUrl}${path}`);
             let data = {};
-            try { data = await resp.json(); } catch (e) { }
+            try { data = await resp.json(); } catch (e) {}
             return { resp, data };
         }
 
@@ -692,163 +604,126 @@
                 body: JSON.stringify(body)
             });
             let data = {};
-            try { data = await resp.json(); } catch (e) { }
+            try { data = await resp.json(); } catch (e) {}
             if (!resp.ok) throw new Error(data.error || 'Помилка запиту');
             return data;
         }
 
-        function pointStatus(p) {
-            return p.delivery_status || p.point_status || 'pending';
-        }
-
-        function statusText(status) {
-            return {
-                pending: 'Очікує',
-                delivered: 'Доставлено',
-                not_found: 'Не застав',
-                rescheduled: 'Перенесено'
-            }[status] || status;
-        }
-
-        function markerColor(status, driverId) {
-            if (status === 'delivered') return '#31b545';
-            if (status === 'not_found') return '#f5a623';
-            if (status === 'rescheduled') return '#9e9e9e';
-            const palette = ['#4a90e2', '#8e44ad', '#00a6a6', '#d35400', '#c0392b', '#2c7a7b'];
-            return palette[Math.abs(Number(driverId || 0)) % palette.length];
-        }
-
-        function makeIcon(number, color) {
-            return L.divIcon({
-                html: `<div class="marker-pin" style="background:${color}">${number}</div>`,
-                className: '',
-                iconSize: [28, 28],
-                iconAnchor: [14, 14]
+        function getPosition() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) { reject(new Error('Геолокація недоступна')); return; }
+                navigator.geolocation.getCurrentPosition(resolve,
+                    () => reject(new Error('Не вдалось отримати геолокацію')),
+                    { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 }
+                );
             });
         }
 
-        function initMap(target, existing) {
-            const el = document.getElementById(target);
-            el.style.display = 'block';
-            const m = existing || L.map(target).setView([50.45, 30.52], 11);
-            if (!existing) {
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap'
-                }).addTo(m);
-            }
-            return m;
+        // ── Tab bar ──────────────────────────────────────────────────────────
+
+        function setupTabBar() {
+            const available = [];
+            if (hasDriver)     available.push({ id: 'driver',  label: '🚗 Маршрут' });
+            if (hasRouteAdmin) available.push({ id: 'admin',   label: '📋 Розподіл' });
+            if (hasArchive)    available.push({ id: 'archive', label: '🗃 Архів' });
+
+            const bar = document.getElementById('tab-bar');
+            if (available.length <= 1) { bar.style.display = 'none'; return; }
+
+            bar.innerHTML = available.map(t =>
+                `<button class="tab-btn" data-tab="${t.id}" onclick="switchTab('${t.id}')">${t.label}</button>`
+            ).join('');
+            bar.style.display = 'flex';
         }
 
-        function startWatchingPosition(targetMap) {
-            if (!navigator.geolocation || watchId) return;
-
-            const myIcon = L.divIcon({
-                html: `<div style="
-                    width: 16px; height: 16px;
-                    background: #2196F3;
-                    border: 3px solid white;
-                    border-radius: 50%;
-                    box-shadow: 0 0 0 4px rgba(33,150,243,0.3);
-                    animation: pulse 1.5s infinite;
-                "></div>`,
-                className: '',
-                iconSize: [16, 16],
-                iconAnchor: [8, 8]
-            });
-
-            watchId = navigator.geolocation.watchPosition(
-                (pos) => {
-                    const lat = pos.coords.latitude;
-                    const lng = pos.coords.longitude;
-                    if (!myLocationMarker) {
-                        myLocationMarker = L.marker([lat, lng], { icon: myIcon, zIndexOffset: 1000 })
-                            .bindPopup('📍 Моя позиція')
-                            .addTo(targetMap);
-                    } else {
-                        myLocationMarker.setLatLng([lat, lng]);
-                    }
-                },
-                () => { },
-                { enableHighAccuracy: true, maximumAge: 15000, timeout: 10000 }
+        function setActiveTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn =>
+                btn.classList.toggle('active', btn.dataset.tab === tab)
             );
         }
 
-        window.addEventListener('beforeunload', () => {
-            if (watchId) navigator.geolocation.clearWatch(watchId);
-        });
-
-        function renderMarkers(targetMap, layer, list) {
-            if (layer) layer.remove();
-            layer = L.layerGroup().addTo(targetMap);
-            const bounds = [];
-            list.forEach((p, i) => {
-                if (!p.lat_to || !p.lng_to) return;
-                const lat = Number(p.lat_to);
-                const lng = Number(p.lng_to);
-                const status = pointStatus(p);
-                const comment = p.comment ? `<br><span style="font-size:11px;color:#666">${escapeHtml(p.comment)}</span>` : '';
-                const price = p.order_total ? `<br><b style="color:#31b545">${p.order_total} грн</b>` : '';
-                const duration = p.duration_min != null ? `<br><span style="font-size:11px">~${p.duration_min} хв</span>` : '';
-                const wazeBtn = (p.lat_to && p.lng_to)
-                    ? `<br><a href="https://waze.com/ul?ll=${lat},${lng}&navigate=yes"
-                              target="_blank"
-                              style="display:inline-block;margin-top:6px;padding:5px 14px;
-                                     background:#31b545;color:white;border-radius:12px;
-                                     font-size:12px;font-weight:700;text-decoration:none;">
-                          🧭 Waze
-                       </a>`
-                    : '';
-
-                const marker = L.marker([lat, lng], {
-                    icon: makeIcon(p.visit_order || i + 1, markerColor(status, p.driver_id))
-                });
-                marker.bindPopup(
-                    `<b>${escapeHtml(p.client_name)}</b>${comment}${price}${duration}${wazeBtn}`,
-                    { maxWidth: 220 }
-                );
-                marker.addTo(layer);
-                bounds.push([lat, lng]);
-            });
-            if (bounds.length) targetMap.fitBounds(bounds, { padding: [25, 25] });
-            return layer;
+        async function switchTab(tab) {
+            setActiveTab(tab);
+            if (tab === 'driver') {
+                await loadDriver();
+            } else if (tab === 'admin') {
+                await loadAdmin();
+            } else if (tab === 'archive') {
+                showScreen('screen-archive');
+                await loadArchive();
+            }
         }
 
-        async function bootstrap() {
-            try {
-                const admin = await apiGet(`/api/all-driver-points?manager_id=${managerId}&date=${currentDate}`);
-                if (admin.resp.ok && !admin.data.error) {
-                    mode = 'admin';
+        // ── Bootstrap ─────────────────────────────────────────────────────────
 
-                    drivers = admin.data.drivers;
-                    points = admin.data.points || [];
-                    renderAdmin();
-                    return;
-                }
-            } catch (e) { }
-            mode = 'driver';
-            await loadDriver();
+        async function bootstrap() {
+            const [driverRes, adminRes, archiveRes] = await Promise.allSettled([
+                apiGet(`/api/driver-points?manager_id=${managerId}&date=${currentDate}`),
+                apiGet(`/api/all-driver-points?manager_id=${managerId}&date=${currentDate}`),
+                apiGet(`/api/archive-routes?manager_id=${managerId}`)
+            ]);
+
+            hasDriver     = driverRes.status  === 'fulfilled' && driverRes.value.resp.ok  && !driverRes.value.data.error;
+            hasRouteAdmin = adminRes.status   === 'fulfilled' && adminRes.value.resp.ok   && !adminRes.value.data.error;
+            hasArchive    = archiveRes.status === 'fulfilled' && archiveRes.value.resp.ok && !archiveRes.value.data.error;
+
+            setupTabBar();
+
+            if (hasRouteAdmin) {
+                drivers = adminRes.value.data.drivers || [];
+                points  = adminRes.value.data.points  || [];
+                setActiveTab('admin');
+                renderAdmin();
+            } else if (hasDriver) {
+                setActiveTab('driver');
+                await loadDriver();
+            } else if (hasArchive) {
+                setActiveTab('archive');
+                showScreen('screen-archive');
+                await loadArchive();
+            } else {
+                document.getElementById('screen-loading').innerHTML =
+                    '<div class="empty-state">Немає доступних маршрутів</div>';
+            }
+        }
+
+        // ── Driver mode ───────────────────────────────────────────────────────
+
+        function requestDriverLocation() {
+            return new Promise((resolve) => {
+                if (!navigator.geolocation) { resolve(null); return; }
+                navigator.geolocation.getCurrentPosition(
+                    pos => {
+                        driverLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                        resolve(driverLocation);
+                    },
+                    () => resolve(null),
+                    { enableHighAccuracy: true, timeout: 8000 }
+                );
+            });
         }
 
         async function loadDriver() {
             try {
                 showScreen('screen-driver');
                 document.getElementById('driver-title').textContent = `🚗 Мій маршрут на ${currentDate}`;
-                document.getElementById('driver-list').innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
+                document.getElementById('driver-list').innerHTML =
+                    '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
 
-                // Паралельно: точки + статус маршруту + геолокація
                 const [res, statusRes] = await Promise.all([
                     apiGet(`/api/driver-points?manager_id=${managerId}&date=${currentDate}`),
                     apiGet(`/api/driver-route-status?manager_id=${managerId}&date=${currentDate}`),
-                    requestDriverLocation()  // не чекаємо окремо — вже в Promise.all
+                    requestDriverLocation()
                 ]);
 
                 if (!res.resp.ok) throw new Error(res.data.error || 'Помилка завантаження');
 
-                points = res.data.points || [];
+                points       = res.data.points || [];
                 routeStarted = statusRes.data.started || false;
-                routeKm = statusRes.data.total_km || 0;
+                routeKm      = statusRes.data.total_km || 0;
 
-                await loadOptimized(); // тепер має driverLocation
+                await loadOptimized();
                 renderDriver();
             } catch (e) {
                 showToast(e.message, 'error');
@@ -859,41 +734,33 @@
         async function loadOptimized() {
             try {
                 let url = `/api/route-optimized?manager_id=${managerId}&date=${currentDate}`;
-                if (driverLocation) {
-                    url += `&driver_lat=${driverLocation.lat}&driver_lng=${driverLocation.lng}`;
-                }
+                if (driverLocation) url += `&driver_lat=${driverLocation.lat}&driver_lng=${driverLocation.lng}`;
                 const res = await apiGet(url);
                 if (res.resp.ok && res.data.route) {
                     const routeMap = {};
                     res.data.route.forEach(r => { routeMap[r.order_id] = r; });
                     points.forEach(p => {
                         if (routeMap[p.order_id]) {
-                            p.visit_order   = routeMap[p.order_id].visit_order;
-                            p.duration_min  = routeMap[p.order_id].duration_min;
+                            p.visit_order  = routeMap[p.order_id].visit_order;
+                            p.duration_min = routeMap[p.order_id].duration_min;
                             if (!p.lat_to && routeMap[p.order_id].lat) p.lat_to = routeMap[p.order_id].lat;
                             if (!p.lng_to && routeMap[p.order_id].lng) p.lng_to = routeMap[p.order_id].lng;
                         }
                     });
                     points.sort((a, b) => (a.visit_order || 999) - (b.visit_order || 999));
                 }
-            } catch (e) {
-                console.warn('loadOptimized failed:', e);
-            }
+            } catch (e) { console.warn('loadOptimized failed:', e); }
         }
 
         function renderDriver() {
             const done = points.filter(p => pointStatus(p) !== 'pending').length;
             document.getElementById('driver-progress').textContent = `${done} з ${points.length}`;
             document.getElementById('driver-km').textContent = `${routeKm.toFixed(1)} км`;
-            document.getElementById('finish-route-btn').style.display = points.length && done === points.length ? 'block' : 'none';
+            document.getElementById('finish-route-btn').style.display =
+                points.length && done === points.length ? 'block' : 'none';
 
-            // Кнопка старту
             const startBtn = document.getElementById('start-route-btn');
-            if (routeStarted) {
-                startBtn.style.display = 'none';
-            } else {
-                startBtn.style.display = 'block';
-            }
+            startBtn.style.display = routeStarted ? 'none' : 'block';
 
             const withCoords = points.filter(p => p.lat_to && p.lng_to);
             if (withCoords.length) {
@@ -905,13 +772,11 @@
                 document.getElementById('map').style.display = 'none';
             }
 
-            // Показуємо перемикач тільки до старту
             const toggleBlock = document.getElementById('reorder-toggle-block');
             if (!routeStarted && points.length > 1) {
                 toggleBlock.style.display = 'block';
             } else {
                 toggleBlock.style.display = 'none';
-                // Скидаємо режим перетягування якщо стартував
                 if (routeStarted && reorderMode) {
                     reorderMode = false;
                     document.getElementById('reorder-toggle').checked = false;
@@ -932,39 +797,18 @@
                 const noCoords = !p.lat_to && !p.lng_to ? ' 📍' : '';
                 const hasPhotos = p.photos && p.photos.length > 0;
 
-                // Бейдж часу/км — правий верхній кут
                 let badge = '';
-                if (p.duration_min != null) {
-                    badge = `<div class="time-badge">~${p.duration_min} хв</div>`;
-                }
+                if (p.duration_min != null) badge = `<div class="time-badge">~${p.duration_min} хв</div>`;
 
-                // Drag handle — тільки в режимі перетягування
-                const dragHandle = reorderMode
-                    ? `<div class="drag-handle" title="Перетягнути">⠿</div>`
-                    : '';
-
-                // draggable тільки в режимі перетягування
+                const dragHandle   = reorderMode ? `<div class="drag-handle" title="Перетягнути">⠿</div>` : '';
                 const draggableAttr = reorderMode ? 'draggable="true"' : '';
-
-                // Динамічний свайп вправо
-                const rightActionText = (p.lat_to && p.lng_to) ? '🧭 Waze' : '📍 + База';
+                const rightActionText  = (p.lat_to && p.lng_to) ? '🧭 Waze' : '📍 + База';
                 const rightActionColor = (p.lat_to && p.lng_to) ? '#31b545' : '#FF9800';
-
-                // Onclick тільки якщо НЕ в режимі перетягування
-                const numOnclick = reorderMode
-                    ? ''
-                    : `onclick="event.stopPropagation(); focusOnMap(${p.order_id})"`;
-
-                const photoOnclick = reorderMode
-                    ? ''
-                    : `onclick="event.stopPropagation(); openPhotos(${p.order_id})"`;
-
-                const photoIcon = hasPhotos
-                    ? `<span class="photo-icon" ${photoOnclick}>📷</span>`
-                    : '';
-
-                const lockIcon = p.lock === 'first' ? ' 🔒' : p.lock === 'last' ? ' 🏁' : '';
-                const lockClass = p.lock ? `lock-${p.lock}` : '';
+                const numOnclick   = reorderMode ? '' : `onclick="event.stopPropagation(); focusOnMap(${p.order_id})"`;
+                const photoOnclick = reorderMode ? '' : `onclick="event.stopPropagation(); openPhotos(${p.order_id})"`;
+                const photoIcon    = hasPhotos ? `<span class="photo-icon" ${photoOnclick}>📷</span>` : '';
+                const lockIcon     = p.lock === 'first' ? ' 🔒' : p.lock === 'last' ? ' 🏁' : '';
+                const lockClass    = p.lock ? `lock-${p.lock}` : '';
 
                 return `
                     <div class="point-card ${status} ${reorderMode ? 'reorder-active' : ''} ${lockClass}"
@@ -972,11 +816,8 @@
                          data-order-id="${p.order_id}"
                          data-lat="${p.lat_to || ''}"
                          data-lng="${p.lng_to || ''}">
-                        <!-- Права підкладка (Waze або База) -->
                         <div class="swipe-right-action" style="background:${rightActionColor};">${rightActionText}</div>
-                        <!-- Ліва підкладка (Борг) -->
                         <div class="swipe-left-action">🔴 Борг</div>
-                        <!-- Вміст картки -->
                         <div class="point-head">
                             ${dragHandle}
                             <div class="point-num" ${numOnclick}>${p.visit_order || i + 1}</div>
@@ -992,15 +833,100 @@
                 `;
             }).join('');
 
-            // Вішаємо обробники — в залежності від режиму
-            if (reorderMode) {
-                initDragAndDrop();
+            if (reorderMode) initDragAndDrop();
+            else attachCardHandlers();
+        }
+
+        // ── Finish route flow ─────────────────────────────────────────────────
+
+        function finishRoute() {
+            const pendingPoints = points.filter(p => pointStatus(p) === 'pending');
+            if (pendingPoints.length > 0) {
+                showPendingModal(pendingPoints);
             } else {
-                attachCardHandlers();
+                confirmFinish();
             }
         }
 
+        function confirmFinish() {
+            showToast('Натисніть ще раз для завершення');
+            const btn = document.getElementById('finish-route-btn');
+            btn.textContent = 'Підтвердити завершення';
+            btn.onclick = finalizeFinish;
+            setTimeout(() => {
+                btn.textContent = 'Завершити маршрут';
+                btn.onclick = finishRoute;
+            }, 3000);
+        }
 
+        async function finalizeFinish() {
+            try {
+                const stats = await apiPost('/api/driver-finish', { manager_id: Number(managerId) });
+                tg.HapticFeedback.notificationOccurred('success');
+                showFinalScreen(stats);
+            } catch (e) {
+                showToast(e.message, 'error');
+                const btn = document.getElementById('finish-route-btn');
+                btn.textContent = 'Завершити маршрут';
+                btn.onclick = finishRoute;
+            }
+        }
+
+        function showFinalScreen(stats) {
+            let html = `
+                <div class="final-stat-row"><span>📅 Дата</span><span>${stats.route_date || ''}</span></div>
+                <div class="final-stat-row"><span>⏱ Початок</span><span>${stats.start_time || ''}</span></div>
+                <div class="final-stat-row"><span>⏱ Кінець</span><span>${stats.end_time || ''}</span></div>
+                <div class="final-stat-row"><span>⏱ Тривалість</span><span>${stats.duration || ''}</span></div>
+                <div class="final-stat-row"><span>🚗 Пробіг</span><span>${Number(stats.total_km || 0).toFixed(1)} км</span></div>
+                <div class="final-stat-row"><span>📦 Доставлено</span><span>${stats.delivered} з ${stats.total}</span></div>
+                <div class="final-stat-row"><span>💵 Готівка</span><span>${Math.round(stats.paid_total || 0)} грн</span></div>
+            `;
+            if ((stats.debt_total || 0) > 0) {
+                html += `<div class="final-stat-row" style="color:#e53935;"><span>🔴 Борг</span><span>${Math.round(stats.debt_total)} грн</span></div>`;
+            }
+            if ((stats.rescheduled_count || 0) > 0) {
+                html += `<div class="final-stat-row"><span>📅 Перенесено</span><span>${stats.rescheduled_count} (${stats.rescheduled_names.join(', ')})</span></div>`;
+            }
+            if ((stats.cancelled_count || 0) > 0) {
+                html += `<div class="final-stat-row"><span>❌ Відмінено</span><span>${stats.cancelled_count} (${stats.cancelled_names.join(', ')})</span></div>`;
+            }
+            document.getElementById('final-content').innerHTML = html;
+            showScreen('screen-final');
+        }
+
+        // ── Pending modal ─────────────────────────────────────────────────────
+
+        function showPendingModal(pendingPoints) {
+            const listEl = document.getElementById('pending-modal-list');
+            listEl.innerHTML = pendingPoints.map(p =>
+                `<div style="padding:5px 0; border-bottom:1px solid rgba(0,0,0,0.05); font-size:14px;">• ${escapeHtml(p.client_name)}</div>`
+            ).join('');
+            document.getElementById('pending-modal').style.display = 'flex';
+            tg.HapticFeedback.impactOccurred('medium');
+        }
+
+        function closePendingModal() {
+            document.getElementById('pending-modal').style.display = 'none';
+        }
+
+        async function handlePendingAction(action) {
+            closePendingModal();
+            try {
+                await apiPost('/api/driver-finish-pending', {
+                    manager_id: Number(managerId),
+                    date: currentDate,
+                    action
+                });
+                const stats = await apiPost('/api/driver-finish', { manager_id: Number(managerId) });
+                tg.HapticFeedback.notificationOccurred('success');
+                showFinalScreen(stats);
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        // ── Start route ───────────────────────────────────────────────────────
 
         async function startRoute() {
             try {
@@ -1020,6 +946,12 @@
             }
         }
 
+        // ── Point actions ─────────────────────────────────────────────────────
+
+        function pointStatus(p)  { return p.delivery_status || p.point_status || 'pending'; }
+        function statusText(status) {
+            return { pending: 'Очікує', delivered: 'Доставлено', not_found: 'Не застав', rescheduled: 'Перенесено' }[status] || status;
+        }
 
         function openPoint(orderId) {
             selectedPoint = points.find(p => Number(p.order_id) === Number(orderId));
@@ -1031,16 +963,12 @@
             document.getElementById('waze-btn').style.display = selectedPoint.lat_to && selectedPoint.lng_to ? 'block' : 'none';
             document.getElementById('status-actions').style.display = status === 'pending' || status === 'not_found' ? 'block' : 'none';
 
-            // Фото
             const photosContainer = document.getElementById('action-photos');
             const photos = selectedPoint.photos || [];
             if (photos.length > 0) {
                 photosContainer.innerHTML = photos.map((url, idx) => `
-                    <button class="btn btn-outline" 
-                            style="margin-top:8px; font-size:13px; padding:9px 14px;"
-                            onclick="window.open('${url}', '_blank')">
-                        📷 Фото ${idx + 1}
-                    </button>
+                    <button class="btn btn-outline" style="margin-top:8px; font-size:13px; padding:9px 14px;"
+                            onclick="window.open('${url}', '_blank')">📷 Фото ${idx + 1}</button>
                 `).join('');
                 photosContainer.style.display = 'block';
             } else {
@@ -1052,169 +980,7 @@
 
         function backToDriver() {
             showScreen('screen-driver');
-        }
-
-        function attachCardHandlers() {
-            document.querySelectorAll('.point-card').forEach(card => {
-                const orderId = Number(card.dataset.orderId);
-                const lat = card.dataset.lat;
-                const lng = card.dataset.lng;
-                const contentEl = card.querySelector('.point-head');
-                const swipeRightEl = card.querySelector('.swipe-right-action');
-                const swipeLeftEl = card.querySelector('.swipe-left-action');
-
-                let startX = 0;
-                let startY = 0;
-                let currentX = 0;
-                let isDragging = false;
-                let isHorizontal = null; // визначаємо напрям після першого руху
-
-                const THRESHOLD_RIGHT = 90;   // px для відкриття Waze
-                const THRESHOLD_LEFT = 90;   // px для підтвердження оплати
-                const MAX_DRAG = 110;         // максимальне зміщення
-
-                let longTapTimer = null;
-
-                card.addEventListener('touchstart', (e) => {
-                    startX = e.touches[0].clientX;
-                    startY = e.touches[0].clientY;
-                    isDragging = false;
-                    isHorizontal = null;
-                    currentX = 0;
-
-                    longTapTimer = setTimeout(() => {
-                        const p = points.find(pt => Number(pt.order_id) === orderId);
-                        if (p) confirmDelivery(p);
-                    }, 600); // 600мс = довгий тап
-                }, { passive: true });
-
-                card.addEventListener('touchmove', (e) => {
-                    clearTimeout(longTapTimer); // скасовуємо довгий тап при русі
-                    const dx = e.touches[0].clientX - startX;
-                    const dy = e.touches[0].clientY - startY;
-
-                    // Визначаємо напрям тільки один раз на початку жесту
-                    if (isHorizontal === null) {
-                        if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
-                        isHorizontal = Math.abs(dx) > Math.abs(dy);
-                    }
-
-                    // Якщо вертикальний скрол — ігноруємо
-                    if (!isHorizontal) return;
-
-                    e.preventDefault(); // блокуємо скрол сторінки під час свайпу
-                    isDragging = true;
-
-                    // Обмежуємо діапазон з пружинним ефектом за межею MAX_DRAG
-                    let clamped;
-                    if (Math.abs(dx) <= MAX_DRAG) {
-                        clamped = dx;
-                    } else {
-                        const overflow = Math.abs(dx) - MAX_DRAG;
-                        clamped = (MAX_DRAG + overflow * 0.2) * Math.sign(dx);
-                    }
-                    currentX = clamped;
-
-                    // Плавно переміщуємо вміст (без transition під час руху)
-                    contentEl.style.transition = 'none';
-                    contentEl.style.transform = `translateX(${currentX}px)`;
-
-                    // Показуємо підкладку відповідного напряму
-                    if (currentX > 0) {
-                        // Вправо → Waze
-                        const pct = Math.min(currentX / MAX_DRAG, 1);
-                        swipeRightEl.style.opacity = pct;
-                        swipeLeftEl.style.opacity = 0;
-                    } else if (currentX < 0) {
-                        // Вліво → Оплата
-                        const pct = Math.min(Math.abs(currentX) / MAX_DRAG, 1);
-                        swipeLeftEl.style.opacity = pct;
-                        swipeRightEl.style.opacity = 0;
-                    } else {
-                        swipeRightEl.style.opacity = 0;
-                        swipeLeftEl.style.opacity = 0;
-                    }
-                }, { passive: false });
-
-                card.addEventListener('touchend', () => {
-                    clearTimeout(longTapTimer);
-                    // Вмикаємо плавне повернення
-                    contentEl.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-                    contentEl.style.transform = '';
-                    swipeRightEl.style.opacity = 0;
-                    swipeLeftEl.style.opacity = 0;
-
-                    if (!isDragging) return;
-
-                    if (currentX >= THRESHOLD_RIGHT) {
-                        const p = points.find(pt => Number(pt.order_id) === orderId);
-                        if (p && p.lat_to && p.lng_to) {
-                            // Є координати → Waze
-                            tg.HapticFeedback.impactOccurred('medium');
-                            window.open(`https://waze.com/ul?ll=${p.lat_to},${p.lng_to}&navigate=yes`, '_blank');
-                        } else if (p) {
-                            // Немає координат → форма Бази
-                            openBaseModal(p);
-                        }
-                    } else if (currentX <= -THRESHOLD_LEFT) {
-                        // Свайп вліво — форма "Не оплачено"
-                        const p = points.find(pt => Number(pt.order_id) === orderId);
-                        if (p) openUnpaidModal(p);
-                    }
-
-                    currentX = 0;
-                    isDragging = false;
-                });
-
-                // Клік → openPoint (тільки якщо не було свайпу)
-                card.addEventListener('click', (e) => {
-                    if (isDragging) return;
-                    if (e.target.closest('.point-num') || e.target.closest('.photo-icon')) return;
-                    openPoint(orderId);
-                });
-            });
-        }
-
-        function confirmDeliveryOrPayment(p) {
-            openPoint(p.order_id);
-        }
-
-        function focusOnMap(orderId) {
-            const p = points.find(pt => Number(pt.order_id) === Number(orderId));
-            if (!p || !p.lat_to || !p.lng_to) {
-                showToast('Координат немає', 'error');
-                return;
-            }
-            tg.HapticFeedback.impactOccurred('light');
-            document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
-            map.setView([Number(p.lat_to), Number(p.lng_to)], 15, { animate: true });
-            markersLayer.eachLayer(layer => {
-                const latlng = layer.getLatLng();
-                if (
-                    Math.abs(latlng.lat - Number(p.lat_to)) < 0.0001 &&
-                    Math.abs(latlng.lng - Number(p.lng_to)) < 0.0001
-                ) {
-                    layer.openPopup();
-                }
-            });
-        }
-
-        function openPhotos(orderId) {
-            const p = points.find(pt => Number(pt.order_id) === Number(orderId));
-            if (!p || !p.photos || !p.photos.length) return;
-            if (p.photos.length === 1) {
-                window.open(p.photos[0], '_blank');
-                return;
-            }
-            openPoint(orderId);
-        }
-
-        function openWaze() {
-            if (!selectedPoint || !selectedPoint.lat_to || !selectedPoint.lng_to) {
-                showToast('Координат ще немає', 'error');
-                return;
-            }
-            window.open(`https://waze.com/ul?ll=${selectedPoint.lat_to},${selectedPoint.lng_to}&navigate=yes`, '_blank');
+            setActiveTab('driver');
         }
 
         async function setStatus(status) {
@@ -1237,258 +1003,114 @@
             }
         }
 
-        function getPosition() {
-            return new Promise((resolve, reject) => {
-                if (!navigator.geolocation) {
-                    reject(new Error('Геолокація недоступна'));
-                    return;
-                }
-                navigator.geolocation.getCurrentPosition(resolve, () => reject(new Error('Не вдалось отримати геолокацію')), {
-                    enableHighAccuracy: true,
-                    timeout: 12000,
-                    maximumAge: 30000
+        function openWaze() {
+            if (!selectedPoint || !selectedPoint.lat_to || !selectedPoint.lng_to) {
+                showToast('Координат ще немає', 'error'); return;
+            }
+            window.open(`https://waze.com/ul?ll=${selectedPoint.lat_to},${selectedPoint.lng_to}&navigate=yes`, '_blank');
+        }
+
+        function focusOnMap(orderId) {
+            const p = points.find(pt => Number(pt.order_id) === Number(orderId));
+            if (!p || !p.lat_to || !p.lng_to) { showToast('Координат немає', 'error'); return; }
+            tg.HapticFeedback.impactOccurred('light');
+            document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            map.setView([Number(p.lat_to), Number(p.lng_to)], 15, { animate: true });
+            markersLayer.eachLayer(layer => {
+                const ll = layer.getLatLng();
+                if (Math.abs(ll.lat - Number(p.lat_to)) < 0.0001 && Math.abs(ll.lng - Number(p.lng_to)) < 0.0001)
+                    layer.openPopup();
+            });
+        }
+
+        function openPhotos(orderId) {
+            const p = points.find(pt => Number(pt.order_id) === Number(orderId));
+            if (!p || !p.photos || !p.photos.length) return;
+            if (p.photos.length === 1) { window.open(p.photos[0], '_blank'); return; }
+            openPoint(orderId);
+        }
+
+        // ── Swipe card handlers ───────────────────────────────────────────────
+
+        function attachCardHandlers() {
+            document.querySelectorAll('.point-card').forEach(card => {
+                const orderId   = Number(card.dataset.orderId);
+                const contentEl = card.querySelector('.point-head');
+                const swipeRightEl = card.querySelector('.swipe-right-action');
+                const swipeLeftEl  = card.querySelector('.swipe-left-action');
+
+                let startX = 0, startY = 0, currentX = 0, isDragging = false, isHorizontal = null;
+                const THRESHOLD = 90, MAX_DRAG = 110;
+                let longTapTimer = null;
+
+                card.addEventListener('touchstart', (e) => {
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+                    isDragging = false; isHorizontal = null; currentX = 0;
+                    longTapTimer = setTimeout(() => {
+                        const p = points.find(pt => Number(pt.order_id) === orderId);
+                        if (p) confirmDelivery(p);
+                    }, 600);
+                }, { passive: true });
+
+                card.addEventListener('touchmove', (e) => {
+                    clearTimeout(longTapTimer);
+                    const dx = e.touches[0].clientX - startX;
+                    const dy = e.touches[0].clientY - startY;
+                    if (isHorizontal === null) {
+                        if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+                        isHorizontal = Math.abs(dx) > Math.abs(dy);
+                    }
+                    if (!isHorizontal) return;
+                    e.preventDefault();
+                    isDragging = true;
+                    let clamped = Math.abs(dx) <= MAX_DRAG ? dx :
+                        (MAX_DRAG + (Math.abs(dx) - MAX_DRAG) * 0.2) * Math.sign(dx);
+                    currentX = clamped;
+                    contentEl.style.transition = 'none';
+                    contentEl.style.transform = `translateX(${currentX}px)`;
+                    if (currentX > 0) {
+                        swipeRightEl.style.opacity = Math.min(currentX / MAX_DRAG, 1);
+                        swipeLeftEl.style.opacity = 0;
+                    } else if (currentX < 0) {
+                        swipeLeftEl.style.opacity = Math.min(Math.abs(currentX) / MAX_DRAG, 1);
+                        swipeRightEl.style.opacity = 0;
+                    } else {
+                        swipeRightEl.style.opacity = 0; swipeLeftEl.style.opacity = 0;
+                    }
+                }, { passive: false });
+
+                card.addEventListener('touchend', () => {
+                    clearTimeout(longTapTimer);
+                    contentEl.style.transition = 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)';
+                    contentEl.style.transform = '';
+                    swipeRightEl.style.opacity = 0; swipeLeftEl.style.opacity = 0;
+                    if (!isDragging) return;
+                    if (currentX >= THRESHOLD) {
+                        const p = points.find(pt => Number(pt.order_id) === orderId);
+                        if (p && p.lat_to && p.lng_to) {
+                            tg.HapticFeedback.impactOccurred('medium');
+                            window.open(`https://waze.com/ul?ll=${p.lat_to},${p.lng_to}&navigate=yes`, '_blank');
+                        } else if (p) {
+                            openBaseModal(p);
+                        }
+                    } else if (currentX <= -THRESHOLD) {
+                        const p = points.find(pt => Number(pt.order_id) === orderId);
+                        if (p) openUnpaidModal(p);
+                    }
+                    currentX = 0; isDragging = false;
+                });
+
+                card.addEventListener('click', (e) => {
+                    if (isDragging) return;
+                    if (e.target.closest('.point-num') || e.target.closest('.photo-icon')) return;
+                    openPoint(orderId);
                 });
             });
         }
 
-        function confirmFinish() {
-            showToast('Натисніть ще раз для завершення');
-            const btn = document.getElementById('finish-route-btn');
-            btn.textContent = 'Підтвердити завершення';
-            btn.onclick = finishRoute;
-            setTimeout(() => {
-                btn.textContent = 'Завершити маршрут';
-                btn.onclick = confirmFinish;
-            }, 3000);
-        }
+        // ── Drag & Drop ───────────────────────────────────────────────────────
 
-        async function finishRoute() {
-            try {
-                const stats = await apiPost('/api/driver-finish', { manager_id: Number(managerId) });
-                document.getElementById('driver-list').innerHTML = `
-                    <div class="card">
-                        <div class="card-title">Маршрут завершено</div>
-                        <div class="point-meta">Доставлено: ${stats.delivered} з ${stats.total}</div>
-                        <div class="point-meta">Пробіг: ${Number(stats.total_km || 0).toFixed(1)} км</div>
-                        <div class="point-meta">Час у дорозі: ${stats.duration}</div>
-                    </div>
-                `;
-                document.getElementById('finish-route-btn').style.display = 'none';
-                tg.HapticFeedback.notificationOccurred('success');
-                setTimeout(() => tg.close(), 1800);
-            } catch (e) {
-                showToast(e.message, 'error');
-            }
-        }
-
-        async function loadAdmin() {
-            currentDate = isoToDisplay(document.getElementById('route-date').value);
-            try {
-                const res = await apiGet(`/api/all-driver-points?manager_id=${managerId}&date=${currentDate}`);
-                if (!res.resp.ok) throw new Error(res.data.error || 'Помилка завантаження');
-                points = res.data.points || [];
-                drivers = res.data.drivers || [];
-                renderAdmin();
-            } catch (e) {
-                showToast(e.message, 'error');
-            }
-        }
-
-        function renderAdmin() {
-            showScreen('screen-admin');
-            document.getElementById('admin-title').textContent = `📋 Маршрути на ${currentDate}`;
-            const mapEl = document.getElementById('admin-map');
-            mapEl.id = 'admin-map';
-            mapEl.style.height = '350px';
-            mapEl.style.borderRadius = '12px';
-            mapEl.style.overflow = 'hidden';
-            mapEl.style.marginBottom = '15px';
-            adminMap = initMap('admin-map', adminMap);
-            adminMarkersLayer = renderMarkers(adminMap, adminMarkersLayer, points);
-            setTimeout(() => adminMap.invalidateSize(), 50);
-
-            const counts = new Map();
-            points.forEach(p => counts.set(String(p.driver_id || 0), (counts.get(String(p.driver_id || 0)) || 0) + 1));
-            document.getElementById('drivers-summary').innerHTML = drivers.length
-                ? drivers.map(d => `<span class="driver-chip">${escapeHtml(d.name)}: ${counts.get(String(d.id)) || 0}</span>`).join('')
-                : '<div class="empty-state">Водіїв з правом driver немає</div>';
-            document.getElementById('bulk-driver').innerHTML = driverOptions('');
-
-            const list = document.getElementById('admin-list');
-            if (!points.length) {
-                list.innerHTML = '<div class="empty-state">На цю дату точок немає</div>';
-                return;
-            }
-            list.innerHTML = points.map((p, i) => {
-
-                const status = pointStatus(p);
-                const isStarted = p.route_started;
-                const assignHtml = isStarted
-                    ? `<div class="point-meta">🚗 В дорозі — зміни заблоковано</div>`
-                    : `<div class="assign-box" id="assign-${p.order_id}" onclick="event.stopPropagation()">
-                           <select id="driver-${p.order_id}">${driverOptions(p.driver_id)}</select>
-                           <button class="btn btn-green" onclick="assignOne(${p.order_id})">Призначити</button>
-                       </div>`;
-
-                return `
-                    <div class="point-card ${status}">
-                        <div class="admin-row">
-                            <input type="checkbox" class="bulk-check" value="${p.order_id}" ${isStarted ? 'disabled' : ''}>
-                            <div onclick="${isStarted ? '' : `toggleAssign(${p.order_id})`}">
-                                <div class="point-name">${escapeHtml(p.client_name)}</div>
-                                <div class="point-meta">${statusText(status)} • ${escapeHtml(p.driver_name || 'без водія')}</div>
-                                ${assignHtml}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-
-        function driverOptions(currentId) {
-            return `<option value="">Оберіть водія</option>` + drivers.map(d => {
-                const selected = String(d.id) === String(currentId) ? 'selected' : '';
-                return `<option value="${d.id}" ${selected}>${escapeHtml(d.name)}</option>`;
-            }).join('');
-        }
-
-        function toggleAssign(orderId) {
-            tg.HapticFeedback.impactOccurred('light');
-            const box = document.getElementById(`assign-${orderId}`);
-            box.style.display = box.style.display === 'block' ? 'none' : 'block';
-        }
-
-        async function assignOne(orderId) {
-            const driverId = document.getElementById(`driver-${orderId}`).value;
-            if (!driverId) {
-                showToast('Оберіть водія', 'error');
-                return;
-            }
-            await saveAssignments([{ order_id: Number(orderId), driver_id: Number(driverId) }]);
-        }
-
-        async function assignSelected() {
-            const selected = [...document.querySelectorAll('.bulk-check:checked')].map(c => Number(c.value));
-            if (!selected.length) {
-                showToast('Оберіть точки', 'error');
-                return;
-            }
-            const driverId = document.getElementById('bulk-driver').value;
-            if (!driverId) {
-                showToast('Оберіть водія', 'error');
-                return;
-            }
-            await saveAssignments(selected.map(orderId => ({ order_id: orderId, driver_id: Number(driverId) })));
-        }
-
-        async function saveAssignments(assignments) {
-            try {
-                const result = await apiPost('/api/driver-assign', {
-                    manager_id: Number(managerId),
-                    date: currentDate,
-                    assignments
-                });
-                tg.HapticFeedback.notificationOccurred('success');
-
-                if (result.skipped > 0) {
-                    showToast(
-                        `Призначено: ${result.assigned}. Пропущено (водій вже в дорозі): ${result.skipped}`,
-                        'error'
-                    );
-                } else {
-                    showToast(`Призначено: ${result.assigned}`);
-                }
-                await loadAdmin();
-            } catch (e) {
-                showToast(e.message, 'error');
-            }
-        }
-
-
-        function escapeHtml(value) {
-            return String(value ?? '').replace(/[&<>"']/g, ch => ({
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            }[ch]));
-        }
-
-        async function openUnpaidModal(p) {
-            // Наповнюємо даними
-            document.getElementById('unpaid-modal-title').textContent = p.client_name;
-            document.getElementById('unpaid-modal-comment').textContent = p.comment || '';
-            document.getElementById('unpaid-modal-total').textContent = `${p.order_total || 0} грн`;
-            document.getElementById('unpaid-modal-amount').value = p.order_total || '';
-            document.getElementById('unpaid-modal-btn').dataset.orderId = p.order_id;
-            document.getElementById('unpaid-modal-btn').disabled = false;
-            document.getElementById('unpaid-modal-btn').textContent = 'Не оплачено';
-
-            // Перевіряємо депозит — як в payments.html selectTodayClient()
-            const depositEl = document.getElementById('unpaid-modal-deposit');
-            depositEl.style.display = 'none';
-            try {
-                const resp = await fetch(
-                    `${apiUrl}/api/client-balance?manager_id=${managerId}&client=${encodeURIComponent(p.client_name)}`
-                );
-                const data = await resp.json();
-                if (data.balance > 0) {
-                    depositEl.textContent = `⚠️ У клієнта є депозит ${data.balance} грн`;
-                    depositEl.style.display = 'block';
-                }
-            } catch (e) { /* ігноруємо */ }
-
-            // Показуємо модалку
-            document.getElementById('unpaid-modal').style.display = 'flex';
-            tg.HapticFeedback.impactOccurred('light');
-        }
-
-        async function submitUnpaid() {
-            const btn = document.getElementById('unpaid-modal-btn');
-            const orderId = Number(btn.dataset.orderId);
-            const paid = parseFloat(document.getElementById('unpaid-modal-amount').value) || 0;
-
-            btn.disabled = true;
-            btn.textContent = '...';
-
-            try {
-                const resp = await fetch(`${apiUrl}/api/mark-unpaid`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        manager_id: Number(managerId),
-                        order_id: orderId,
-                        paid_amount: paid
-                    })
-                });
-                const res = await resp.json();
-
-                if (res.status === 'ok') {
-                    tg.HapticFeedback.notificationOccurred('success');
-                    showToast('Відмічено як неоплачено ⚠️');
-                    closeUnpaidModal();
-                    // Оновлюємо статус локально щоб не перезавантажувати весь список
-                    const p = points.find(pt => Number(pt.order_id) === orderId);
-                    if (p) p.payment_status = 'unpaid';
-                } else {
-                    showToast(res.error || res.message || 'Помилка', 'error');
-                    btn.disabled = false;
-                    btn.textContent = 'Не оплачено';
-                }
-            } catch (e) {
-                showToast('Помилка мережі', 'error');
-                btn.disabled = false;
-                btn.textContent = 'Не оплачено';
-            }
-        }
-
-        function closeUnpaidModal() {
-            document.getElementById('unpaid-modal').style.display = 'none';
-        }
-
-        // --- Drag & Drop ---
         let dragSrcOrderId = null;
 
         function initDragAndDrop() {
@@ -1498,29 +1120,18 @@
                     card.classList.add('dragging');
                     e.dataTransfer.effectAllowed = 'move';
                 });
-
                 card.addEventListener('dragend', () => {
                     card.classList.remove('dragging');
-                    document.querySelectorAll('.point-card').forEach(c => {
-                        c.classList.remove('drag-over');
-                    });
+                    document.querySelectorAll('.point-card').forEach(c => c.classList.remove('drag-over'));
                 });
-
                 card.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                    // Прибираємо drag-over з усіх і ставимо тільки на поточну
+                    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
                     document.querySelectorAll('.point-card').forEach(c => c.classList.remove('drag-over'));
                     card.classList.add('drag-over');
                 });
-
-                card.addEventListener('dragleave', () => {
-                    card.classList.remove('drag-over');
-                });
-
+                card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
                 card.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    card.classList.remove('drag-over');
+                    e.preventDefault(); card.classList.remove('drag-over');
                     const targetOrderId = Number(card.dataset.orderId);
                     if (!dragSrcOrderId || dragSrcOrderId === targetOrderId) return;
                     reorderPoints(dragSrcOrderId, targetOrderId);
@@ -1532,29 +1143,55 @@
             const fromIdx = points.findIndex(p => Number(p.order_id) === fromOrderId);
             const toIdx   = points.findIndex(p => Number(p.order_id) === toOrderId);
             if (fromIdx === -1 || toIdx === -1) return;
-
             const [moved] = points.splice(fromIdx, 1);
             points.splice(toIdx, 0, moved);
-
-            // Визначаємо нову позицію після вставки
             const newIdx = points.findIndex(p => Number(p.order_id) === fromOrderId);
-
-            // Скидаємо старі locks з усіх точок
             points.forEach(p => { p.lock = null; });
-
-            // Виставляємо lock для переміщеної точки
-            if (newIdx === 0) {
-                moved.lock = 'first';
-            } else if (newIdx === points.length - 1) {
-                moved.lock = 'last';
-            }
-            // На будь-якій іншій позиції — lock = null (вже скинули вище)
-
-            // Перенумеровуємо visit_order
+            if (newIdx === 0) moved.lock = 'first';
+            else if (newIdx === points.length - 1) moved.lock = 'last';
             points.forEach((p, i) => { p.visit_order = i + 1; });
-
             tg.HapticFeedback.impactOccurred('light');
             saveNewOrder().catch(() => {});
+            renderDriverList();
+            markersLayer = renderMarkers(map, markersLayer, points);
+        }
+
+        async function toggleReorderMode(enabled) {
+            reorderMode = enabled;
+            tg.HapticFeedback.impactOccurred('light');
+            if (!enabled) {
+                renderDriverList();
+                await recalculateAfterReorder();
+            } else {
+                renderDriverList();
+            }
+        }
+
+        async function recalculateAfterReorder() {
+            document.querySelectorAll('.time-badge').forEach(b => {
+                b.textContent = '...'; b.style.background = 'var(--tg-theme-hint-color)';
+            });
+            try {
+                await saveNewOrder();
+                const lockedFirst = points.find(p => p.lock === 'first');
+                const lockedLast  = points.find(p => p.lock === 'last');
+                let url = `/api/route-optimized?manager_id=${managerId}&date=${currentDate}&force=1`;
+                if (driverLocation) url += `&driver_lat=${driverLocation.lat}&driver_lng=${driverLocation.lng}`;
+                if (lockedFirst) url += `&locked_first=${lockedFirst.order_id}`;
+                if (lockedLast)  url += `&locked_last=${lockedLast.order_id}`;
+                const res = await apiGet(url);
+                if (res.resp.ok && res.data.route) {
+                    const routeMap = {};
+                    res.data.route.forEach(r => { routeMap[r.order_id] = r; });
+                    points.forEach(p => {
+                        if (routeMap[p.order_id]) {
+                            if (!p.lock) p.visit_order = routeMap[p.order_id].visit_order;
+                            p.duration_min = routeMap[p.order_id].duration_min;
+                        }
+                    });
+                    sortPointsWithLocks();
+                }
+            } catch (e) { console.warn('recalculate failed:', e); }
             renderDriverList();
             markersLayer = renderMarkers(map, markersLayer, points);
         }
@@ -1563,47 +1200,30 @@
             const lockedFirst = points.find(p => p.lock === 'first');
             const lockedLast  = points.find(p => p.lock === 'last');
             const free = points.filter(p => !p.lock);
-
-            // Сортуємо free за visit_order що прийшов від ORS
             free.sort((a, b) => (a.visit_order || 999) - (b.visit_order || 999));
-
-            // Збираємо фінальний порядок
             const sorted = [];
             if (lockedFirst) sorted.push(lockedFirst);
             sorted.push(...free);
             if (lockedLast) sorted.push(lockedLast);
-
-            // Перенумеровуємо
             sorted.forEach((p, i) => { p.visit_order = i + 1; });
-
-            // Замінюємо масив points
-            points.length = 0;
-            sorted.forEach(p => points.push(p));
+            points.length = 0; sorted.forEach(p => points.push(p));
         }
 
         async function saveNewOrder() {
             try {
                 const sequence = points.map(p => ({
-                    order_id: p.order_id,
-                    visit_order: p.visit_order,
-                    duration_min: p.duration_min || null
+                    order_id: p.order_id, visit_order: p.visit_order, duration_min: p.duration_min || null
                 }));
                 await apiPost('/api/save-visit-order', {
-                    manager_id: Number(managerId),
-                    date: currentDate,
-                    sequence
+                    manager_id: Number(managerId), date: currentDate, sequence
                 });
-            } catch (e) {
-                // Тихо ігноруємо — порядок вже оновлено локально
-                console.warn('saveNewOrder failed:', e);
-            }
+            } catch (e) { console.warn('saveNewOrder failed:', e); }
         }
 
-        // --- Довгий тап -> Доставка ---
-        function confirmDelivery(p) {
-            const status = pointStatus(p);
-            if (status === 'delivered') return; // вже доставлено
+        // ── Delivery confirm (long tap) ────────────────────────────────────────
 
+        function confirmDelivery(p) {
+            if (pointStatus(p) === 'delivered') return;
             document.getElementById('delivery-modal-title').textContent = p.client_name;
             document.getElementById('delivery-modal-info').innerHTML = `
                 <div style="margin:8px 0; font-size:14px;">
@@ -1620,16 +1240,12 @@
         async function submitDelivery() {
             const btn = document.getElementById('delivery-modal-btn');
             const orderId = Number(btn.dataset.orderId);
-            btn.disabled = true;
-            btn.textContent = '...';
+            btn.disabled = true; btn.textContent = '...';
             try {
                 const pos = await getPosition();
                 await apiPost('/api/update-delivery-status', {
-                    manager_id: Number(managerId),
-                    order_id: orderId,
-                    status: 'delivered',
-                    lat: pos.coords.latitude,
-                    lng: pos.coords.longitude
+                    manager_id: Number(managerId), order_id: orderId, status: 'delivered',
+                    lat: pos.coords.latitude, lng: pos.coords.longitude
                 });
                 const p = points.find(pt => Number(pt.order_id) === orderId);
                 if (p) p.delivery_status = 'delivered';
@@ -1639,26 +1255,73 @@
                 renderDriver();
             } catch (e) {
                 showToast(e.message || 'Помилка', 'error');
-                btn.disabled = false;
-                btn.textContent = '✅ Підтвердити доставку';
+                btn.disabled = false; btn.textContent = '✅ Підтвердити доставку';
             }
         }
 
-        function closeDeliveryModal() {
-            document.getElementById('delivery-modal').style.display = 'none';
+        function closeDeliveryModal() { document.getElementById('delivery-modal').style.display = 'none'; }
+
+        // ── Unpaid modal ──────────────────────────────────────────────────────
+
+        async function openUnpaidModal(p) {
+            document.getElementById('unpaid-modal-title').textContent = p.client_name;
+            document.getElementById('unpaid-modal-comment').textContent = p.comment || '';
+            document.getElementById('unpaid-modal-total').textContent = `${p.order_total || 0} грн`;
+            document.getElementById('unpaid-modal-amount').value = p.order_total || '';
+            document.getElementById('unpaid-modal-btn').dataset.orderId = p.order_id;
+            document.getElementById('unpaid-modal-btn').disabled = false;
+            document.getElementById('unpaid-modal-btn').textContent = 'Не оплачено';
+
+            const depositEl = document.getElementById('unpaid-modal-deposit');
+            depositEl.style.display = 'none';
+            try {
+                const resp = await fetch(`${apiUrl}/api/client-balance?manager_id=${managerId}&client=${encodeURIComponent(p.client_name)}`);
+                const data = await resp.json();
+                if (data.balance > 0) {
+                    depositEl.textContent = `⚠️ У клієнта є депозит ${data.balance} грн`;
+                    depositEl.style.display = 'block';
+                }
+            } catch (e) {}
+
+            document.getElementById('unpaid-modal').style.display = 'flex';
+            tg.HapticFeedback.impactOccurred('light');
         }
 
-        // ─── СТАН BASE MODAL ───
-        let baseModalPoint = null;      // поточна точка
-        let baseModalCoords = '';       // "lat, lng"
-        let baseModalPhotoFiles = [];   // File[]
+        async function submitUnpaid() {
+            const btn = document.getElementById('unpaid-modal-btn');
+            const orderId = Number(btn.dataset.orderId);
+            const paid = parseFloat(document.getElementById('unpaid-modal-amount').value) || 0;
+            btn.disabled = true; btn.textContent = '...';
+            try {
+                const resp = await fetch(`${apiUrl}/api/mark-unpaid`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ manager_id: Number(managerId), order_id: orderId, paid_amount: paid })
+                });
+                const res = await resp.json();
+                if (res.status === 'ok') {
+                    tg.HapticFeedback.notificationOccurred('success');
+                    showToast('Відмічено як неоплачено ⚠️');
+                    closeUnpaidModal();
+                    const p = points.find(pt => Number(pt.order_id) === orderId);
+                    if (p) p.payment_status = 'unpaid';
+                } else {
+                    showToast(res.error || res.message || 'Помилка', 'error');
+                    btn.disabled = false; btn.textContent = 'Не оплачено';
+                }
+            } catch (e) {
+                showToast('Помилка мережі', 'error');
+                btn.disabled = false; btn.textContent = 'Не оплачено';
+            }
+        }
+
+        function closeUnpaidModal() { document.getElementById('unpaid-modal').style.display = 'none'; }
+
+        // ── Base modal ────────────────────────────────────────────────────────
+
+        let baseModalPoint = null, baseModalCoords = '', baseModalPhotoFiles = [];
 
         function openBaseModal(p) {
-            baseModalPoint = p;
-            baseModalCoords = '';
-            baseModalPhotoFiles = [];
-
-            // Заповнюємо поля
+            baseModalPoint = p; baseModalCoords = ''; baseModalPhotoFiles = [];
             document.getElementById('base-modal-client-name').textContent = p.client_name;
             document.getElementById('base-modal-fixed').value = p.client_name;
             document.getElementById('base-modal-coords-btn').textContent = '📍 Додати координати';
@@ -1668,63 +1331,45 @@
             document.getElementById('base-modal-photo-grid').innerHTML = '';
             document.getElementById('base-modal-send-btn').disabled = true;
             document.getElementById('base-modal-send-btn').style.opacity = '0.5';
-
             document.getElementById('base-modal').style.display = 'flex';
             tg.HapticFeedback.impactOccurred('light');
         }
 
         function closeBaseModal() {
             document.getElementById('base-modal').style.display = 'none';
-            baseModalPoint = null;
-            baseModalCoords = '';
-            baseModalPhotoFiles = [];
+            baseModalPoint = null; baseModalCoords = ''; baseModalPhotoFiles = [];
         }
 
         function baseModalCheckCanSend() {
             const ready = baseModalCoords !== '';
             const btn = document.getElementById('base-modal-send-btn');
-            btn.disabled = !ready;
-            btn.style.opacity = ready ? '1' : '0.5';
+            btn.disabled = !ready; btn.style.opacity = ready ? '1' : '0.5';
         }
 
         function baseModalGetCoords() {
             const btn = document.getElementById('base-modal-coords-btn');
-            btn.textContent = '⏳ Визначаємо...';
-            btn.disabled = true;
-
+            btn.textContent = '⏳ Визначаємо...'; btn.disabled = true;
             if (!navigator.geolocation) {
                 showToast('Геолокація не підтримується', 'error');
-                btn.textContent = '📍 Додати координати';
-                btn.disabled = false;
-                return;
+                btn.textContent = '📍 Додати координати'; btn.disabled = false; return;
             }
-
             navigator.geolocation.getCurrentPosition(
                 pos => {
                     const lat = pos.coords.latitude.toFixed(6);
                     const lng = pos.coords.longitude.toFixed(6);
                     baseModalCoords = `${lat}, ${lng}`;
-
-                    btn.textContent = '✅ Координати додано';
-                    btn.style.color = '#31b545';
-                    btn.disabled = false;
-
-                    document.getElementById('base-modal-coords-result').textContent =
-                        `📌 ${baseModalCoords}`;
-
-                    // Оновлюємо точку локально одразу — маркер з'явиться після збереження
+                    btn.textContent = '✅ Координати додано'; btn.style.color = '#31b545'; btn.disabled = false;
+                    document.getElementById('base-modal-coords-result').textContent = `📌 ${baseModalCoords}`;
                     baseModalCheckCanSend();
                 },
                 () => {
                     showToast('Не вдалось отримати геолокацію', 'error');
-                    btn.textContent = '📍 Спробувати ще раз';
-                    btn.disabled = false;
+                    btn.textContent = '📍 Спробувати ще раз'; btn.disabled = false;
                 },
                 { enableHighAccuracy: true, timeout: 10000 }
             );
         }
 
-        // Стискання фото — та сама логіка що в base.html
         function baseModalCompressPhoto(file) {
             return new Promise(resolve => {
                 const reader = new FileReader();
@@ -1740,12 +1385,7 @@
                         const canvas = document.createElement('canvas');
                         canvas.width = w; canvas.height = h;
                         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                        const compressed = canvas.toDataURL('image/jpeg', 0.82);
-                        resolve({
-                            name: file.name.replace(/\.[^.]+$/, '.jpg'),
-                            data: compressed.split(',')[1],
-                            type: 'image/jpeg'
-                        });
+                        resolve({ name: file.name.replace(/\.[^.]+$/, '.jpg'), data: canvas.toDataURL('image/jpeg', 0.82).split(',')[1], type: 'image/jpeg' });
                     };
                     img.src = e.target.result;
                 };
@@ -1756,22 +1396,14 @@
         function baseModalHandlePhotos(input) {
             const files = Array.from(input.files);
             const grid = document.getElementById('base-modal-photo-grid');
-
             files.forEach(file => {
                 baseModalPhotoFiles.push(file);
                 const reader = new FileReader();
                 reader.onload = e => {
                     const img = document.createElement('img');
                     img.src = e.target.result;
-                    img.style.cssText = `
-                        width:72px; height:72px; object-fit:cover;
-                        border-radius:8px; cursor:pointer;
-                    `;
-                    img.onclick = () => {
-                        // Клік на превью → видалити фото
-                        baseModalPhotoFiles = baseModalPhotoFiles.filter(f => f !== file);
-                        img.remove();
-                    };
+                    img.style.cssText = 'width:72px; height:72px; object-fit:cover; border-radius:8px; cursor:pointer;';
+                    img.onclick = () => { baseModalPhotoFiles = baseModalPhotoFiles.filter(f => f !== file); img.remove(); };
                     grid.appendChild(img);
                 };
                 reader.readAsDataURL(file);
@@ -1781,217 +1413,379 @@
 
         async function baseModalSend() {
             if (!baseModalCoords || !baseModalPoint) return;
-
             const btn = document.getElementById('base-modal-send-btn');
-            btn.textContent = '⏳ Зберігаємо...';
-            btn.disabled = true;
-
+            btn.textContent = '⏳ Зберігаємо...'; btn.disabled = true;
             try {
-                const clientFixed = document.getElementById('base-modal-fixed').value.trim()
-                    || baseModalPoint.client_name;
-
-                // Стискаємо фото
-                const photosBase64 = await Promise.all(
-                    baseModalPhotoFiles.map(baseModalCompressPhoto)
-                );
-
-                const payload = JSON.stringify({
-                    manager_id: managerId,
-                    type: 'delivery',
-                    client_id: baseModalPoint.order_id,   // order_id як client_id
-                    client_db_name: baseModalPoint.client_name,
-                    client_fixed: clientFixed,
-                    coords: baseModalCoords,
-                    photos: photosBase64
-                });
-
+                const clientFixed = document.getElementById('base-modal-fixed').value.trim() || baseModalPoint.client_name;
+                const photosBase64 = await Promise.all(baseModalPhotoFiles.map(baseModalCompressPhoto));
                 const resp = await fetch(`${apiUrl}/api/delivery`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: payload
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        manager_id: managerId, type: 'delivery',
+                        client_id: baseModalPoint.order_id, client_db_name: baseModalPoint.client_name,
+                        client_fixed: clientFixed, coords: baseModalCoords, photos: photosBase64
+                    })
                 });
-
                 if (!resp.ok) throw new Error('Помилка сервера');
-
-                // Оновлюємо точку локально
                 const parts = baseModalCoords.replace(' ', '').split(',');
                 baseModalPoint.lat_to = parseFloat(parts[0]);
                 baseModalPoint.lng_to = parseFloat(parts[1]);
-
                 tg.HapticFeedback.notificationOccurred('success');
                 showToast('Збережено в Базу ✅');
                 closeBaseModal();
-
-                // Оновлюємо маркери на карті — тепер точка має координати
                 if (points.some(p => p.lat_to && p.lng_to)) {
                     map = initMap('map', map);
                     markersLayer = renderMarkers(map, markersLayer, points);
                     setTimeout(() => map.invalidateSize(), 100);
                 }
-                renderDriverList(); // оновлюємо іконку підкладки (тепер Waze замість + База)
-
+                renderDriverList();
             } catch (e) {
                 showToast(e.message || 'Помилка', 'error');
-                btn.textContent = 'Зберегти в Базу';
-                btn.disabled = false;
+                btn.textContent = 'Зберегти в Базу'; btn.disabled = false;
             }
         }
+
+        // ── Map helpers ───────────────────────────────────────────────────────
+
+        function markerColor(status, driverId) {
+            if (status === 'delivered') return '#31b545';
+            if (status === 'not_found') return '#f5a623';
+            if (status === 'rescheduled') return '#9e9e9e';
+            const palette = ['#4a90e2', '#8e44ad', '#00a6a6', '#d35400', '#c0392b', '#2c7a7b'];
+            return palette[Math.abs(Number(driverId || 0)) % palette.length];
+        }
+
+        function makeIcon(number, color) {
+            return L.divIcon({
+                html: `<div class="marker-pin" style="background:${color}">${number}</div>`,
+                className: '', iconSize: [28, 28], iconAnchor: [14, 14]
+            });
+        }
+
+        function initMap(target, existing) {
+            const el = document.getElementById(target);
+            el.style.display = 'block';
+            const m = existing || L.map(target).setView([50.45, 30.52], 11);
+            if (!existing) {
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(m);
+            }
+            return m;
+        }
+
+        function renderMarkers(targetMap, layer, list) {
+            if (layer) layer.remove();
+            layer = L.layerGroup().addTo(targetMap);
+            const bounds = [];
+            list.forEach((p, i) => {
+                if (!p.lat_to || !p.lng_to) return;
+                const lat = Number(p.lat_to), lng = Number(p.lng_to);
+                const status = pointStatus(p);
+                const comment  = p.comment ? `<br><span style="font-size:11px;color:#666">${escapeHtml(p.comment)}</span>` : '';
+                const price    = p.order_total ? `<br><b style="color:#31b545">${p.order_total} грн</b>` : '';
+                const duration = p.duration_min != null ? `<br><span style="font-size:11px">~${p.duration_min} хв</span>` : '';
+                const wazeBtn  = `<br><a href="https://waze.com/ul?ll=${lat},${lng}&navigate=yes" target="_blank"
+                    style="display:inline-block;margin-top:6px;padding:5px 14px;background:#31b545;color:white;
+                           border-radius:12px;font-size:12px;font-weight:700;text-decoration:none;">🧭 Waze</a>`;
+                const marker = L.marker([lat, lng], { icon: makeIcon(p.visit_order || i + 1, markerColor(status, p.driver_id)) });
+                marker.bindPopup(`<b>${escapeHtml(p.client_name)}</b>${comment}${price}${duration}${wazeBtn}`, { maxWidth: 220 });
+                marker.addTo(layer);
+                bounds.push([lat, lng]);
+            });
+            if (bounds.length) targetMap.fitBounds(bounds, { padding: [25, 25] });
+            return layer;
+        }
+
+        function startWatchingPosition(targetMap) {
+            if (!navigator.geolocation || watchId) return;
+            const myIcon = L.divIcon({
+                html: `<div style="width:16px;height:16px;background:#2196F3;border:3px solid white;border-radius:50%;
+                                   box-shadow:0 0 0 4px rgba(33,150,243,0.3);animation:pulse 1.5s infinite;"></div>`,
+                className: '', iconSize: [16, 16], iconAnchor: [8, 8]
+            });
+            watchId = navigator.geolocation.watchPosition(
+                pos => {
+                    const lat = pos.coords.latitude, lng = pos.coords.longitude;
+                    if (!myLocationMarker) {
+                        myLocationMarker = L.marker([lat, lng], { icon: myIcon, zIndexOffset: 1000 })
+                            .bindPopup('📍 Моя позиція').addTo(targetMap);
+                    } else {
+                        myLocationMarker.setLatLng([lat, lng]);
+                    }
+                },
+                () => {},
+                { enableHighAccuracy: true, maximumAge: 15000, timeout: 10000 }
+            );
+        }
+
+        window.addEventListener('beforeunload', () => { if (watchId) navigator.geolocation.clearWatch(watchId); });
+
+        // ── Admin mode ────────────────────────────────────────────────────────
+
+        async function loadAdmin() {
+            currentDate = isoToDisplay(document.getElementById('route-date').value);
+            try {
+                const res = await apiGet(`/api/all-driver-points?manager_id=${managerId}&date=${currentDate}`);
+                if (!res.resp.ok) throw new Error(res.data.error || 'Помилка завантаження');
+                points  = res.data.points  || [];
+                drivers = res.data.drivers || [];
+                renderAdmin();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        function renderAdmin() {
+            showScreen('screen-admin');
+            document.getElementById('admin-title').textContent = `📋 Маршрути на ${currentDate}`;
+            const mapEl = document.getElementById('admin-map');
+            mapEl.style.height = '350px'; mapEl.style.borderRadius = '12px';
+            mapEl.style.overflow = 'hidden'; mapEl.style.marginBottom = '15px';
+            adminMap = initMap('admin-map', adminMap);
+            adminMarkersLayer = renderMarkers(adminMap, adminMarkersLayer, points);
+            setTimeout(() => adminMap.invalidateSize(), 50);
+
+            const counts = new Map();
+            points.forEach(p => counts.set(String(p.driver_id || 0), (counts.get(String(p.driver_id || 0)) || 0) + 1));
+            document.getElementById('drivers-summary').innerHTML = drivers.length
+                ? drivers.map(d => `<span class="driver-chip">${escapeHtml(d.name)}: ${counts.get(String(d.id)) || 0}</span>`).join('')
+                : '<div class="empty-state">Водіїв з правом driver немає</div>';
+            document.getElementById('bulk-driver').innerHTML = driverOptions('');
+
+            const list = document.getElementById('admin-list');
+            if (!points.length) { list.innerHTML = '<div class="empty-state">На цю дату точок немає</div>'; return; }
+            list.innerHTML = points.map(p => {
+                const status = pointStatus(p);
+                const isStarted = p.route_started;
+                const assignHtml = isStarted
+                    ? `<div class="point-meta">🚗 В дорозі — зміни заблоковано</div>`
+                    : `<div class="assign-box" id="assign-${p.order_id}" onclick="event.stopPropagation()">
+                           <select id="driver-${p.order_id}">${driverOptions(p.driver_id)}</select>
+                           <button class="btn btn-green" onclick="assignOne(${p.order_id})">Призначити</button>
+                       </div>`;
+                return `
+                    <div class="point-card ${status}">
+                        <div class="admin-row">
+                            <input type="checkbox" class="bulk-check" value="${p.order_id}" ${isStarted ? 'disabled' : ''}>
+                            <div onclick="${isStarted ? '' : `toggleAssign(${p.order_id})`}">
+                                <div class="point-name">${escapeHtml(p.client_name)}</div>
+                                <div class="point-meta">${statusText(status)} • ${escapeHtml(p.driver_name || 'без водія')}</div>
+                                ${assignHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function driverOptions(currentId) {
+            return `<option value="">Оберіть водія</option>` + drivers.map(d => {
+                const selected = String(d.id) === String(currentId) ? 'selected' : '';
+                return `<option value="${d.id}" ${selected}>${escapeHtml(d.name)}</option>`;
+            }).join('');
+        }
+
+        function toggleAssign(orderId) {
+            tg.HapticFeedback.impactOccurred('light');
+            const box = document.getElementById(`assign-${orderId}`);
+            box.style.display = box.style.display === 'block' ? 'none' : 'block';
+        }
+
+        async function assignOne(orderId) {
+            const driverId = document.getElementById(`driver-${orderId}`).value;
+            if (!driverId) { showToast('Оберіть водія', 'error'); return; }
+            await saveAssignments([{ order_id: Number(orderId), driver_id: Number(driverId) }]);
+        }
+
+        async function assignSelected() {
+            const selected = [...document.querySelectorAll('.bulk-check:checked')].map(c => Number(c.value));
+            if (!selected.length) { showToast('Оберіть точки', 'error'); return; }
+            const driverId = document.getElementById('bulk-driver').value;
+            if (!driverId) { showToast('Оберіть водія', 'error'); return; }
+            await saveAssignments(selected.map(orderId => ({ order_id: orderId, driver_id: Number(driverId) })));
+        }
+
+        async function saveAssignments(assignments) {
+            try {
+                const result = await apiPost('/api/driver-assign', {
+                    manager_id: Number(managerId), date: currentDate, assignments
+                });
+                tg.HapticFeedback.notificationOccurred('success');
+                if (result.skipped > 0) {
+                    showToast(`Призначено: ${result.assigned}. Пропущено (водій вже в дорозі): ${result.skipped}`, 'error');
+                } else {
+                    showToast(`Призначено: ${result.assigned}`);
+                }
+                await loadAdmin();
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+
+        // ── Archive mode ──────────────────────────────────────────────────────
+
+        async function loadArchive() {
+            const list = document.getElementById('archive-list');
+            list.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
+            try {
+                const from = document.getElementById('archive-from').value;
+                const to   = document.getElementById('archive-to').value;
+                let url = `/api/archive-routes?manager_id=${managerId}`;
+                if (from) url += `&date_from=${isoToDisplay(from)}`;
+                if (to)   url += `&date_to=${isoToDisplay(to)}`;
+                const res = await apiGet(url);
+                if (!res.resp.ok) throw new Error(res.data.error || 'Помилка');
+                renderArchive(res.data.routes || []);
+            } catch (e) {
+                list.innerHTML = `<div class="empty-state">${escapeHtml(e.message)}</div>`;
+            }
+        }
+
+        function renderArchive(routes) {
+            const list = document.getElementById('archive-list');
+            if (!routes.length) { list.innerHTML = '<div class="empty-state">Маршрутів не знайдено</div>'; return; }
+            list.innerHTML = routes.map(r => `
+                <div class="card" style="cursor:pointer;" onclick="toggleArchiveDetails(this)">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div>
+                            <div style="font-weight:700; font-size:15px;">📅 ${r.route_date} &nbsp; 🚗 ${escapeHtml(r.driver_name)}</div>
+                            <div class="point-meta" style="margin-top:4px;">
+                                ${Number(r.total_km || 0).toFixed(1)} км &nbsp;•&nbsp; ${r.delivered}/${r.total} доставлено
+                            </div>
+                            ${r.started_at ? `<div class="point-meta">⏱ ${r.started_at} → ${r.finished_at || '?'}</div>` : ''}
+                        </div>
+                        <span style="font-size:13px; color:var(--tg-theme-hint-color);">▼</span>
+                    </div>
+                    <div class="archive-details" style="display:none; margin-top:10px; padding-top:10px;
+                                                       border-top:1px dashed var(--tg-theme-hint-color);">
+                        <div>📦 Доставлено: ${r.delivered} з ${r.total}</div>
+                        ${r.rescheduled_count > 0 ? `<div style="margin-top:4px;">📅 Перенесено: ${r.rescheduled_count}</div>` : ''}
+                        ${r.cancelled_count   > 0 ? `<div style="margin-top:4px;">❌ Відмінено: ${r.cancelled_count}</div>`   : ''}
+                        ${r.duration ? `<div style="margin-top:4px;">⏱ Тривалість: ${r.duration}</div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleArchiveDetails(card) {
+            const details = card.querySelector('.archive-details');
+            details.style.display = details.style.display === 'none' ? 'block' : 'none';
+        }
+
         bootstrap();
     </script>
-    <!-- Bottom sheet: форма "Не оплачено" (свайп вліво) -->
-    <div id="unpaid-modal" style="display:none; position:fixed; inset:0;
-     background:rgba(0,0,0,0.5); z-index:1000; align-items:flex-end;"
-        onclick="if(event.target===this) closeUnpaidModal()">
-        <div style="background:var(--tg-theme-bg-color); border-radius:20px 20px 0 0;
-                padding:20px; width:100%; max-width:480px; margin:0 auto;
-                animation: slideUp 0.25s ease;">
 
-            <!-- Заголовок -->
+    <!-- Unpaid modal (swipe left) -->
+    <div id="unpaid-modal" style="display:none; position:fixed; inset:0;
+         background:rgba(0,0,0,0.5); z-index:1000; align-items:flex-end;"
+         onclick="if(event.target===this) closeUnpaidModal()">
+        <div style="background:var(--tg-theme-bg-color); border-radius:20px 20px 0 0;
+                    padding:20px; width:100%; max-width:480px; margin:0 auto;
+                    animation: slideUp 0.25s ease;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                 <b style="font-size:16px;" id="unpaid-modal-title"></b>
                 <button onclick="closeUnpaidModal()" style="background:none;border:none;font-size:22px;cursor:pointer;
                            color:var(--tg-theme-hint-color); line-height:1;">✕</button>
             </div>
-
-            <!-- Коментар -->
-            <div id="unpaid-modal-comment"
-                style="font-size:13px; color:var(--tg-theme-hint-color); margin-bottom:12px;"></div>
-
-            <!-- Депозит (показується якщо є) -->
-            <div id="unpaid-modal-deposit" style="display:none; margin-bottom:10px;
-             padding:8px 12px; background:rgba(49,181,69,0.1);
-             border-radius:10px; font-size:13px; color:#31b545; font-weight:600;"></div>
-
-            <!-- Разом -->
-            <div style="display:flex; justify-content:space-between;
-                    border-top:1px dashed var(--tg-theme-hint-color);
-                    padding-top:10px; margin-bottom:12px;">
+            <div id="unpaid-modal-comment" style="font-size:13px; color:var(--tg-theme-hint-color); margin-bottom:12px;"></div>
+            <div id="unpaid-modal-deposit" style="display:none; margin-bottom:10px; padding:8px 12px;
+                 background:rgba(49,181,69,0.1); border-radius:10px; font-size:13px; color:#31b545; font-weight:600;"></div>
+            <div style="display:flex; justify-content:space-between; border-top:1px dashed var(--tg-theme-hint-color);
+                        padding-top:10px; margin-bottom:12px;">
                 <span style="font-size:14px;">Разом:</span>
                 <span style="font-size:14px; font-weight:700;" id="unpaid-modal-total"></span>
             </div>
-
-            <!-- Сума оплати -->
-            <label style="font-size:12px; color:var(--tg-theme-hint-color);
-                      font-weight:600; text-transform:uppercase;">
-                Сума оплати (грн):
-            </label>
+            <label style="font-size:12px; color:var(--tg-theme-hint-color); font-weight:600; text-transform:uppercase;">Сума оплати (грн):</label>
             <input id="unpaid-modal-amount" type="number" step="0.01" style="width:100%; padding:10px; margin:6px 0 16px;
-                      border:1px solid var(--tg-theme-hint-color);
-                      border-radius:10px; font-size:16px;
-                      background:var(--tg-theme-secondary-bg-color);
-                      color:var(--tg-theme-text-color); box-sizing:border-box;" />
-
-            <!-- Кнопка -->
+                   border:1px solid var(--tg-theme-hint-color); border-radius:10px; font-size:16px;
+                   background:var(--tg-theme-secondary-bg-color); color:var(--tg-theme-text-color); box-sizing:border-box;" />
             <button id="unpaid-modal-btn" onclick="submitUnpaid()" style="width:100%; padding:14px; background:#e53935;
-                       color:white; border:none; border-radius:12px;
-                       font-size:15px; font-weight:700; cursor:pointer;">
+                    color:white; border:none; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer;">
                 Не оплачено
             </button>
         </div>
     </div>
-    <!-- Модалка підтвердження доставки (довгий тап) -->
+
+    <!-- Delivery confirm modal (long tap) -->
     <div id="delivery-modal" style="display:none; position:fixed; inset:0;
-     background:rgba(0,0,0,0.5); z-index:1000; align-items:flex-end;"
+         background:rgba(0,0,0,0.5); z-index:1000; align-items:flex-end;"
          onclick="if(event.target===this) closeDeliveryModal()">
         <div style="background:var(--tg-theme-bg-color); border-radius:20px 20px 0 0;
-                padding:20px; width:100%; max-width:480px; margin:0 auto;
-                animation: slideUp 0.25s ease;">
+                    padding:20px; width:100%; max-width:480px; margin:0 auto; animation: slideUp 0.25s ease;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <b id="delivery-modal-title" style="font-size:16px"></b>
                 <button onclick="closeDeliveryModal()"
-                        style="background:none;border:none;font-size:20px;cursor:pointer;
-                           color:var(--tg-theme-hint-color)">✕</button>
+                        style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--tg-theme-hint-color)">✕</button>
             </div>
             <div id="delivery-modal-info"></div>
             <button id="delivery-modal-btn" onclick="submitDelivery()"
-                    style="width:100%; padding:13px; background:#31b545;
-                       color:white; border:none; border-radius:12px;
-                       font-size:15px; font-weight:700; cursor:pointer; margin-top:8px;">
+                    style="width:100%; padding:13px; background:#31b545; color:white; border:none; border-radius:12px;
+                           font-size:15px; font-weight:700; cursor:pointer; margin-top:8px;">
                 ✅ Підтвердити доставку
             </button>
         </div>
     </div>
-    <!-- Bottom sheet: додавання в Базу (свайп вправо без координат) -->
+
+    <!-- Base modal (swipe right, no coords) -->
     <div id="base-modal" style="display:none; position:fixed; inset:0;
          background:rgba(0,0,0,0.5); z-index:1000; align-items:flex-end;"
          onclick="if(event.target===this) closeBaseModal()">
         <div style="background:var(--tg-theme-bg-color); border-radius:20px 20px 0 0;
                     padding:20px; width:100%; max-width:480px; margin:0 auto;
                     max-height:85vh; overflow-y:auto; animation: slideUp 0.25s ease;">
-
-            <!-- Заголовок -->
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                 <b style="font-size:16px;">📍 Додати в Базу</b>
                 <button onclick="closeBaseModal()"
-                        style="background:none;border:none;font-size:22px;cursor:pointer;
-                               color:var(--tg-theme-hint-color);">✕</button>
+                        style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--tg-theme-hint-color);">✕</button>
             </div>
-
-            <!-- Ім'я клієнта (нередаговане) -->
-            <div style="font-size:12px; color:var(--tg-theme-hint-color);
-                        font-weight:600; text-transform:uppercase; margin-bottom:6px;">
-                🏪 Клієнт
-            </div>
-            <div id="base-modal-client-name"
-                 style="padding:12px; border-radius:10px; font-size:15px; font-weight:600;
-                        background:var(--tg-theme-secondary-bg-color); margin-bottom:16px;"></div>
-
-            <!-- Скоректована назва / адреса -->
-            <div style="font-size:12px; color:var(--tg-theme-hint-color);
-                        font-weight:600; text-transform:uppercase; margin-bottom:6px;">
-                ✏️ Скоректована назва / адреса
-            </div>
+            <div style="font-size:12px; color:var(--tg-theme-hint-color); font-weight:600; text-transform:uppercase; margin-bottom:6px;">🏪 Клієнт</div>
+            <div id="base-modal-client-name" style="padding:12px; border-radius:10px; font-size:15px; font-weight:600;
+                 background:var(--tg-theme-secondary-bg-color); margin-bottom:16px;"></div>
+            <div style="font-size:12px; color:var(--tg-theme-hint-color); font-weight:600; text-transform:uppercase; margin-bottom:6px;">✏️ Скоректована назва / адреса</div>
             <textarea id="base-modal-fixed" rows="2"
-                      style="width:100%; padding:12px; border-radius:10px;
-                             border:1px solid var(--tg-theme-hint-color);
-                             background:var(--tg-theme-secondary-bg-color);
-                             color:var(--tg-theme-text-color); font-size:15px;
-                             font-family:inherit; resize:none; margin-bottom:16px;
-                             box-sizing:border-box;"></textarea>
-
-            <!-- Координати -->
-            <div style="font-size:12px; color:var(--tg-theme-hint-color);
-                        font-weight:600; text-transform:uppercase; margin-bottom:8px;">
-                📌 Координати
-            </div>
+                      style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--tg-theme-hint-color);
+                             background:var(--tg-theme-secondary-bg-color); color:var(--tg-theme-text-color);
+                             font-size:15px; font-family:inherit; resize:none; margin-bottom:16px; box-sizing:border-box;"></textarea>
+            <div style="font-size:12px; color:var(--tg-theme-hint-color); font-weight:600; text-transform:uppercase; margin-bottom:8px;">📌 Координати</div>
             <button id="base-modal-coords-btn" onclick="baseModalGetCoords()"
-                    style="width:100%; padding:12px; border-radius:10px;
-                           border:none; background:var(--tg-theme-secondary-bg-color);
-                           color:var(--tg-theme-text-color); font-size:15px;
-                           cursor:pointer; margin-bottom:6px; text-align:left;">
+                    style="width:100%; padding:12px; border-radius:10px; border:none;
+                           background:var(--tg-theme-secondary-bg-color); color:var(--tg-theme-text-color);
+                           font-size:15px; cursor:pointer; margin-bottom:6px; text-align:left;">
                 📍 Додати координати
             </button>
-            <div id="base-modal-coords-result"
-                 style="font-size:13px; color:#31b545; margin-bottom:16px; min-height:16px;"></div>
-
-            <!-- Фото — два варіанти -->
-            <div style="font-size:12px; color:var(--tg-theme-hint-color);
-                        font-weight:600; text-transform:uppercase; margin-bottom:8px;">
-                📸 Фото (необов'язково)
-            </div>
+            <div id="base-modal-coords-result" style="font-size:13px; color:#31b545; margin-bottom:16px; min-height:16px;"></div>
+            <div style="font-size:12px; color:var(--tg-theme-hint-color); font-weight:600; text-transform:uppercase; margin-bottom:8px;">📸 Фото (необов'язково)</div>
             <button onclick="document.getElementById('base-modal-photo').click()"
                     style="width:100%; padding:12px; border-radius:10px; border:none;
-                           background:var(--tg-theme-secondary-bg-color);
-                           color:var(--tg-theme-text-color); font-size:15px;
-                           cursor:pointer; margin-bottom:12px; text-align:left;">
+                           background:var(--tg-theme-secondary-bg-color); color:var(--tg-theme-text-color);
+                           font-size:15px; cursor:pointer; margin-bottom:12px; text-align:left;">
                 📷 Додати фото
             </button>
-            <input type="file" id="base-modal-photo"
-                   accept="image/*" multiple
+            <input type="file" id="base-modal-photo" accept="image/*" multiple
                    onchange="baseModalHandlePhotos(this)" style="display:none;">
-
-            <!-- Превью фото -->
-            <div id="base-modal-photo-grid"
-                 style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;"></div>
-
-            <!-- Кнопка відправки -->
+            <div id="base-modal-photo-grid" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;"></div>
             <button id="base-modal-send-btn" onclick="baseModalSend()" disabled
-                    style="width:100%; padding:14px; background:#31b545;
-                           color:white; border:none; border-radius:12px;
-                           font-size:15px; font-weight:700; cursor:pointer;
-                           opacity:0.5;">
+                    style="width:100%; padding:14px; background:#31b545; color:white; border:none; border-radius:12px;
+                           font-size:15px; font-weight:700; cursor:pointer; opacity:0.5;">
                 Зберегти в Базу
             </button>
+        </div>
+    </div>
+
+    <!-- Pending modal (finish route with pending points) -->
+    <div id="pending-modal" style="display:none; position:fixed; inset:0;
+         background:rgba(0,0,0,0.5); z-index:1000; align-items:flex-end;"
+         onclick="if(event.target===this) closePendingModal()">
+        <div style="background:var(--tg-theme-bg-color); border-radius:20px 20px 0 0;
+                    padding:20px; width:100%; max-width:480px; margin:0 auto;
+                    max-height:80vh; overflow-y:auto; animation: slideUp 0.25s ease;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <b style="font-size:16px;">⚠️ Є незакриті замовлення</b>
+                <button onclick="closePendingModal()" style="background:none;border:none;font-size:22px;cursor:pointer;
+                           color:var(--tg-theme-hint-color);">✕</button>
+            </div>
+            <div id="pending-modal-list" style="margin-bottom:16px; max-height:200px; overflow-y:auto;"></div>
+            <div style="font-size:14px; font-weight:600; margin-bottom:12px; color:var(--tg-theme-hint-color);">Що робимо з ними?</div>
+            <button class="btn btn-outline" style="margin-top:0;" onclick="handlePendingAction('reschedule')">📅 Перенести на завтра</button>
+            <button class="btn btn-red"     style="margin-top:8px;" onclick="handlePendingAction('cancel')">❌ Відмінити замовлення</button>
+            <button class="btn btn-gray"    style="margin-top:8px;" onclick="closePendingModal()">← Повернутись</button>
         </div>
     </div>
 </body>
