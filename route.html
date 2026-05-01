@@ -593,6 +593,16 @@
 
         document.getElementById('route-date').value = isoDate;
 
+        function escapeHtml(text) {
+            if (!text) return "";
+            return text.toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
             toast.style.cssText = `
@@ -1725,7 +1735,11 @@
                 closeBaseModal();
 
                 // Оновлюємо маркери на карті — тепер точка має координати
-                markersLayer = renderMarkers(map, markersLayer, points);
+                if (points.some(p => p.lat_to && p.lng_to)) {
+                    map = initMap('map', map);
+                    markersLayer = renderMarkers(map, markersLayer, points);
+                    setTimeout(() => map.invalidateSize(), 100);
+                }
                 renderDriverList(); // оновлюємо іконку підкладки (тепер Waze замість + База)
 
             } catch (e) {
@@ -1883,7 +1897,7 @@
             </div>
             <!-- Камера (capture відкриває камеру напряму) -->
             <input type="file" id="base-modal-camera"
-                   accept="image/*" capture="environment"
+                   accept="image/*" capture="camera"
                    onchange="baseModalHandlePhotos(this)" style="display:none;">
             <!-- Галерея (multiple — можна вибрати кілька) -->
             <input type="file" id="base-modal-gallery"
