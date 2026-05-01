@@ -269,7 +269,7 @@
         let coordsValue = '';
         let photoFiles = [];
 
-        let existingIds = new Set();
+        let existingNames = new Set();
 
         // ─── ЗАГРУЗКА КЛИЕНТОВ ───
         async function loadTodayClients() {
@@ -282,7 +282,7 @@
                 const existingData = await existingResp.json();
 
                 allClients = clientsData.clients || [];
-                existingIds = new Set(existingData.existing.map(String));
+                existingNames = new Set(existingData.existing); // вже lowercase з сервера
 
                 if (allClients.length === 0) {
                     document.getElementById('client-search').placeholder = 'Сьогодні замовлень немає';
@@ -327,7 +327,7 @@
             searchInput.value = '';
             suggestionsBox.style.display = 'none';
 
-            const alreadyExists = existingIds.has(String(client.id));
+            const alreadyExists = existingNames.has(client.name.toLowerCase().trim());
 
             document.getElementById('selected-name').textContent = client.name;
             document.getElementById('selected-display').classList.add('visible');
