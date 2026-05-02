@@ -788,19 +788,30 @@
                     const routeMap = {};
                     res.data.route.forEach(r => { routeMap[r.order_id] = r; });
 
-                    const closedMaxOrder = points
-                        .filter(p => p.delivery_status !== 'pending')
-                        .reduce((max, p) => Math.max(max, p.visit_order || 0), 0);
-
                     points.forEach(p => {
                         if (routeMap[p.order_id]) {
-                            p.visit_order  = routeMap[p.order_id].visit_order + closedMaxOrder;
                             p.duration_min = routeMap[p.order_id].duration_min;
                             if (!p.lat_to && routeMap[p.order_id].lat) p.lat_to = routeMap[p.order_id].lat;
                             if (!p.lng_to && routeMap[p.order_id].lng) p.lng_to = routeMap[p.order_id].lng;
                         }
                     });
-                    points.sort((a, b) => (a.visit_order || 999) - (b.visit_order || 999));
+
+                    const closed = points
+                        .filter(p => p.delivery_status === 'delivered')
+                        .sort((a, b) => (a.visit_order || 999) - (b.visit_order || 999));
+
+                    const active = points
+                        .filter(p => p.delivery_status !== 'delivered')
+                        .sort((a, b) => {
+                            const aOrder = routeMap[a.order_id]?.visit_order || 999;
+                            const bOrder = routeMap[b.order_id]?.visit_order || 999;
+                            return aOrder - bOrder;
+                        });
+
+                    const sorted = [...closed, ...active];
+                    sorted.forEach((p, i) => { p.visit_order = i + 1; });
+                    points.length = 0;
+                    sorted.forEach(p => points.push(p));
                 }
             } catch (e) { console.warn('loadOptimized failed:', e); }
         }
@@ -849,12 +860,19 @@
             }
             points.sort((a, b) => (a.visit_order || 999) - (b.visit_order || 999));
             list.innerHTML = points.map((p) => {
+                const isRescheduledToday = p.delivery_status === 'rescheduled';
                 const status = pointStatus(p);
                 const noCoords = !p.lat_to && !p.lng_to ? ' 📍' : '';
                 const hasPhotos = p.photos && p.photos.length > 0;
 
                 let badge = '';
                 if (p.duration_min != null) badge = `<div class="time-badge">~${p.duration_min} хв</div>`;
+
+                const rescheduledBadge = isRescheduledToday
+                    ? `<div style="font-size:11px; color:#f5a623; font-weight:600; margin-top:2px;">
+                           🔄 Перенесено з ${formatRescheduledDate(p.order_date)}
+                       </div>`
+                    : '';
 
                 const dragHandle   = reorderMode ? `<div class="drag-handle" title="Перетягнути">⠿</div>` : '';
                 const draggableAttr = reorderMode ? 'draggable="true"' : '';
@@ -879,7 +897,8 @@
                             <div class="point-num" ${numOnclick}>${p.visit_order || ''}</div>
                             <div style="flex:1; min-width:0;">
                                 <div class="point-name">${escapeHtml(p.client_name)}${lockIcon}${noCoords} ${photoIcon}</div>
-                                <div class="point-meta">${statusText(status)}</div>
+                                <div class="point-meta">${statusText(status, isRescheduledToday)}</div>
+                                ${rescheduledBadge}
                                 ${p.comment ? `<div class="point-comment">${escapeHtml(p.comment)}</div>` : ''}
                                 ${p.order_total ? `<div class="point-price">💰 ${p.order_total} грн</div>` : ''}
                             </div>
@@ -1005,8 +1024,20 @@
         // ── Point actions ─────────────────────────────────────────────────────
 
         function pointStatus(p)  { return p.delivery_status || p.point_status || 'pending'; }
-        function statusText(status) {
+        function statusText(status, isRescheduledToday) {
+            if (status === 'rescheduled' && isRescheduledToday) return 'Очікує (перенесено)';
             return { pending: 'Очікує', delivered: 'Доставлено', rescheduled: 'Перенесено', cancelled: 'Відмінено' }[status] || status;
+        }
+
+        function formatRescheduledDate(dateStr) {
+            if (!dateStr) return 'попереднього дня';
+            try {
+                if (String(dateStr).includes('-')) {
+                    const [y, m, d] = String(dateStr).split('-');
+                    return `${d}.${m}.${y}`;
+                }
+                return String(dateStr);
+            } catch { return 'попереднього дня'; }
         }
         function cardClass(p) {
             const s = p.delivery_status;
