@@ -810,14 +810,16 @@
             const startBtn = document.getElementById('start-route-btn');
             startBtn.style.display = routeStarted ? 'none' : 'block';
 
+            const mapEl = document.getElementById('map');
             const withCoords = points.filter(p => p.lat_to && p.lng_to);
             if (withCoords.length) {
+                mapEl.style.display = '';
                 map = initMap('map', map);
                 markersLayer = renderMarkers(map, markersLayer, points);
                 startWatchingPosition(map);
                 setTimeout(() => map.invalidateSize(), 50);
             } else {
-                document.getElementById('map').style.display = 'none';
+                mapEl.style.display = 'none';
             }
 
             const toggleBlock = document.getElementById('reorder-toggle-block');
@@ -840,6 +842,7 @@
                 list.innerHTML = '<div class="empty-state">На цю дату точок немає</div>';
                 return;
             }
+            points.sort((a, b) => (a.visit_order || 999) - (b.visit_order || 999));
             list.innerHTML = points.map((p) => {
                 const status = pointStatus(p);
                 const noCoords = !p.lat_to && !p.lng_to ? ' 📍' : '';
@@ -1042,6 +1045,16 @@
             if (!selectedPoint) return;
             try {
                 const pos = await getPosition();
+
+                let isOutOfOrder = false;
+                if (status === 'delivered') {
+                    const nextExpected = points
+                        .filter(p => p.delivery_status === 'pending')
+                        .sort((a, b) => (a.visit_order || 999) - (b.visit_order || 999))[0];
+                    isOutOfOrder = nextExpected &&
+                        selectedPoint.visit_order !== nextExpected.visit_order;
+                }
+
                 const data = await apiPost('/api/update-delivery-status', {
                     manager_id: Number(managerId),
                     order_id: Number(selectedPoint.order_id),
@@ -1049,10 +1062,21 @@
                     lat: pos.coords.latitude,
                     lng: pos.coords.longitude
                 });
+
                 routeKm = Number(data.total_km || routeKm || 0);
+                selectedPoint.delivery_status = status;
+
                 tg.HapticFeedback.notificationOccurred('success');
                 showToast('Статус оновлено');
-                await loadDriver();
+                showScreen('screen-driver');
+                setActiveTab('driver');
+
+                if (isOutOfOrder) {
+                    await loadOptimized();
+                }
+
+                renderDriver();
+
             } catch (e) {
                 showToast(e.message, 'error');
             }
@@ -1307,16 +1331,32 @@
             btn.disabled = true; btn.textContent = '...';
             try {
                 const pos = await getPosition();
-                await apiPost('/api/update-delivery-status', {
+
+                const p = points.find(pt => Number(pt.order_id) === orderId);
+                const nextExpected = points
+                    .filter(pt => pt.delivery_status === 'pending')
+                    .sort((a, b) => (a.visit_order || 999) - (b.visit_order || 999))[0];
+                const isOutOfOrder = nextExpected && p &&
+                    p.visit_order !== nextExpected.visit_order;
+
+                const data = await apiPost('/api/update-delivery-status', {
                     manager_id: Number(managerId), order_id: orderId, status: 'delivered',
                     lat: pos.coords.latitude, lng: pos.coords.longitude
                 });
-                const p = points.find(pt => Number(pt.order_id) === orderId);
+
+                routeKm = Number(data.total_km || routeKm || 0);
                 if (p) p.delivery_status = 'delivered';
+
                 tg.HapticFeedback.notificationOccurred('success');
                 showToast('Доставлено ✅');
                 closeDeliveryModal();
+
+                if (isOutOfOrder) {
+                    await loadOptimized();
+                }
+
                 renderDriver();
+
             } catch (e) {
                 showToast(e.message || 'Помилка', 'error');
                 btn.disabled = false; btn.textContent = '✅ Підтвердити доставку';
