@@ -787,9 +787,14 @@
                 if (res.resp.ok && res.data.route) {
                     const routeMap = {};
                     res.data.route.forEach(r => { routeMap[r.order_id] = r; });
+
+                    const closedMaxOrder = points
+                        .filter(p => p.delivery_status !== 'pending')
+                        .reduce((max, p) => Math.max(max, p.visit_order || 0), 0);
+
                     points.forEach(p => {
                         if (routeMap[p.order_id]) {
-                            p.visit_order  = routeMap[p.order_id].visit_order;
+                            p.visit_order  = routeMap[p.order_id].visit_order + closedMaxOrder;
                             p.duration_min = routeMap[p.order_id].duration_min;
                             if (!p.lat_to && routeMap[p.order_id].lat) p.lat_to = routeMap[p.order_id].lat;
                             if (!p.lng_to && routeMap[p.order_id].lng) p.lng_to = routeMap[p.order_id].lng;
@@ -805,7 +810,7 @@
             document.getElementById('driver-progress').textContent = `${done} з ${points.length}`;
             document.getElementById('driver-km').textContent = `${routeKm.toFixed(1)} км`;
             document.getElementById('finish-route-btn').style.display =
-                points.length && done === points.length ? 'block' : 'none';
+                routeStarted && points.length ? 'block' : 'none';
 
             const startBtn = document.getElementById('start-route-btn');
             startBtn.style.display = routeStarted ? 'none' : 'block';
