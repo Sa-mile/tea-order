@@ -96,10 +96,6 @@
             cursor: pointer;
         }
 
-        .point-card.rescheduled {
-            opacity: 0.65;
-            text-decoration: line-through;
-        }
 
         .point-head {
             position: relative;
@@ -817,8 +813,9 @@
         }
 
         function renderDriver() {
-            const done = points.filter(p => pointStatus(p) !== 'pending').length;
-            document.getElementById('driver-progress').textContent = `${done} з ${points.length}`;
+            const done  = points.filter(p => p.delivery_status === 'delivered').length;
+            const total = points.filter(p => p.delivery_status !== 'cancelled').length;
+            document.getElementById('driver-progress').textContent = `${done} з ${total}`;
             document.getElementById('driver-km').textContent = `${routeKm.toFixed(1)} км`;
             document.getElementById('finish-route-btn').style.display =
                 routeStarted && points.length ? 'block' : 'none';
@@ -915,7 +912,10 @@
         // ── Finish route flow ─────────────────────────────────────────────────
 
         function finishRoute() {
-            const pendingPoints = points.filter(p => pointStatus(p) === 'pending');
+            const pendingPoints = points.filter(p =>
+                p.delivery_status === 'pending' ||
+                p.delivery_status === 'rescheduled'
+            );
             if (pendingPoints.length > 0) {
                 showPendingModal(pendingPoints);
             } else {
