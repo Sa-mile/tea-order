@@ -857,7 +857,7 @@
             }
             points.sort((a, b) => (a.visit_order || 999) - (b.visit_order || 999));
             list.innerHTML = points.map((p) => {
-                const isRescheduledToday = p.delivery_status === 'rescheduled';
+                const isRescheduled = !!p.rescheduled_from;
                 const status = pointStatus(p);
                 const noCoords = !p.lat_to && !p.lng_to ? ' 📍' : '';
                 const hasPhotos = p.photos && p.photos.length > 0;
@@ -865,9 +865,9 @@
                 let badge = '';
                 if (p.duration_min != null) badge = `<div class="time-badge">~${p.duration_min} хв</div>`;
 
-                const rescheduledBadge = isRescheduledToday
+                const rescheduledBadge = isRescheduled
                     ? `<div style="font-size:11px; color:#f5a623; font-weight:600; margin-top:2px;">
-                           🔄 Перенесено з ${formatRescheduledDate(p.order_date)}
+                           🔄 Перенесено з ${formatRescheduledDate(p.rescheduled_from)}
                        </div>`
                     : '';
 
@@ -894,7 +894,7 @@
                             <div class="point-num" ${numOnclick}>${p.visit_order || ''}</div>
                             <div style="flex:1; min-width:0;">
                                 <div class="point-name">${escapeHtml(p.client_name)}${lockIcon}${noCoords} ${photoIcon}</div>
-                                <div class="point-meta">${statusText(status, isRescheduledToday)}</div>
+                                <div class="point-meta">${statusText(status, isRescheduled)}</div>
                                 ${rescheduledBadge}
                                 ${p.comment ? `<div class="point-comment">${escapeHtml(p.comment)}</div>` : ''}
                                 ${p.order_total ? `<div class="point-price">💰 ${p.order_total} грн</div>` : ''}
@@ -913,8 +913,7 @@
 
         function finishRoute() {
             const pendingPoints = points.filter(p =>
-                p.delivery_status === 'pending' ||
-                p.delivery_status === 'rescheduled'
+                p.delivery_status === 'pending'
             );
             if (pendingPoints.length > 0) {
                 showPendingModal(pendingPoints);
@@ -1024,9 +1023,9 @@
         // ── Point actions ─────────────────────────────────────────────────────
 
         function pointStatus(p)  { return p.delivery_status || p.point_status || 'pending'; }
-        function statusText(status, isRescheduledToday) {
-            if (status === 'rescheduled' && isRescheduledToday) return 'Очікує (перенесено)';
-            return { pending: 'Очікує', delivered: 'Доставлено', rescheduled: 'Перенесено', cancelled: 'Відмінено' }[status] || status;
+        function statusText(status, isRescheduled) {
+            if (status === 'pending' && isRescheduled) return 'Очікує (перенесено)';
+            return { pending: 'Очікує', delivered: 'Доставлено', cancelled: 'Відмінено' }[status] || status;
         }
 
         function formatRescheduledDate(dateStr) {
@@ -1040,10 +1039,9 @@
             } catch { return 'попереднього дня'; }
         }
         function cardClass(p) {
-            const s = p.delivery_status;
-            if (s === 'delivered')   return 'delivered';
-            if (s === 'rescheduled') return 'rescheduled';
-            if (s === 'cancelled')   return 'cancelled';
+            if (p.delivery_status === 'delivered') return 'delivered';
+            if (p.delivery_status === 'cancelled') return 'cancelled';
+            if (p.rescheduled_from)                return 'rescheduled';
             return '';
         }
 
