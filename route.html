@@ -630,6 +630,7 @@
         let selectedPoint = null;
         let routeKm = 0;
         let routeStarted = false;
+        let routeFinished = false;
         let map = null;
         let myLocationMarker = null;
         let watchId = null;
@@ -848,6 +849,7 @@
 
                 points = res.data.points || [];
                 routeStarted = statusRes.data.started || false;
+                routeFinished = statusRes.data.finished || false;
                 routeKm = statusRes.data.total_km || 0;
 
                 await loadOptimized();
@@ -901,10 +903,10 @@
             document.getElementById('driver-progress').textContent = `${done} з ${total}`;
             document.getElementById('driver-km').textContent = `${routeKm.toFixed(1)} км`;
             document.getElementById('finish-route-btn').style.display =
-                routeStarted && points.length ? 'block' : 'none';
+                routeStarted && !routeFinished && points.length ? 'block' : 'none';
 
             const startBtn = document.getElementById('start-route-btn');
-            startBtn.style.display = routeStarted ? 'none' : 'block';
+            startBtn.style.display = routeStarted || routeFinished ? 'none' : 'block';
 
             const mapEl = document.getElementById('map');
             const withCoords = points.filter(p => p.lat_to && p.lng_to);
