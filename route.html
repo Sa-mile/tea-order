@@ -1103,6 +1103,11 @@
                 });
                 routeStarted = true;
                 document.getElementById('start-route-btn').style.display = 'none';
+                document.getElementById('reorder-toggle-block').style.display = 'none';
+                reorderMode = false;
+                const tog = document.getElementById('reorder-toggle');
+                if (tog) { tog.checked = false; tog.disabled = true; }
+                renderDriverList();
                 tg.HapticFeedback.notificationOccurred('success');
                 showToast('Маршрут стартував 🚗');
             } catch (e) {
@@ -1724,6 +1729,17 @@
                 const comment = p.comment ? `<br><span style="font-size:11px;color:#666">${escapeHtml(p.comment)}</span>` : '';
                 const price = p.order_total ? `<br><b style="color:#31b545">${p.order_total} грн</b>` : '';
                 const duration = p.duration_min != null ? `<br><span style="font-size:11px">~${p.duration_min} хв</span>` : '';
+                let deliveredTime = '';
+                if (p.delivery_status === 'delivered') {
+                    let timeStr = '—';
+                    if (p.delivered_at) {
+                        try {
+                            const t = new Date(p.delivered_at);
+                            timeStr = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
+                        } catch { }
+                    }
+                    deliveredTime = `<br><span style="font-size:11px;color:#9e9e9e">✅ ${timeStr}</span>`;
+                }
                 const wazeBtn = `<br><a href="https://waze.com/ul?ll=${lat},${lng}&navigate=yes" target="_blank"
                     style="display:inline-block;margin-top:6px;padding:5px 14px;background:#31b545;color:white;
                            border-radius:12px;font-size:12px;font-weight:700;text-decoration:none;">🧭 Waze</a>`;
@@ -1731,7 +1747,7 @@
                 const label = markerLabel(p);
                 const isDelivered = p.delivery_status === 'delivered';
                 const marker = L.marker([lat, lng], { icon: makeIcon(label, markerCol, isDelivered) });
-                marker.bindPopup(`<b>${escapeHtml(p.client_name)}</b>${comment}${price}${duration}${wazeBtn}`, { maxWidth: 220 });
+                marker.bindPopup(`<b>${escapeHtml(p.client_name)}</b>${comment}${price}${duration}${deliveredTime}${wazeBtn}`, { maxWidth: 220 });
                 marker.addTo(layer);
                 bounds.push([lat, lng]);
             });
