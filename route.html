@@ -1102,14 +1102,10 @@
                     lng: pos.coords.longitude
                 });
                 routeStarted = true;
-                document.getElementById('start-route-btn').style.display = 'none';
-                document.getElementById('reorder-toggle-block').style.display = 'none';
                 reorderMode = false;
-                const tog = document.getElementById('reorder-toggle');
-                if (tog) { tog.checked = false; tog.disabled = true; }
-                renderDriverList();
                 tg.HapticFeedback.notificationOccurred('success');
                 showToast('Маршрут стартував 🚗');
+                renderDriver();
             } catch (e) {
                 showToast(e.message, 'error');
             }
@@ -1198,10 +1194,7 @@
                 showScreen('screen-driver');
                 setActiveTab('driver');
 
-                if (isOutOfOrder) {
-                    await loadOptimized();
-                }
-
+                await loadOptimized();
                 renderDriver();
 
             } catch (e) {
@@ -1478,10 +1471,7 @@
                 showToast('Доставлено ✅');
                 closeDeliveryModal();
 
-                if (isOutOfOrder) {
-                    await loadOptimized();
-                }
-
+                await loadOptimized();
                 renderDriver();
 
             } catch (e) {
