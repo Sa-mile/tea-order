@@ -120,20 +120,12 @@
             border-left-color: #2196F3;
         }
 
-        .point-card.rescheduled .point-head {
-            border-left-color: #f5a623;
-        }
-
         .point-card.cancelled .point-head {
             border-left-color: #e53935;
         }
 
         .point-card.delivered .point-num {
             background: #2196F3;
-        }
-
-        .point-card.rescheduled .point-num {
-            background: #f5a623;
         }
 
         .point-card.cancelled .point-num {
@@ -521,6 +513,10 @@
                 <div class="stat-box">
                     <div class="stat-label">Виконано</div>
                     <div class="stat-value" id="driver-progress">0 з 0</div>
+                    <div style="font-size:12px; margin-top:4px;">
+                        <span id="driver-paid">💵 0 грн</span>
+                        <span id="driver-debt" style="display:none; margin-left:8px;">🔴 0 грн</span>
+                    </div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-label">Пробіг</div>
@@ -582,7 +578,6 @@
             <button class="btn btn-outline" id="waze-btn" onclick="openWaze()">🧭 Їхати (Waze)</button>
             <div id="status-actions">
                 <button class="btn btn-green" onclick="setStatus('delivered')">✅ Доставлено</button>
-                <button class="btn btn-gray" onclick="setStatus('rescheduled')">📅 Перенести на завтра</button>
             </div>
         </div>
     </div>
@@ -902,6 +897,21 @@
             const total = points.filter(p => p.delivery_status !== 'cancelled').length;
             document.getElementById('driver-progress').textContent = `${done} з ${total}`;
             document.getElementById('driver-km').textContent = `${routeKm.toFixed(1)} км`;
+
+            const paidTotal = points
+                .filter(p => p.delivery_status === 'delivered' && p.payment_status === 'paid')
+                .reduce((sum, p) => sum + (Number(p.order_total) || 0), 0);
+            const debtTotal = points
+                .filter(p => p.delivery_status === 'delivered' && p.payment_status === 'unpaid')
+                .reduce((sum, p) => sum + (Number(p.order_total) || 0), 0);
+            document.getElementById('driver-paid').textContent = `💵 ${Math.round(paidTotal)} грн`;
+            const debtEl = document.getElementById('driver-debt');
+            if (debtTotal > 0) {
+                debtEl.textContent = `🔴 ${Math.round(debtTotal)} грн`;
+                debtEl.style.display = 'inline';
+            } else {
+                debtEl.style.display = 'none';
+            }
             document.getElementById('finish-route-btn').style.display =
                 routeStarted && !routeFinished && points.length ? 'block' : 'none';
 
@@ -921,16 +931,11 @@
             }
 
             const toggleBlock = document.getElementById('reorder-toggle-block');
-            if (!routeStarted && points.length > 1) {
-                toggleBlock.style.display = 'block';
-            } else {
-                toggleBlock.style.display = 'none';
+            toggleBlock.style.display = (!routeStarted && points.length > 1) ? 'block' : 'none';
+            if (routeStarted) {
                 reorderMode = false;
                 const toggle = document.getElementById('reorder-toggle');
-                if (toggle) {
-                    toggle.checked = false;
-                    toggle.disabled = routeStarted;
-                }
+                if (toggle) { toggle.checked = false; toggle.disabled = true; }
             }
 
             renderDriverList();
@@ -944,19 +949,12 @@
             }
             points.sort((a, b) => (a.visit_order || 999) - (b.visit_order || 999));
             list.innerHTML = points.map((p) => {
-                const isRescheduled = !!p.rescheduled_from;
                 const status = pointStatus(p);
                 const noCoords = !p.lat_to && !p.lng_to ? ' 📍' : '';
                 const hasPhotos = p.photos && p.photos.length > 0;
 
                 let badge = '';
                 if (p.duration_min != null) badge = `<div class="time-badge">~${p.duration_min} хв</div>`;
-
-                const rescheduledBadge = isRescheduled
-                    ? `<div style="font-size:11px; color:#f5a623; font-weight:600; margin-top:2px;">
-                           🔄 Перенесено з ${formatRescheduledDate(p.rescheduled_from)}
-                       </div>`
-                    : '';
 
                 const dragHandle = reorderMode ? `<div class="drag-handle" title="Перетягнути">⠿</div>` : '';
                 const draggableAttr = reorderMode ? 'draggable="true"' : '';
@@ -981,8 +979,7 @@
                             <div class="point-num" ${numOnclick}>${p.visit_order || ''}</div>
                             <div style="flex:1; min-width:0;">
                                 <div class="point-name">${escapeHtml(p.client_name)}${lockIcon}${noCoords} ${photoIcon}</div>
-                                <div class="point-meta">${statusText(status, isRescheduled)}</div>
-                                ${rescheduledBadge}
+                                <div class="point-meta">${statusText(status)}</div>
                                 ${p.comment ? `<div class="point-comment">${escapeHtml(p.comment)}</div>` : ''}
                                 ${p.order_total ? `<div class="point-price">💰 ${p.order_total} грн</div>` : ''}
                             </div>
@@ -1055,9 +1052,6 @@
             if ((stats.debt_total || 0) > 0) {
                 html += `<div class="final-stat-row" style="color:#e53935;"><span>🔴 Борг</span><span>${Math.round(stats.debt_total)} грн</span></div>`;
             }
-            if ((stats.rescheduled_count || 0) > 0) {
-                html += `<div class="final-stat-row"><span>📅 Перенесено</span><span>${stats.rescheduled_count} (${stats.rescheduled_names.join(', ')})</span></div>`;
-            }
             if ((stats.cancelled_count || 0) > 0) {
                 html += `<div class="final-stat-row"><span>❌ Відмінено</span><span>${stats.cancelled_count} (${stats.cancelled_names.join(', ')})</span></div>`;
             }
@@ -1119,8 +1113,7 @@
         // ── Point actions ─────────────────────────────────────────────────────
 
         function pointStatus(p) { return p.delivery_status || p.point_status || 'pending'; }
-        function statusText(status, isRescheduled) {
-            if (status === 'pending' && isRescheduled) return 'Очікує (перенесено)';
+        function statusText(status) {
             return { pending: 'Очікує', delivered: 'Доставлено', cancelled: 'Відмінено' }[status] || status;
         }
 
@@ -1137,7 +1130,6 @@
         function cardClass(p) {
             if (p.delivery_status === 'delivered') return 'delivered';
             if (p.delivery_status === 'cancelled') return 'cancelled';
-            if (p.rescheduled_from) return 'rescheduled';
             return '';
         }
 
@@ -1537,7 +1529,7 @@
                     showToast('Відмічено як неоплачено ⚠️');
                     closeUnpaidModal();
                     const p = points.find(pt => Number(pt.order_id) === orderId);
-                    if (p) p.payment_status = 'unpaid';
+                    if (p) { p.payment_status = 'unpaid'; renderDriver(); }
                 } else {
                     showToast(res.error || res.message || 'Помилка', 'error');
                     btn.disabled = false; btn.textContent = 'Не оплачено';
@@ -1684,20 +1676,28 @@
         function markerColor(p) {
             const s = p.delivery_status;
             if (s === 'delivered') return '#9e9e9e';
-            if (s === 'rescheduled') return '#f5a623';
             if (s === 'cancelled') return '#e53935';
             return '#31b545';
         }
 
         function markerLabel(p) {
-            if (p.delivery_status === 'delivered') return '✓';
+            if (p.delivery_status === 'delivered') {
+                if (p.delivered_at) {
+                    try {
+                        const t = new Date(p.delivered_at);
+                        return `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
+                    } catch { return '✓'; }
+                }
+                return '✓';
+            }
             return String(p.visit_order || '');
         }
 
-        function makeIcon(number, color) {
+        function makeIcon(number, color, wide = false) {
+            const size = wide ? [46, 28] : [28, 28];
             return L.divIcon({
-                html: `<div class="marker-pin" style="background:${color}">${number}</div>`,
-                className: '', iconSize: [28, 28], iconAnchor: [14, 14]
+                html: `<div class="marker-pin" style="background:${color};${wide ? 'border-radius:10px;width:46px;font-size:10px;' : ''}">${number}</div>`,
+                className: '', iconSize: size, iconAnchor: [size[0] / 2, size[1] / 2]
             });
         }
 
@@ -1729,7 +1729,8 @@
                            border-radius:12px;font-size:12px;font-weight:700;text-decoration:none;">🧭 Waze</a>`;
                 const markerCol = markerColor(p);
                 const label = markerLabel(p);
-                const marker = L.marker([lat, lng], { icon: makeIcon(label, markerCol) });
+                const isDelivered = p.delivery_status === 'delivered';
+                const marker = L.marker([lat, lng], { icon: makeIcon(label, markerCol, isDelivered) });
                 marker.bindPopup(`<b>${escapeHtml(p.client_name)}</b>${comment}${price}${duration}${wazeBtn}`, { maxWidth: 220 });
                 marker.addTo(layer);
                 bounds.push([lat, lng]);
@@ -2141,10 +2142,7 @@
             <div id="pending-modal-list" style="margin-bottom:16px; max-height:200px; overflow-y:auto;"></div>
             <div style="font-size:14px; font-weight:600; margin-bottom:12px; color:var(--tg-theme-hint-color);">Що
                 робимо з ними?</div>
-            <button class="btn btn-outline" style="margin-top:0;" onclick="handlePendingAction('reschedule')">📅
-                Перенести на завтра</button>
-            <button class="btn btn-red" style="margin-top:8px;" onclick="handlePendingAction('cancel')">❌ Відмінити
-                замовлення</button>
+            <button class="btn btn-red" style="margin-top:0;" onclick="handlePendingAction('cancel')">❌ Відмінити замовлення</button>
             <button class="btn btn-gray" style="margin-top:8px;" onclick="closePendingModal()">← Повернутись</button>
         </div>
     </div>
