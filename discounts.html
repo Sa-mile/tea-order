@@ -341,6 +341,7 @@
     const params    = new URLSearchParams(window.location.search);
     const managerId = params.get('manager_id');
     const apiUrl    = decodeURIComponent(params.get('api_url') || '');
+    const adminId   = parseInt(params.get('admin_id') || managerId);
 
     let allClients     = [];
     let discountsList  = [];
@@ -477,7 +478,7 @@
 
         tg.HapticFeedback.impactOccurred('medium');
 
-        const body = { manager_id: activeManagerId, client_name: client };
+        const body = { requester_id: adminId, manager_id: activeManagerId, client_name: client };
         if (activeType === 'pct') body.discount_pct = val;
         else                      body.discount_uah = val;
 
@@ -582,6 +583,7 @@
             if (!ok) return;
             try {
                 await apiPost('/api/delete-discount', {
+                    requester_id: adminId,
                     manager_id: activeManagerId,
                     client_name: name,
                 });
