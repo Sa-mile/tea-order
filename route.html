@@ -478,7 +478,15 @@
             border-bottom: none;
         }
         .individual-driver-select {
-            max-width: 160px;
+            width: auto;
+            max-width: 180px;
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--tg-theme-hint-color);
+            background: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            margin-top: 6px;
             cursor: pointer;
         }
     </style>
@@ -569,10 +577,9 @@
 
         <!-- Масове призначення -->
         <div class="card" style="margin-top:10px;">
-            <div style="display:flex; gap:8px; align-items:center;">
-                <select id="bulk-driver" style="flex:1;"></select>
-                <button class="btn btn-green" style="white-space:nowrap;" onclick="assignSelected()">Призначити обрані</button>
-            </div>
+            <div class="card-title">Масове призначення</div>
+            <select id="bulk-driver"></select>
+            <button class="btn btn-green" onclick="assignSelected()">Призначити обрані</button>
         </div>
 
         <!-- Список точок -->
@@ -1876,15 +1883,18 @@
                 const color = DRIVER_COLORS[idx % DRIVER_COLORS.length];
                 const driverPoints = points.filter(p => String(p.driver_id) === String(d.id));
                 return `
-                    <div class="card" style="margin-top:8px; border-left: 4px solid ${color};">
+                    <div class="card" style="margin-top:8px; border-left:4px solid ${color}; padding:12px 14px;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div>
-                                <span style="font-weight:700; color:${color};">${escapeHtml(d.name)}</span>
-                                <span class="point-meta" style="margin-left:8px;">${driverPoints.length} точок</span>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div class="point-num" style="background:${color};">${driverPoints.length}</div>
+                                <div>
+                                    <div class="point-name" style="color:${color};">${escapeHtml(d.name)}</div>
+                                    <div class="point-meta">точок призначено</div>
+                                </div>
                             </div>
                             <button onclick="unassignDriver(${d.id})"
-                                    style="background:none; border:none; font-size:18px; cursor:pointer;
-                                           color:var(--tg-theme-hint-color); padding:4px 8px;">✕</button>
+                                    style="background:none; border:none; font-size:20px; cursor:pointer;
+                                           color:var(--tg-theme-hint-color); padding:4px 10px; line-height:1;">✕</button>
                         </div>
                     </div>
                 `;
@@ -1906,22 +1916,18 @@
 
                 const individualAssign = (!isLocked)
                     ? `<select class="individual-driver-select" data-order-id="${p.order_id}"
-                               style="font-size:12px; padding:2px 4px; border-radius:6px;
-                                      border:1px solid var(--tg-theme-hint-color);
-                                      background:var(--tg-theme-secondary-bg-color);
-                                      color:var(--tg-theme-text-color); margin-top:4px;"
                                onchange="assignOneImmediate(${p.order_id}, this.value)">
                            ${driverOptions(p.driver_id)}
                        </select>`
                     : `<span class="point-meta">${isLocked ? '🔒' : ''} ${escapeHtml(p.driver_name || 'без водія')}</span>`;
 
                 return `
-                    <div class="point-card ${cardClass(p)}" id="admin-point-${p.order_id}"
-                         style="border-left: 3px solid ${color};">
-                        <div class="admin-row" style="display:flex; align-items:flex-start; gap:10px;">
+                    <div class="point-card ${cardClass(p)}" id="admin-point-${p.order_id}">
+                        <div class="point-head" style="border-left-color:${color};">
                             <input type="checkbox" class="bulk-check" value="${p.order_id}"
                                    ${isLocked ? 'disabled' : ''}
-                                   style="margin-top:4px; width:18px; height:18px; accent-color:#31b545; flex-shrink:0;">
+                                   style="width:18px; height:18px; accent-color:#31b545;
+                                          flex-shrink:0; margin-top:2px; cursor:pointer;">
                             <div style="flex:1; min-width:0;">
                                 <div class="point-name">${escapeHtml(p.client_name)}</div>
                                 <div class="point-meta">${statusText(status)}</div>
