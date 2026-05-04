@@ -576,6 +576,8 @@
             <div id="action-comment" class="point-meta"></div>
             <div id="action-photos" style="display:none;"></div>
             <button class="btn btn-outline" id="waze-btn" onclick="openWaze()">🧭 Їхати (Waze)</button>
+            <button class="btn btn-outline" id="base-btn" onclick="openBaseModalFromAction()">📍 База</button>
+            <button class="btn btn-outline" id="debt-btn" onclick="openUnpaidModalFromAction()" style="margin-top:8px; border-color:#e53935; color:#e53935;">🔴 Борг</button>
             <div id="status-actions">
                 <button class="btn btn-green" onclick="setStatus('delivered')">✅ Доставлено</button>
             </div>
@@ -1142,7 +1144,11 @@
             document.getElementById('action-title').textContent = selectedPoint.client_name;
             document.getElementById('action-comment').textContent = selectedPoint.comment || '';
             document.getElementById('waze-btn').style.display = selectedPoint.lat_to && selectedPoint.lng_to ? 'block' : 'none';
+            document.getElementById('base-btn').style.display =
+                (!selectedPoint.lat_to && !selectedPoint.lng_to) ? 'block' : 'none';
             document.getElementById('status-actions').style.display = status === 'pending' ? 'block' : 'none';
+            document.getElementById('debt-btn').style.display =
+                status === 'pending' ? 'block' : 'none';
 
             const photosContainer = document.getElementById('action-photos');
             const photos = selectedPoint.photos || [];
@@ -1157,6 +1163,18 @@
             }
 
             showScreen('screen-action');
+        }
+
+        function openBaseModalFromAction() {
+            if (!selectedPoint) return;
+            showScreen('screen-driver');
+            openBaseModal(selectedPoint);
+        }
+
+        function openUnpaidModalFromAction() {
+            if (!selectedPoint) return;
+            showScreen('screen-driver');
+            openUnpaidModal(selectedPoint);
         }
 
         function backToDriver() {
@@ -1248,7 +1266,13 @@
                     isDragging = false; isHorizontal = null; currentX = 0;
                     longTapTimer = setTimeout(() => {
                         const p = points.find(pt => Number(pt.order_id) === orderId);
-                        if (p) confirmDelivery(p);
+                        if (!p) return;
+                        if (!routeStarted) {
+                            tg.HapticFeedback.notificationOccurred('warning');
+                            showToast('Спочатку старт маршруту', 'warning');
+                            return;
+                        }
+                        confirmDelivery(p);
                     }, 600);
                 }, { passive: true });
 
@@ -1295,7 +1319,13 @@
                         }
                     } else if (currentX <= -THRESHOLD) {
                         const p = points.find(pt => Number(pt.order_id) === orderId);
-                        if (p) openUnpaidModal(p);
+                        if (!p) return;
+                        if (!routeStarted) {
+                            tg.HapticFeedback.notificationOccurred('warning');
+                            showToast('Спочатку старт маршруту', 'warning');
+                            return;
+                        }
+                        openUnpaidModal(p);
                     }
                     currentX = 0; isDragging = false;
                 });
