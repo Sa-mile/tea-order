@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            padding: 15px;
+            font-size: 14px;
+        }
+
+        h3 {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        .fade-in { animation: fadeIn 0.18s ease both; }
+
+        /* ─── AUTOCOMPLETE ─── */
+        .autocomplete-container {
+            position: relative;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        input[type=text], input[type=number] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(0,0,0,0.15);
+            background: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+            font-size: 16px;
+        }
+
+        input::placeholder { color: var(--tg-theme-hint-color); }
+
+        .suggestions-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--tg-theme-secondary-bg-color);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 10px;
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: none;
+            margin-top: 5px;
+        }
+
+        .suggestion-item {
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-size: 15px;
+        }
+
+        .suggestion-item:last-child { border-bottom: none; }
+        .suggestion-item:active {
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
+
+        /* ─── ТАБИ ТИПУ ЗНИЖКИ ─── */
+        .type-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .type-tab {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1.5px solid rgba(0,0,0,0.15);
+            background: transparent;
+            color: var(--tg-theme-text-color);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .type-tab.active {
+            background: #31b545;
+            border-color: #31b545;
+            color: white;
+        }
+
+        /* ─── КАРТКА ─── */
+        .card {
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .card-title {
+            font-weight: bold;
+            font-size: 15px;
+            color: #31b545;
+            margin-bottom: 12px;
+        }
+
+        /* ─── КНОПКИ ─── */
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .btn-green { background: #31b545; color: white; }
+        .btn-red   { background: #e53935; color: white; }
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid #31b545;
+            color: #31b545;
+        }
+
+        .btn:active { opacity: 0.85; transform: scale(0.98); }
+
+        /* ─── СПИСОК ЗНИЖОК ─── */
+        .discount-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+
+        .discount-item:last-child { border-bottom: none; }
+
+        .discount-name { font-weight: 600; font-size: 15px; }
+        .discount-manager { font-size: 12px; color: var(--tg-theme-hint-color); margin-top: 2px; }
+
+        .discount-badge {
+            background: rgba(49,181,69,0.12);
+            color: #31b545;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        /* ─── SKELETON ─── */
+        .skeleton {
+            background: linear-gradient(90deg,
+                var(--tg-theme-secondary-bg-color) 25%,
+                rgba(255,255,255,0.08) 50%,
+                var(--tg-theme-secondary-bg-color) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.2s infinite;
+            border-radius: 10px;
+            height: 52px;
+            margin-bottom: 8px;
+        }
+
+        @keyframes shimmer {
+            0%   { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--tg-theme-hint-color);
+            font-size: 15px;
+        }
+
+        /* ─── BOTTOM SHEET ─── */
+        .sheet-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 900;
+            display: none;
+        }
+
+        .sheet-overlay.open { display: block; }
+
+        .bottom-sheet {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--tg-theme-bg-color);
+            border-radius: 16px 16px 0 0;
+            padding: 20px 15px 32px;
+            z-index: 1000;
+            transform: translateY(100%);
+            transition: transform 0.25s ease;
+        }
+
+        .bottom-sheet.open { transform: translateY(0); }
+
+        .sheet-handle {
+            width: 40px;
+            height: 4px;
+            background: rgba(0,0,0,0.15);
+            border-radius: 2px;
+            margin: 0 auto 16px;
+        }
+
+        .sheet-title {
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .sheet-btn {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+
+        .sheet-btn-edit   { background: rgba(49,181,69,0.12); color: #31b545; }
+        .sheet-btn-delete { background: rgba(229,57,53,0.10); color: #e53935; }
+        .sheet-btn-cancel { background: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-hint-color); }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 9999;
+            animation: fadeIn 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            white-space: nowrap;
+        }
+
+        label.field-label {
+            display: block;
+            font-size: 12px;
+            color: var(--tg-theme-hint-color);
+            font-weight: 600;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+    </style>
+</head>
+<body>
+
+<h3>🏷 Знижки</h3>
+
+<!-- ─── ФОРМА ─── -->
+<div class="card">
+    <div class="card-title">Встановити знижку</div>
+
+    <label class="field-label">Клієнт</label>
+    <div class="autocomplete-container" style="margin-bottom:12px;">
+        <input type="text" id="client-input" placeholder="Назва клієнта..." autocomplete="off">
+        <div id="client-suggestions" class="suggestions-list"></div>
+    </div>
+
+    <label class="field-label" style="margin-bottom:8px;">Тип знижки</label>
+    <div class="type-tabs">
+        <button class="type-tab active" id="tab-pct" onclick="switchType('pct')">% Відсоток</button>
+        <button class="type-tab" id="tab-uah" onclick="switchType('uah')">грн Сума</button>
+    </div>
+
+    <label class="field-label" id="value-label">Розмір знижки (%)</label>
+    <input type="number" id="discount-value" placeholder="напр. 10" min="0" step="0.01" style="margin-bottom:4px;">
+
+    <button class="btn btn-green" onclick="saveDiscount()">Зберегти знижку</button>
+</div>
+
+<!-- ─── СПИСОК ─── -->
+<div class="card">
+    <div class="card-title">Активні знижки</div>
+    <div id="discounts-list">
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+    </div>
+</div>
+
+<!-- ─── BOTTOM SHEET ─── -->
+<div class="sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
+<div class="bottom-sheet" id="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sheet-client-name"></div>
+    <button class="sheet-btn sheet-btn-edit"   onclick="editFromSheet()">✏️ Змінити знижку</button>
+    <button class="sheet-btn sheet-btn-delete" onclick="deleteFromSheet()">🗑 Видалити знижку</button>
+    <button class="sheet-btn sheet-btn-cancel" onclick="closeSheet()">Скасувати</button>
+</div>
+
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    const params    = new URLSearchParams(window.location.search);
+    const managerId = params.get('manager_id');
+    const apiUrl    = decodeURIComponent(params.get('api_url') || '');
+
+    let allClients     = [];
+    let discountsList  = [];
+    let activeType     = 'pct';
+    let sheetClient    = null;
+    let longPressTimer = null;
+
+    // ─── HELPERS ─────────────────────────────────────
+    function showToast(msg, type = 'success') {
+        const t = document.createElement('div');
+        t.className = 'toast';
+        t.style.background = type === 'success' ? '#31b545' : '#e53935';
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2500);
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, ch => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+        }[ch]));
+    }
+
+    async function apiGet(path) {
+        const r = await fetch(`${apiUrl}${path}`);
+        if (!r.ok) throw new Error(r.status);
+        return r.json();
+    }
+
+    async function apiPost(path, body) {
+        const r = await fetch(`${apiUrl}${path}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (!r.ok) throw new Error(r.status);
+        return r.json();
+    }
+
+    // ─── ЗАВАНТАЖЕННЯ КЛІЄНТІВ ────────────────────────
+    async function loadClients() {
+        try {
+            const [r1, r2] = await Promise.allSettled([
+                apiGet(`/api/clients?manager_id=${managerId}`),
+                apiGet(`/api/today-clients?manager_id=${managerId}`),
+            ]);
+
+            const set = new Set();
+            if (r1.status === 'fulfilled') (r1.value.clients || []).forEach(n => set.add(n));
+            if (r2.status === 'fulfilled') (r2.value.clients || []).forEach(c => set.add(c.name || c));
+            allClients = [...set].sort();
+        } catch (e) { console.error(e); }
+    }
+
+    // ─── AUTOCOMPLETE ─────────────────────────────────
+    const clientInput = document.getElementById('client-input');
+    const suggList    = document.getElementById('client-suggestions');
+
+    clientInput.addEventListener('input', function () {
+        const val = this.value.toLowerCase().trim();
+        suggList.innerHTML = '';
+        if (!val) { suggList.style.display = 'none'; return; }
+        const matches = allClients.filter(n => n.toLowerCase().includes(val));
+        matches.forEach(name => {
+            const d = document.createElement('div');
+            d.className = 'suggestion-item';
+            d.textContent = name;
+            d.onclick = () => {
+                clientInput.value = name;
+                suggList.style.display = 'none';
+                tg.HapticFeedback.impactOccurred('light');
+            };
+            suggList.appendChild(d);
+        });
+        suggList.style.display = matches.length ? 'block' : 'none';
+    });
+
+    document.addEventListener('click', e => {
+        if (e.target !== clientInput) suggList.style.display = 'none';
+    });
+
+    // ─── ПЕРЕМИКАЧ ТИПУ ───────────────────────────────
+    function switchType(type) {
+        activeType = type;
+        document.getElementById('tab-pct').classList.toggle('active', type === 'pct');
+        document.getElementById('tab-uah').classList.toggle('active', type === 'uah');
+        document.getElementById('value-label').textContent =
+            type === 'pct' ? 'Розмір знижки (%)' : 'Розмір знижки (грн)';
+        document.getElementById('discount-value').placeholder =
+            type === 'pct' ? 'напр. 10' : 'напр. 50';
+        tg.HapticFeedback.impactOccurred('light');
+    }
+
+    // ─── ЗБЕРЕЖЕННЯ ───────────────────────────────────
+    async function saveDiscount() {
+        const client = clientInput.value.trim();
+        const val    = parseFloat(document.getElementById('discount-value').value);
+
+        if (!client) { showToast('Введіть назву клієнта', 'error'); return; }
+        if (!val || val <= 0) { showToast('Введіть коректне значення', 'error'); return; }
+
+        tg.HapticFeedback.impactOccurred('medium');
+
+        const body = { manager_id: parseInt(managerId), client_name: client };
+        if (activeType === 'pct') body.discount_pct = val;
+        else                      body.discount_uah = val;
+
+        try {
+            await apiPost('/api/set-discount', body);
+            showToast('✅ Знижку збережено');
+            clientInput.value = '';
+            document.getElementById('discount-value').value = '';
+            loadDiscounts();
+        } catch (e) {
+            showToast('Помилка збереження', 'error');
+        }
+    }
+
+    // ─── СПИСОК ЗНИЖОК ────────────────────────────────
+    async function loadDiscounts() {
+        try {
+            const data = await apiGet(`/api/discounts?manager_id=${managerId}`);
+            discountsList = data.discounts || [];
+            renderDiscounts();
+        } catch (e) {
+            document.getElementById('discounts-list').innerHTML =
+                '<div class="empty-state">Помилка завантаження</div>';
+        }
+    }
+
+    function renderDiscounts() {
+        const el = document.getElementById('discounts-list');
+        if (!discountsList.length) {
+            el.innerHTML = '<div class="empty-state">🏷 Знижок ще немає</div>';
+            return;
+        }
+        el.innerHTML = discountsList.map(d => {
+            const badge = d.discount_pct != null
+                ? `${parseFloat(d.discount_pct).toFixed(0)}%`
+                : `${parseFloat(d.discount_uah).toFixed(0)} грн`;
+            const mgr = d.manager_name ? `<div class="discount-manager">${escapeHtml(d.manager_name)}</div>` : '';
+            return `
+                <div class="discount-item fade-in"
+                     data-name="${escapeHtml(d.client_name)}"
+                     data-pct="${d.discount_pct ?? ''}"
+                     data-uah="${d.discount_uah ?? ''}">
+                    <div>
+                        <div class="discount-name">${escapeHtml(d.client_name)}</div>
+                        ${mgr}
+                    </div>
+                    <div class="discount-badge">${badge}</div>
+                </div>`;
+        }).join('');
+
+        el.querySelectorAll('.discount-item').forEach(item => {
+            item.addEventListener('click', () => openSheet(item));
+            item.addEventListener('contextmenu', e => { e.preventDefault(); openSheet(item); });
+
+            item.addEventListener('touchstart', () => {
+                longPressTimer = setTimeout(() => openSheet(item), 600);
+            }, { passive: true });
+            item.addEventListener('touchend',   () => clearTimeout(longPressTimer), { passive: true });
+            item.addEventListener('touchmove',  () => clearTimeout(longPressTimer), { passive: true });
+        });
+    }
+
+    // ─── BOTTOM SHEET ─────────────────────────────────
+    function openSheet(item) {
+        tg.HapticFeedback.impactOccurred('medium');
+        sheetClient = {
+            name: item.dataset.name,
+            pct:  item.dataset.pct  || null,
+            uah:  item.dataset.uah  || null,
+        };
+        document.getElementById('sheet-client-name').textContent = sheetClient.name;
+        document.getElementById('sheet-overlay').classList.add('open');
+        document.getElementById('bottom-sheet').classList.add('open');
+    }
+
+    function closeSheet() {
+        document.getElementById('sheet-overlay').classList.remove('open');
+        document.getElementById('bottom-sheet').classList.remove('open');
+        sheetClient = null;
+    }
+
+    function editFromSheet() {
+        if (!sheetClient) return;
+        closeSheet();
+        clientInput.value = sheetClient.name;
+        if (sheetClient.pct) {
+            switchType('pct');
+            document.getElementById('discount-value').value = parseFloat(sheetClient.pct);
+        } else {
+            switchType('uah');
+            document.getElementById('discount-value').value = parseFloat(sheetClient.uah);
+        }
+        clientInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        tg.HapticFeedback.impactOccurred('light');
+    }
+
+    function deleteFromSheet() {
+        if (!sheetClient) return;
+        const name = sheetClient.name;
+        closeSheet();
+        tg.showConfirm(`Видалити знижку для "${name}"?`, async ok => {
+            if (!ok) return;
+            try {
+                await apiPost('/api/delete-discount', {
+                    manager_id: parseInt(managerId),
+                    client_name: name,
+                });
+                tg.HapticFeedback.impactOccurred('medium');
+                showToast('🗑 Знижку видалено');
+                loadDiscounts();
+            } catch (e) {
+                showToast('Помилка видалення', 'error');
+            }
+        });
+    }
+
+    // ─── ІНІЦІАЛІЗАЦІЯ ────────────────────────────────
+    Promise.all([loadClients(), loadDiscounts()]);
+</script>
+</body>
+</html>
