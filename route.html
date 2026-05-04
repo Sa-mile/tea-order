@@ -477,6 +477,10 @@
         .final-stat-row:last-child {
             border-bottom: none;
         }
+        .individual-driver-select {
+            max-width: 160px;
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -555,18 +559,24 @@
         </div>
         <div class="toolbar">
             <button class="btn-secondary" onclick="loadAdmin()">🔄 Оновити</button>
-            <button class="btn-secondary" onclick="assignSelected()">Призначити всі обрані</button>
         </div>
-        <div class="card">
-            <div class="card-title">Масове призначення</div>
-            <select id="bulk-driver"></select>
-        </div>
+
+        <!-- Карта -->
         <div id="admin-map"></div>
-        <div class="card">
-            <div class="card-title">Водії</div>
-            <div id="drivers-summary"></div>
+
+        <!-- Блоки водіїв з ❌ -->
+        <div id="drivers-blocks"></div>
+
+        <!-- Масове призначення -->
+        <div class="card" style="margin-top:10px;">
+            <div style="display:flex; gap:8px; align-items:center;">
+                <select id="bulk-driver" style="flex:1;"></select>
+                <button class="btn btn-green" style="white-space:nowrap;" onclick="assignSelected()">Призначити обрані</button>
+            </div>
         </div>
-        <div id="admin-list"></div>
+
+        <!-- Список точок -->
+        <div id="admin-list" style="margin-top:10px;"></div>
     </div>
 
     <div id="screen-action" class="screen">
@@ -642,6 +652,14 @@
         let adminMap = null;
         let markersLayer = null;
         let adminMarkersLayer = null;
+
+        const DRIVER_COLORS = ['#2196F3', '#FF9800', '#9C27B0', '#00BCD4', '#FF5722'];
+
+        function driverColor(driverId) {
+            if (!driverId) return '#9e9e9e';
+            const idx = drivers.findIndex(d => String(d.id) === String(driverId));
+            return idx >= 0 ? DRIVER_COLORS[idx % DRIVER_COLORS.length] : '#9e9e9e';
+        }
         let longTapTimer = null;
 
         document.getElementById('route-date').value = isoDate;
@@ -1775,6 +1793,34 @@
             return layer;
         }
 
+        function renderAdminMarkers(targetMap, layer, list) {
+            if (layer) layer.remove();
+            layer = L.layerGroup().addTo(targetMap);
+            const bounds = [];
+            list.forEach(p => {
+                if (!p.lat_to || !p.lng_to) return;
+                const lat = Number(p.lat_to), lng = Number(p.lng_to);
+                const color = driverColor(p.driver_id);
+                const marker = L.marker([lat, lng], {
+                    icon: makeIcon(p.visit_order || '?', color)
+                }).addTo(layer);
+                marker.on('click', () => scrollToPoint(p.order_id));
+                bounds.push([lat, lng]);
+            });
+            if (bounds.length) targetMap.fitBounds(bounds, { padding: [25, 25] });
+            return layer;
+        }
+
+        function scrollToPoint(orderId) {
+            const el = document.getElementById(`admin-point-${orderId}`);
+            if (!el) return;
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const cb = el.querySelector('.bulk-check');
+            if (cb && !cb.disabled) cb.checked = true;
+            el.style.outline = '2px solid #31b545';
+            setTimeout(() => el.style.outline = '', 1500);
+        }
+
         function startWatchingPosition(targetMap) {
             if (!navigator.geolocation || watchId) return;
             const myIcon = L.divIcon({
@@ -1815,40 +1861,71 @@
         function renderAdmin() {
             showScreen('screen-admin');
             document.getElementById('admin-title').textContent = `📋 Маршрути на ${currentDate}`;
+
             const mapEl = document.getElementById('admin-map');
-            mapEl.style.height = '350px'; mapEl.style.borderRadius = '12px';
-            mapEl.style.overflow = 'hidden'; mapEl.style.marginBottom = '15px';
+            mapEl.style.height = '300px';
+            mapEl.style.borderRadius = '12px';
+            mapEl.style.overflow = 'hidden';
+            mapEl.style.marginBottom = '10px';
             adminMap = initMap('admin-map', adminMap);
-            adminMarkersLayer = renderMarkers(adminMap, adminMarkersLayer, points);
+            adminMarkersLayer = renderAdminMarkers(adminMap, adminMarkersLayer, points);
             setTimeout(() => adminMap.invalidateSize(), 50);
 
-            const counts = new Map();
-            points.forEach(p => counts.set(String(p.driver_id || 0), (counts.get(String(p.driver_id || 0)) || 0) + 1));
-            document.getElementById('drivers-summary').innerHTML = drivers.length
-                ? drivers.map(d => `<span class="driver-chip">${escapeHtml(d.name)}: ${counts.get(String(d.id)) || 0}</span>`).join('')
-                : '<div class="empty-state">Водіїв з правом driver немає</div>';
+            const blocksEl = document.getElementById('drivers-blocks');
+            blocksEl.innerHTML = drivers.map((d, idx) => {
+                const color = DRIVER_COLORS[idx % DRIVER_COLORS.length];
+                const driverPoints = points.filter(p => String(p.driver_id) === String(d.id));
+                return `
+                    <div class="card" style="margin-top:8px; border-left: 4px solid ${color};">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <span style="font-weight:700; color:${color};">${escapeHtml(d.name)}</span>
+                                <span class="point-meta" style="margin-left:8px;">${driverPoints.length} точок</span>
+                            </div>
+                            <button onclick="unassignDriver(${d.id})"
+                                    style="background:none; border:none; font-size:18px; cursor:pointer;
+                                           color:var(--tg-theme-hint-color); padding:4px 8px;">✕</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
             document.getElementById('bulk-driver').innerHTML = driverOptions('');
 
             const list = document.getElementById('admin-list');
-            if (!points.length) { list.innerHTML = '<div class="empty-state">На цю дату точок немає</div>'; return; }
+            if (!points.length) {
+                list.innerHTML = '<div class="empty-state">На цю дату точок немає</div>';
+                return;
+            }
+
             list.innerHTML = points.map(p => {
                 const status = pointStatus(p);
+                const isLocked = p.delivery_status === 'delivered' || p.delivery_status === 'cancelled';
                 const isStarted = p.route_started;
-                const assignHtml = isStarted
-                    ? `<div class="point-meta">🚗 В дорозі — зміни заблоковано</div>`
-                    : `<div class="assign-box" id="assign-${p.order_id}"
-                               style="display:block;" onclick="event.stopPropagation()">
-                           <select id="driver-${p.order_id}">${driverOptions(p.driver_id)}</select>
-                           <button class="btn btn-green" onclick="assignOne(${p.order_id})">Призначити</button>
-                       </div>`;
+                const color = driverColor(p.driver_id);
+
+                const individualAssign = (!isLocked)
+                    ? `<select class="individual-driver-select" data-order-id="${p.order_id}"
+                               style="font-size:12px; padding:2px 4px; border-radius:6px;
+                                      border:1px solid var(--tg-theme-hint-color);
+                                      background:var(--tg-theme-secondary-bg-color);
+                                      color:var(--tg-theme-text-color); margin-top:4px;"
+                               onchange="assignOneImmediate(${p.order_id}, this.value)">
+                           ${driverOptions(p.driver_id)}
+                       </select>`
+                    : `<span class="point-meta">${isLocked ? '🔒' : ''} ${escapeHtml(p.driver_name || 'без водія')}</span>`;
+
                 return `
-                    <div class="point-card ${cardClass(p)}">
-                        <div class="admin-row">
-                            <input type="checkbox" class="bulk-check" value="${p.order_id}" ${isStarted ? 'disabled' : ''}>
-                            <div>
+                    <div class="point-card ${cardClass(p)}" id="admin-point-${p.order_id}"
+                         style="border-left: 3px solid ${color};">
+                        <div class="admin-row" style="display:flex; align-items:flex-start; gap:10px;">
+                            <input type="checkbox" class="bulk-check" value="${p.order_id}"
+                                   ${isLocked ? 'disabled' : ''}
+                                   style="margin-top:4px; width:18px; height:18px; accent-color:#31b545; flex-shrink:0;">
+                            <div style="flex:1; min-width:0;">
                                 <div class="point-name">${escapeHtml(p.client_name)}</div>
-                                <div class="point-meta">${statusText(status)} • ${escapeHtml(p.driver_name || 'без водія')}</div>
-                                ${assignHtml}
+                                <div class="point-meta">${statusText(status)}</div>
+                                ${individualAssign}
                             </div>
                         </div>
                     </div>
@@ -1881,6 +1958,20 @@
             const driverId = document.getElementById('bulk-driver').value;
             if (!driverId) { showToast('Оберіть водія', 'error'); return; }
             await saveAssignments(selected.map(orderId => ({ order_id: orderId, driver_id: Number(driverId) })));
+        }
+
+        async function assignOneImmediate(orderId, driverId) {
+            if (!driverId) return;
+            await saveAssignments([{ order_id: Number(orderId), driver_id: Number(driverId) }]);
+        }
+
+        async function unassignDriver(driverId) {
+            const toUnassign = points
+                .filter(p => String(p.driver_id) === String(driverId) &&
+                             p.delivery_status === 'pending')
+                .map(p => ({ order_id: Number(p.order_id), driver_id: 0 }));
+            if (!toUnassign.length) { showToast('Немає pending точок для відкріплення'); return; }
+            await saveAssignments(toUnassign);
         }
 
         async function saveAssignments(assignments) {
