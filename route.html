@@ -493,17 +493,13 @@
 </head>
 
 <body>
-    <!-- Admin date picker (shown only to admin) -->
-    <div id="admin-date-bar" style="display:none; align-items:center; gap:8px; padding:8px 12px;
-         margin-bottom:10px; background:var(--tg-theme-secondary-bg-color);
-         border-radius:12px; font-size:13px; color:var(--tg-theme-hint-color);">
-        📅 <input type="date" id="admin-date-picker" style="border:none; background:transparent;
-             color:var(--tg-theme-text-color); font-size:13px; font-weight:600;
-             padding:0; cursor:pointer; flex:1; outline:none;">
-    </div>
-
     <!-- Tab bar (shown only when 2+ tabs available) -->
     <div id="tab-bar" class="tab-bar" style="display:none;"></div>
+
+    <div id="back-to-admin-bar" style="display:none; margin-bottom:10px;">
+        <button class="btn-secondary" onclick="backToAdmin()"
+                style="width:100%;">← Повернутись до адмін-панелі</button>
+    </div>
 
     <div id="screen-loading" class="screen active">
         <div class="skeleton"></div>
@@ -518,6 +514,16 @@
             📅 <input type="date" id="driver-date-picker" style="border:none; background:transparent;
                  color:var(--tg-theme-text-color); font-size:13px; font-weight:600;
                  padding:0; cursor:pointer; flex:1; outline:none;">
+        </div>
+        <div id="driver-switch-bar" style="display:none; margin-bottom:10px;">
+            <div class="card" style="padding:10px 14px;">
+                <div class="card-title" style="margin-bottom:8px;">👁 Переглядати маршрут водія</div>
+                <select id="driver-switch-select"
+                        style="width:100%; margin-bottom:0;"
+                        onchange="switchToDriver(this.value)">
+                    <option value="">Оберіть водія...</option>
+                </select>
+            </div>
         </div>
         <h3 id="driver-title"></h3>
         <div class="card">
@@ -635,6 +641,8 @@
         const apiUrl = decodeURIComponent(params.get('api_url') || '');
         const adminId = Number(params.get('admin_id') || 0);
         const isAdmin = adminId > 0 && Number(managerId) === adminId;
+        const originalManagerId = params.get('original_manager_id') || null;
+        const isViewingAsDriver = !!originalManagerId;
         const today = new Date();
         let currentDate = formatDate(today);
         let isoDate = today.toISOString().slice(0, 10);
@@ -792,8 +800,6 @@
             hasRouteAdmin = adminRes.status === 'fulfilled' && adminRes.value.resp.ok && !adminRes.value.data.error;
             hasArchive = archiveRes.status === 'fulfilled' && archiveRes.value.resp.ok && !archiveRes.value.data.error;
 
-            setupTabBar();
-
             // Driver date picker — visible to everyone
             const driverPicker = document.getElementById('driver-date-picker');
             const [dd, dm, dy] = currentDate.split('.');
@@ -802,22 +808,28 @@
             driverPicker.addEventListener('change', () => {
                 const [y2, m2, d2] = driverPicker.value.split('-');
                 currentDate = `${d2}.${m2}.${y2}`;
-                const adminPicker = document.getElementById('admin-date-picker');
-                if (adminPicker) adminPicker.value = driverPicker.value;
                 loadDriver();
             });
 
-            if (isAdmin) {
-                const bar = document.getElementById('admin-date-bar');
-                bar.style.display = 'flex';
-                const picker = document.getElementById('admin-date-picker');
-                picker.value = `${dy}-${dm}-${dd}`;
-                picker.addEventListener('change', () => {
-                    const [y2, m2, d2] = picker.value.split('-');
-                    currentDate = `${d2}.${m2}.${y2}`;
-                    driverPicker.value = picker.value;
-                    loadDriver();
-                });
+            setupTabBar();
+
+            if (isViewingAsDriver) {
+                document.getElementById('back-to-admin-bar').style.display = 'block';
+            }
+
+            if (hasRouteAdmin && !isViewingAsDriver) {
+                const driverList = adminRes.value?.data?.drivers || [];
+                if (driverList.length === 1) {
+                    switchToDriver(driverList[0].id);
+                    return;
+                }
+                if (driverList.length > 1) {
+                    const bar = document.getElementById('driver-switch-bar');
+                    const select = document.getElementById('driver-switch-select');
+                    select.innerHTML = '<option value="">Оберіть водія...</option>' +
+                        driverList.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
+                    bar.style.display = 'block';
+                }
             }
 
             if (hasRouteAdmin) {
@@ -2100,6 +2112,21 @@
             } catch (e) {
                 showToast('Помилка скидання', 'error');
             }
+        }
+
+        function backToAdmin() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('manager_id', originalManagerId);
+            url.searchParams.delete('original_manager_id');
+            window.location.href = url.toString();
+        }
+
+        function switchToDriver(driverId) {
+            if (!driverId) return;
+            const url = new URL(window.location.href);
+            url.searchParams.set('original_manager_id', managerId);
+            url.searchParams.set('manager_id', driverId);
+            window.location.href = url.toString();
         }
 
         bootstrap();
