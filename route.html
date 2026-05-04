@@ -643,6 +643,7 @@
         const isAdmin = adminId > 0 && Number(managerId) === adminId;
         const originalManagerId = params.get('original_manager_id') || null;
         const isViewingAsDriver = !!originalManagerId;
+        const noSwitch = params.get('no_switch') === '1';
         const today = new Date();
         let currentDate = formatDate(today);
         let isoDate = today.toISOString().slice(0, 10);
@@ -755,7 +756,7 @@
 
         function setupTabBar() {
             const available = [];
-            if (hasDriver) available.push({ id: 'driver', label: '🚗 Маршрут' });
+            if (hasDriver && (isViewingAsDriver || (!hasRouteAdmin && !noSwitch))) available.push({ id: 'driver', label: '🚗 Маршрут' });
             if (hasRouteAdmin) available.push({ id: 'admin', label: '📋 Розподіл' });
             if (hasArchive) available.push({ id: 'archive', label: '🗃 Архів' });
 
@@ -817,7 +818,7 @@
                 document.getElementById('back-to-admin-bar').style.display = 'block';
             }
 
-            if (hasRouteAdmin && !isViewingAsDriver) {
+            if (hasRouteAdmin && !isViewingAsDriver && !noSwitch) {
                 const driverList = adminRes.value?.data?.drivers || [];
                 if (driverList.length === 1) {
                     switchToDriver(driverList[0].id);
@@ -1904,9 +1905,15 @@
                                     <div class="point-meta">точок призначено</div>
                                 </div>
                             </div>
-                            <button onclick="unassignDriver(${d.id})"
-                                    style="background:none; border:none; font-size:20px; cursor:pointer;
-                                           color:var(--tg-theme-hint-color); padding:4px 10px; line-height:1;">✕</button>
+                            <div style="display:flex; align-items:center; gap:4px;">
+                                <button onclick="switchToDriver(${d.id})"
+                                        style="background:none; border:1px solid ${color}; border-radius:8px;
+                                               font-size:12px; cursor:pointer; color:${color};
+                                               padding:4px 10px; line-height:1;">👁</button>
+                                <button onclick="unassignDriver(${d.id})"
+                                        style="background:none; border:none; font-size:20px; cursor:pointer;
+                                               color:var(--tg-theme-hint-color); padding:4px 10px; line-height:1;">✕</button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -2118,6 +2125,7 @@
             const url = new URL(window.location.href);
             url.searchParams.set('manager_id', originalManagerId);
             url.searchParams.delete('original_manager_id');
+            url.searchParams.set('no_switch', '1');
             window.location.href = url.toString();
         }
 
