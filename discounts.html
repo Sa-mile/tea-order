@@ -278,6 +278,20 @@
 
 <h3>🏷 Знижки</h3>
 
+<div id="manager-switcher" style="display:none; margin-bottom:14px;">
+    <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:12px; color:var(--tg-theme-hint-color); white-space:nowrap;">Менеджер:</span>
+        <select id="manager-select"
+                style="flex:1; padding:7px 10px; border-radius:8px;
+                       border:1px solid rgba(0,0,0,0.15);
+                       background:var(--tg-theme-secondary-bg-color);
+                       color:var(--tg-theme-text-color);
+                       font-size:14px; cursor:pointer;"
+                onchange="onManagerChange()">
+        </select>
+    </div>
+</div>
+
 <!-- ─── ФОРМА ─── -->
 <div class="card">
     <div class="card-title">Встановити знижку</div>
@@ -333,6 +347,8 @@
     let activeType     = 'pct';
     let sheetClient    = null;
     let longPressTimer = null;
+    let activeManagerId = parseInt(managerId);
+    let allManagers     = [];
 
     // ─── HELPERS ─────────────────────────────────────
     function showToast(msg, type = 'success') {
@@ -366,12 +382,43 @@
         return r.json();
     }
 
+    // ─── МЕНЕДЖЕРИ ────────────────────────────────────
+    async function loadManagers() {
+        try {
+            const data = await apiGet(`/api/managers-list?manager_id=${managerId}`);
+            allManagers = data.managers || [];
+            if (!allManagers.length) {
+                await Promise.all([loadClients(), loadDiscounts()]);
+                return;
+            }
+
+            const select = document.getElementById('manager-select');
+            select.innerHTML = allManagers.map(m =>
+                `<option value="${m.id}">${escapeHtml(m.name)}</option>`
+            ).join('');
+
+            activeManagerId = allManagers[0].id;
+            document.getElementById('manager-switcher').style.display = 'block';
+
+            await Promise.all([loadClients(), loadDiscounts()]);
+        } catch (e) {
+            console.error('loadManagers error:', e);
+            await Promise.all([loadClients(), loadDiscounts()]);
+        }
+    }
+
+    function onManagerChange() {
+        activeManagerId = parseInt(document.getElementById('manager-select').value);
+        tg.HapticFeedback.impactOccurred('light');
+        Promise.all([loadClients(), loadDiscounts()]);
+    }
+
     // ─── ЗАВАНТАЖЕННЯ КЛІЄНТІВ ────────────────────────
     async function loadClients() {
         try {
             const [r1, r2] = await Promise.allSettled([
-                apiGet(`/api/clients?manager_id=${managerId}`),
-                apiGet(`/api/today-clients?manager_id=${managerId}`),
+                apiGet(`/api/clients?manager_id=${activeManagerId}`),
+                apiGet(`/api/today-clients?manager_id=${activeManagerId}`),
             ]);
 
             const set = new Set();
@@ -430,7 +477,7 @@
 
         tg.HapticFeedback.impactOccurred('medium');
 
-        const body = { manager_id: parseInt(managerId), client_name: client };
+        const body = { manager_id: activeManagerId, client_name: client };
         if (activeType === 'pct') body.discount_pct = val;
         else                      body.discount_uah = val;
 
@@ -535,7 +582,7 @@
             if (!ok) return;
             try {
                 await apiPost('/api/delete-discount', {
-                    manager_id: parseInt(managerId),
+                    manager_id: activeManagerId,
                     client_name: name,
                 });
                 tg.HapticFeedback.impactOccurred('medium');
@@ -548,7 +595,7 @@
     }
 
     // ─── ІНІЦІАЛІЗАЦІЯ ────────────────────────────────
-    Promise.all([loadClients(), loadDiscounts()]);
+    loadManagers();
 </script>
 </body>
 </html>
