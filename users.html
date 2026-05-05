@@ -59,6 +59,17 @@
             font-size: 14px;
         }
 
+        input[type=text] {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(0,0,0,0.15);
+            background: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
         input::placeholder { color: var(--tg-theme-hint-color); }
 
         .btn {
@@ -70,6 +81,12 @@
             cursor: pointer;
         }
 
+        .btn-green {
+            background: #31b545;
+            color: white;
+            border: none;
+        }
+
         .btn-outline {
             background: transparent;
             border: 1px solid rgba(0,0,0,0.2);
@@ -79,7 +96,7 @@
         .skeleton {
             background: var(--tg-theme-secondary-bg-color);
             border-radius: 12px;
-            height: 90px;
+            height: 110px;
             margin-bottom: 12px;
             animation: pulse 1.2s ease-in-out infinite;
         }
@@ -123,6 +140,23 @@
 
 <h3>👥 Менеджери</h3>
 
+<button class="btn btn-green" style="width:100%; margin-bottom:16px;"
+        onclick="showAddForm()">➕ Додати менеджера</button>
+
+<!-- Форма додавання -->
+<div id="add-form" style="display:none;" class="card">
+    <div class="card-title">Новий менеджер</div>
+    <input type="number" id="new-id" placeholder="Telegram ID" style="margin-bottom:8px;">
+    <input type="text" id="new-name" placeholder="Ім'я">
+    <input type="text" id="new-sheet" placeholder="Sheet ID (необов'язково)" style="margin-bottom:12px;">
+    <div class="card-title" style="font-size:13px; margin-bottom:8px;">Права доступу:</div>
+    <div id="new-permissions"></div>
+    <div style="display:flex; gap:8px; margin-top:12px;">
+        <button class="btn btn-green" style="flex:1;" onclick="saveNewUser()">✅ Зберегти</button>
+        <button class="btn btn-outline" style="flex:1;" onclick="hideAddForm()">Скасувати</button>
+    </div>
+</div>
+
 <div id="list"></div>
 
 <script>
@@ -132,6 +166,24 @@
     const params    = new URLSearchParams(window.location.search);
     const managerId = params.get('manager_id');
     const apiUrl    = decodeURIComponent(params.get('api_url') || '');
+
+    const PERMISSIONS = {
+        orders:          '🛒 Замовлення',
+        reports:         '📊 Звіт',
+        service_reports: '⚙️ Сервіс звіти',
+        service_pdf:     '⚙️ Сервіс PDF',
+        service_reset:   '⚙️ Сервіс скидання',
+        base:            '📍 База',
+        driver:          '🚗 Водій',
+        route_admin:     '📋 Розподіл маршруту',
+        archive_routes:  '🗃 Архів маршрутів',
+        payments_today:  '💳 Оплати сьогодні',
+        payments_debts:  '💳 Борги',
+        payments_history:'💳 Історія оплат',
+        discounts:       '🏷 Знижки',
+    };
+
+    // ─── HELPERS ─────────────────────────────────────────────────────────────
 
     function showToast(msg, type = 'success') {
         const t = document.createElement('div');
@@ -174,6 +226,22 @@
         return { owner: 'власник', admin: 'адмін', manager: 'менеджер' }[role] || role;
     }
 
+    function permBadge(userId, key, active) {
+        const label = PERMISSIONS[key];
+        const border = active ? '#31b545' : 'rgba(0,0,0,0.15)';
+        const bg     = active ? 'rgba(49,181,69,0.1)' : 'transparent';
+        const color  = active ? '#31b545' : 'var(--tg-theme-hint-color)';
+        return `<button onclick="togglePermission(${userId}, '${key}', ${active})"
+                        style="display:inline-flex; align-items:center; gap:4px;
+                               margin:3px; padding:5px 10px; border-radius:20px;
+                               border:1px solid ${border}; background:${bg}; color:${color};
+                               font-size:12px; font-weight:600; cursor:pointer;">
+                    ${active ? '✅' : '○'} ${label}
+                </button>`;
+    }
+
+    // ─── RENDER ──────────────────────────────────────────────────────────────
+
     function renderUsers(users) {
         const list = document.getElementById('list');
         if (!users.length) {
@@ -190,17 +258,31 @@
                     <span>🆔 ${u.id}</span>
                     ${u.linked_id ? `<span>🔗 ${u.linked_id}</span>` : ''}
                 </div>
-                <div style="display:flex; gap:8px; align-items:center;">
+
+                <div style="margin-bottom:12px;">
+                    ${Object.keys(PERMISSIONS).map(k => permBadge(u.id, k, !!u.permissions?.[k])).join('')}
+                </div>
+
+                <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
                     <input type="number" id="linked-id-${u.id}"
-                           placeholder="Вставте Telegram ID"
+                           placeholder="Додатковий Telegram ID"
                            value="${u.linked_id || ''}"
                            style="flex:1;">
-                    <button onclick="saveLinkedId(${u.id})" class="btn btn-outline" style="white-space:nowrap;">💾</button>
+                    <button onclick="saveLinkedId(${u.id})" class="btn btn-outline" style="white-space:nowrap;">🔗</button>
                     ${u.linked_id ? `<button onclick="saveLinkedId(${u.id}, true)" class="btn btn-outline" style="white-space:nowrap; color:#e53935;">✕</button>` : ''}
                 </div>
+
+                <button onclick="deleteUser(${u.id}, '${escapeHtml(u.name)}')"
+                        style="width:100%; padding:8px; border-radius:8px;
+                               border:1px solid #e53935; background:transparent;
+                               color:#e53935; font-size:13px; font-weight:600; cursor:pointer;">
+                    🗑 Видалити менеджера
+                </button>
             </div>
         `).join('');
     }
+
+    // ─── LOAD ────────────────────────────────────────────────────────────────
 
     async function loadUsers() {
         const list = document.getElementById('list');
@@ -212,6 +294,25 @@
             list.innerHTML = `<div style="color:#e53935; text-align:center;">${escapeHtml(e.message)}</div>`;
         }
     }
+
+    // ─── PERMISSIONS ─────────────────────────────────────────────────────────
+
+    async function togglePermission(userId, key, current) {
+        tg.HapticFeedback.impactOccurred('light');
+        try {
+            await apiPost('/api/toggle-permission', {
+                manager_id: parseInt(managerId),
+                user_id: userId,
+                key,
+                value: !current,
+            });
+            loadUsers();
+        } catch (e) {
+            showToast(e.message, 'error');
+        }
+    }
+
+    // ─── LINKED ID ───────────────────────────────────────────────────────────
 
     async function saveLinkedId(userId, remove = false) {
         const input = document.getElementById(`linked-id-${userId}`);
@@ -225,14 +326,97 @@
             await apiPost('/api/set-linked-id', {
                 manager_id: parseInt(managerId),
                 user_id: userId,
-                linked_id: linkedId
+                linked_id: linkedId,
             });
-            showToast(remove ? "ID відв'язано" : 'ID прив\'язано ✅');
+            showToast(remove ? "ID відв'язано" : "ID прив'язано ✅");
             loadUsers();
         } catch (e) {
             showToast(e.message, 'error');
         }
     }
+
+    // ─── DELETE ──────────────────────────────────────────────────────────────
+
+    async function deleteUser(userId, name) {
+        if (!confirm(`Видалити менеджера ${name}?`)) return;
+        tg.HapticFeedback.notificationOccurred('warning');
+        try {
+            await apiPost('/api/deactivate-user', {
+                manager_id: parseInt(managerId),
+                user_id: userId,
+            });
+            showToast('Менеджера видалено');
+            loadUsers();
+        } catch (e) {
+            showToast(e.message, 'error');
+        }
+    }
+
+    // ─── ADD FORM ────────────────────────────────────────────────────────────
+
+    let newPermissions = {};
+
+    function showAddForm() {
+        newPermissions = Object.fromEntries(Object.keys(PERMISSIONS).map(k => [k, false]));
+        renderNewPermissions();
+        document.getElementById('add-form').style.display = 'block';
+        document.getElementById('new-id').value   = '';
+        document.getElementById('new-name').value  = '';
+        document.getElementById('new-sheet').value = '';
+        document.getElementById('new-id').focus();
+    }
+
+    function hideAddForm() {
+        document.getElementById('add-form').style.display = 'none';
+    }
+
+    function renderNewPermissions() {
+        document.getElementById('new-permissions').innerHTML =
+            Object.entries(PERMISSIONS).map(([key, label]) => {
+                const active = newPermissions[key];
+                const border = active ? '#31b545' : 'rgba(0,0,0,0.15)';
+                const bg     = active ? 'rgba(49,181,69,0.1)' : 'transparent';
+                const color  = active ? '#31b545' : 'var(--tg-theme-hint-color)';
+                return `<button onclick="toggleNewPerm('${key}')" type="button" id="np-${key}"
+                                style="display:inline-flex; align-items:center; gap:4px;
+                                       margin:3px; padding:5px 10px; border-radius:20px;
+                                       border:1px solid ${border}; background:${bg}; color:${color};
+                                       font-size:12px; font-weight:600; cursor:pointer;">
+                            ${active ? '✅' : '○'} ${label}
+                        </button>`;
+            }).join('');
+    }
+
+    function toggleNewPerm(key) {
+        newPermissions[key] = !newPermissions[key];
+        renderNewPermissions();
+    }
+
+    async function saveNewUser() {
+        const userId  = parseInt(document.getElementById('new-id').value);
+        const name    = document.getElementById('new-name').value.trim();
+        const sheetId = document.getElementById('new-sheet').value.trim();
+        if (!userId || isNaN(userId)) return showToast('Введіть Telegram ID', 'error');
+        if (!name) return showToast("Введіть ім'я", 'error');
+        tg.HapticFeedback.notificationOccurred('success');
+        try {
+            await apiPost('/api/add-user', {
+                manager_id: parseInt(managerId),
+                user_id: userId,
+                name,
+                sheet_id: sheetId,
+                role: 'manager',
+                permissions: newPermissions,
+            });
+            showToast('Менеджера додано ✅');
+            hideAddForm();
+            loadUsers();
+        } catch (e) {
+            showToast(e.message, 'error');
+        }
+    }
+
+    // ─── INIT ────────────────────────────────────────────────────────────────
 
     loadUsers();
 </script>
