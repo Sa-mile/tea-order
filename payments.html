@@ -148,27 +148,6 @@
             color: var(--tg-theme-button-text-color);
         }
 
-        .debts-filter-card {
-            position: relative;
-        }
-
-        .debts-filter-card.collapsed {
-            overflow: hidden;
-        }
-
-        .debts-filter-card.collapsed::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 52px;
-            height: 34px;
-            pointer-events: none;
-            background: linear-gradient(to bottom,
-                    transparent 60%,
-                    var(--tg-theme-bg-color) 100%);
-        }
-
         .collapse-content {
             max-height: 0;
             overflow: hidden;
@@ -372,40 +351,26 @@
 
     <!-- ════ ЕКРАН 2: БОРГИ ════ -->
     <div id="screen-debts" class="screen">
-        <div class="card debts-filter-card collapsed" id="debts-filter-card">
-            <div class="card-title">🔍 Фільтр боргів</div>
-            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
-                <div>
-                    <label style="font-size:12px; color:#888;">Конкретна дата:</label>
-                    <input type="date" id="debts-filter-date" onchange="applyDebtsFilters()"
-                        style="padding:10px; font-size:14px; width:100%; border-radius:10px; border:1px solid #ccc; background:var(--tg-theme-secondary-bg-color); color:var(--tg-theme-text-color);">
-                </div>
-                <div class="collapse-content" id="debts-filter-extra">
-                    <div style="display: flex; gap: 10px;">
-                        <div style="flex: 1;">
-                            <label style="font-size:12px; color:#888;">Період від:</label>
-                            <input type="date" id="debts-filter-from" onchange="applyDebtsFilters()"
-                                style="padding:10px; font-size:14px; width:100%; border-radius:10px; border:1px solid #ccc; background:var(--tg-theme-secondary-bg-color); color:var(--tg-theme-text-color);">
-                        </div>
-                        <div style="flex: 1;">
-                            <label style="font-size:12px; color:#888;">Період до:</label>
-                            <input type="date" id="debts-filter-to" onchange="applyDebtsFilters()"
-                                style="padding:10px; font-size:14px; width:100%; border-radius:10px; border:1px solid #ccc; background:var(--tg-theme-secondary-bg-color); color:var(--tg-theme-text-color);">
-                        </div>
-                    </div>
-                    <div class="autocomplete-container" style="margin-top:10px;">
-                        <label style="font-size:12px; color:#888;">Ім'я клієнта:</label>
-                        <input type="text" id="debts-filter-client" placeholder="Почніть вводити ім'я..."
-                            autocomplete="off">
-                        <div id="debts-client-suggestions" class="suggestions-list"></div>
-                    </div>
-                    <button class="btn-secondary" style="margin-top:5px;"
-                        onclick="resetDebtsFilters()">Скинути фільтри</button>
-                </div>
-                <button class="btn-secondary accordion-toggle" id="debts-filter-toggle" style="margin-top:5px;"
-                    onclick="toggleCollapse('debts-filter-extra', this)">Розгорнути ▼</button>
+        <input type="hidden" id="debts-filter-date">
+        <div class="card">
+            <div class="autocomplete-container" style="margin-bottom:8px;">
+                <input type="text" id="debts-filter-client"
+                       placeholder="🔍 Пошук по імені клієнта..."
+                       autocomplete="off">
+                <div id="debts-client-suggestions" class="suggestions-list"></div>
             </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <input type="date" id="debts-filter-from" style="flex:1; font-size:14px; padding:8px;">
+                <span style="color:var(--tg-theme-hint-color);">—</span>
+                <input type="date" id="debts-filter-to" style="flex:1; font-size:14px; padding:8px;">
+            </div>
+            <button class="btn btn-outline" onclick="applyDebtsFilters()" style="width:100%; margin-top:8px;">🔄 Застосувати</button>
         </div>
+        <button onclick="resetDebtsFilters()"
+                style="background:none; border:none; color:var(--tg-theme-hint-color);
+                       font-size:13px; cursor:pointer; padding:0; margin-top:-8px; margin-bottom:12px; display:block;">
+            Скинути фільтри
+        </button>
 
         <div id="debts-state-1">
             <div class="card-title" style="color:#e53935;">Дати з боргами:</div>
@@ -413,7 +378,13 @@
         </div>
 
         <div id="debts-state-2" style="display:none;">
-            <button class="back-btn" onclick="backToState1()">До списку дат</button>
+            <div style="margin-bottom:10px;">
+                <button onclick="backToState1()"
+                        style="background:none; border:none; color:#31b545;
+                               font-size:14px; cursor:pointer; padding:0;">
+                    ← До списку дат
+                </button>
+            </div>
             <div class="card-title" id="debts-state-2-title" style="color:#e53935;"></div>
             <div id="debts-debtors-list"></div>
         </div>
