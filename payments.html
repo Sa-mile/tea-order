@@ -120,13 +120,24 @@
             font-size: 16px;
         }
 
-        input[type=date] {
+        .date-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .date-row input[type=date] {
+            flex: 1;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
             background: var(--tg-theme-secondary-bg-color);
             color: var(--tg-theme-text-color);
-            border: 1px solid rgba(0,0,0,0.15);
-            border-radius: 8px;
-            padding: 8px;
             font-size: 14px;
+        }
+
+        .date-row span {
+            color: var(--tg-theme-hint-color);
         }
 
         .suggestions-list {
@@ -368,10 +379,10 @@
                        autocomplete="off">
                 <div id="debts-client-suggestions" class="suggestions-list"></div>
             </div>
-            <div style="display:flex; gap:8px; align-items:center;">
-                <input type="date" id="debts-filter-from" style="flex:1; font-size:14px; padding:8px;">
-                <span style="color:var(--tg-theme-hint-color);">—</span>
-                <input type="date" id="debts-filter-to" style="flex:1; font-size:14px; padding:8px;">
+            <div class="date-row">
+                <input type="date" id="debts-filter-from">
+                <span>—</span>
+                <input type="date" id="debts-filter-to">
             </div>
             <button class="btn btn-outline" onclick="applyDebtsFilters()" style="width:100%; margin-top:8px;">🔄 Застосувати</button>
         </div>
