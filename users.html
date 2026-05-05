@@ -228,16 +228,18 @@
 
     function permBadge(userId, key, active) {
         const label = PERMISSIONS[key];
-        const border = active ? '#31b545' : 'rgba(0,0,0,0.15)';
-        const bg     = active ? 'rgba(49,181,69,0.1)' : 'transparent';
-        const color  = active ? '#31b545' : 'var(--tg-theme-hint-color)';
-        return `<button onclick="togglePermission(${userId}, '${key}', ${active})"
-                        style="display:inline-flex; align-items:center; gap:4px;
-                               margin:3px; padding:5px 10px; border-radius:20px;
-                               border:1px solid ${border}; background:${bg}; color:${color};
-                               font-size:12px; font-weight:600; cursor:pointer;">
-                    ${active ? '✅' : '○'} ${label}
-                </button>`;
+        return `
+            <label style="display:flex; align-items:center; gap:8px;
+                          padding:6px 0; cursor:pointer; border-bottom:1px solid rgba(0,0,0,0.06);"
+                   onclick="togglePermission(${userId}, '${key}', ${active})">
+                <div style="width:20px; height:20px; border-radius:5px; flex-shrink:0;
+                            border:2px solid ${active ? '#31b545' : 'rgba(0,0,0,0.2)'};
+                            background:${active ? '#31b545' : 'transparent'};
+                            display:flex; align-items:center; justify-content:center;">
+                    ${active ? '<svg width="12" height="10" viewBox="0 0 12 10"><polyline points="1,5 4,8 11,1" stroke="white" stroke-width="2" fill="none"/></svg>' : ''}
+                </div>
+                <span style="font-size:13px; color:var(--tg-theme-text-color);">${label}</span>
+            </label>`;
     }
 
     // ─── RENDER ──────────────────────────────────────────────────────────────
@@ -272,12 +274,13 @@
                     ${u.linked_id ? `<button onclick="saveLinkedId(${u.id}, true)" class="btn btn-outline" style="white-space:nowrap; color:#e53935;">✕</button>` : ''}
                 </div>
 
+                ${u.role === 'manager' ? `
                 <button onclick="deleteUser(${u.id}, '${escapeHtml(u.name)}')"
-                        style="width:100%; padding:8px; border-radius:8px;
+                        style="width:100%; margin-top:10px; padding:8px; border-radius:8px;
                                border:1px solid #e53935; background:transparent;
                                color:#e53935; font-size:13px; font-weight:600; cursor:pointer;">
                     🗑 Видалити менеджера
-                </button>
+                </button>` : ''}
             </div>
         `).join('');
     }
