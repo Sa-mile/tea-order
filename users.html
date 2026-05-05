@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            padding: 15px;
+            font-size: 14px;
+        }
+
+        h3 {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        .fade-in { animation: fadeIn 0.18s ease both; }
+
+        .card {
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+
+        .card-title {
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 12px;
+        }
+
+        .manager-meta {
+            font-size: 12px;
+            color: var(--tg-theme-hint-color);
+            margin-bottom: 10px;
+        }
+
+        .manager-meta span { margin-right: 10px; }
+
+        input[type=number] {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(0,0,0,0.15);
+            background: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            font-size: 14px;
+        }
+
+        input::placeholder { color: var(--tg-theme-hint-color); }
+
+        .btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid rgba(0,0,0,0.2);
+            color: var(--tg-theme-text-color);
+        }
+
+        .skeleton {
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 12px;
+            height: 90px;
+            margin-bottom: 12px;
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.5; }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 9999;
+            animation: fadeIn 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            white-space: nowrap;
+        }
+
+        .role-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: rgba(49,181,69,0.12);
+            color: #31b545;
+        }
+
+        .role-badge.owner { background: rgba(255,152,0,0.12); color: #ff9800; }
+        .role-badge.admin { background: rgba(33,150,243,0.12); color: #2196f3; }
+    </style>
+</head>
+<body>
+
+<h3>👥 Менеджери</h3>
+
+<div id="list"></div>
+
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    const params    = new URLSearchParams(window.location.search);
+    const managerId = params.get('manager_id');
+    const apiUrl    = decodeURIComponent(params.get('api_url') || '');
+
+    function showToast(msg, type = 'success') {
+        const t = document.createElement('div');
+        t.className = 'toast';
+        t.style.background = type === 'success' ? '#31b545' : '#e53935';
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2500);
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, ch => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+        }[ch]));
+    }
+
+    async function apiGet(path) {
+        const r = await fetch(`${apiUrl}${path}`);
+        if (!r.ok) {
+            const err = await r.json().catch(() => ({}));
+            throw new Error(err.error || r.status);
+        }
+        return r.json();
+    }
+
+    async function apiPost(path, body) {
+        const r = await fetch(`${apiUrl}${path}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (!r.ok) {
+            const err = await r.json().catch(() => ({}));
+            throw new Error(err.error || r.status);
+        }
+        return r.json();
+    }
+
+    function roleName(role) {
+        return { owner: 'власник', admin: 'адмін', manager: 'менеджер' }[role] || role;
+    }
+
+    function renderUsers(users) {
+        const list = document.getElementById('list');
+        if (!users.length) {
+            list.innerHTML = '<div style="text-align:center; color:var(--tg-theme-hint-color); margin-top:40px;">Немає менеджерів</div>';
+            return;
+        }
+        list.innerHTML = users.map(u => `
+            <div class="card fade-in">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                    <div class="card-title" style="margin-bottom:0;">${escapeHtml(u.name)}</div>
+                    <span class="role-badge ${u.role}">${roleName(u.role)}</span>
+                </div>
+                <div class="manager-meta">
+                    <span>🆔 ${u.id}</span>
+                    ${u.linked_id ? `<span>🔗 ${u.linked_id}</span>` : ''}
+                </div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="number" id="linked-id-${u.id}"
+                           placeholder="Вставте Telegram ID"
+                           value="${u.linked_id || ''}"
+                           style="flex:1;">
+                    <button onclick="saveLinkedId(${u.id})" class="btn btn-outline" style="white-space:nowrap;">💾</button>
+                    ${u.linked_id ? `<button onclick="saveLinkedId(${u.id}, true)" class="btn btn-outline" style="white-space:nowrap; color:#e53935;">✕</button>` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function loadUsers() {
+        const list = document.getElementById('list');
+        list.innerHTML = [1,2,3].map(() => '<div class="skeleton"></div>').join('');
+        try {
+            const data = await apiGet(`/api/users?manager_id=${managerId}`);
+            renderUsers(data.users || []);
+        } catch (e) {
+            list.innerHTML = `<div style="color:#e53935; text-align:center;">${escapeHtml(e.message)}</div>`;
+        }
+    }
+
+    async function saveLinkedId(userId, remove = false) {
+        const input = document.getElementById(`linked-id-${userId}`);
+        const linkedId = remove ? null : parseInt(input.value);
+        if (!remove && (!linkedId || isNaN(linkedId))) {
+            showToast('Введіть коректний Telegram ID', 'error');
+            return;
+        }
+        tg.HapticFeedback.impactOccurred('light');
+        try {
+            await apiPost('/api/set-linked-id', {
+                manager_id: parseInt(managerId),
+                user_id: userId,
+                linked_id: linkedId
+            });
+            showToast(remove ? "ID відв'язано" : 'ID прив\'язано ✅');
+            loadUsers();
+        } catch (e) {
+            showToast(e.message, 'error');
+        }
+    }
+
+    loadUsers();
+</script>
+</body>
+</html>
