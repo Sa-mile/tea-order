@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            padding: 15px;
+            font-size: 14px;
+        }
+
+        h3 {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        .fade-in { animation: fadeIn 0.18s ease both; }
+
+        .autocomplete-container {
+            position: relative;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        input[type=text] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(0,0,0,0.15);
+            background: var(--tg-theme-secondary-bg-color);
+            color: var(--tg-theme-text-color);
+            font-size: 16px;
+        }
+
+        input::placeholder { color: var(--tg-theme-hint-color); }
+
+        .suggestions-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--tg-theme-secondary-bg-color);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 10px;
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: none;
+            margin-top: 5px;
+        }
+
+        .suggestion-item {
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-size: 15px;
+        }
+
+        .suggestion-item:last-child { border-bottom: none; }
+        .suggestion-item:active {
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
+
+        .card {
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .card-title {
+            font-weight: bold;
+            font-size: 15px;
+            color: #31b545;
+            margin-bottom: 12px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+
+        .btn-green { background: #31b545; color: white; }
+        .btn:active { opacity: 0.85; transform: scale(0.98); }
+
+        .invoice-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            cursor: pointer;
+        }
+
+        .invoice-item:last-child { border-bottom: none; }
+
+        .invoice-name {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .invoice-icon {
+            font-size: 18px;
+            color: var(--tg-theme-hint-color);
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg,
+                var(--tg-theme-secondary-bg-color) 25%,
+                rgba(255,255,255,0.08) 50%,
+                var(--tg-theme-secondary-bg-color) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.2s infinite;
+            border-radius: 10px;
+            height: 48px;
+            margin-bottom: 8px;
+        }
+
+        @keyframes shimmer {
+            0%   { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--tg-theme-hint-color);
+            font-size: 15px;
+        }
+
+        .sheet-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 900;
+            display: none;
+        }
+
+        .sheet-overlay.open { display: block; }
+
+        .bottom-sheet {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--tg-theme-bg-color);
+            border-radius: 16px 16px 0 0;
+            padding: 20px 15px 32px;
+            z-index: 1000;
+            transform: translateY(100%);
+            transition: transform 0.25s ease;
+        }
+
+        .bottom-sheet.open { transform: translateY(0); }
+
+        .sheet-handle {
+            width: 40px;
+            height: 4px;
+            background: rgba(0,0,0,0.15);
+            border-radius: 2px;
+            margin: 0 auto 16px;
+        }
+
+        .sheet-title {
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .sheet-btn {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+
+        .sheet-btn-delete { background: rgba(229,57,53,0.10); color: #e53935; }
+        .sheet-btn-cancel { background: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-hint-color); }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 9999;
+            animation: fadeIn 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+
+<h3>📋 Рахунки</h3>
+
+<!-- ─── ФОРМА ─── -->
+<div class="card">
+    <div class="card-title">Додати клієнта</div>
+    <div class="autocomplete-container">
+        <input type="text" id="client-input" placeholder="Назва клієнта..." autocomplete="off">
+        <div id="client-suggestions" class="suggestions-list"></div>
+    </div>
+    <button class="btn btn-green" onclick="addClient()">+ Додати до списку</button>
+</div>
+
+<!-- ─── СПИСОК ─── -->
+<div class="card">
+    <div class="card-title">Список клієнтів для рахунків</div>
+    <div id="invoices-list">
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+    </div>
+</div>
+
+<!-- ─── BOTTOM SHEET ─── -->
+<div class="sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
+<div class="bottom-sheet" id="bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sheet-client-name"></div>
+    <button class="sheet-btn sheet-btn-delete" onclick="deleteFromSheet()">🗑 Видалити</button>
+    <button class="sheet-btn sheet-btn-cancel" onclick="closeSheet()">Скасувати</button>
+</div>
+
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    const params    = new URLSearchParams(window.location.search);
+    const managerId = params.get('manager_id');
+    const apiUrl    = decodeURIComponent(params.get('api_url') || '');
+
+    let allClients     = [];
+    let invoiceClients = [];
+    let sheetClient    = null;
+    let longPressTimer = null;
+
+    function showToast(msg, type = 'success') {
+        const t = document.createElement('div');
+        t.className = 'toast';
+        t.style.background = type === 'success' ? '#31b545' : '#e53935';
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2500);
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, ch => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+        }[ch]));
+    }
+
+    async function apiGet(path) {
+        const resp = await fetch(`${apiUrl}${path}`);
+        const data = await resp.json();
+        return { resp, data };
+    }
+
+    async function apiPost(path, body) {
+        const resp = await fetch(`${apiUrl}${path}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        const data = await resp.json();
+        return { resp, data };
+    }
+
+    // ─── ЗАВАНТАЖЕННЯ КЛІЄНТІВ ────────────────────────
+    async function loadAllClients() {
+        try {
+            const res = await apiGet(`/api/clients?manager_id=${managerId}`);
+            allClients = res.data.clients || [];
+        } catch (e) { console.error(e); }
+    }
+
+    async function loadInvoiceClients() {
+        try {
+            const res = await apiGet(`/api/invoice-clients?manager_id=${managerId}`);
+            if (!res.resp.ok) throw new Error(res.data.error || 'Помилка');
+            invoiceClients = res.data.clients || [];
+            renderInvoiceClients();
+        } catch (e) {
+            document.getElementById('invoices-list').innerHTML =
+                `<div class="empty-state">${escapeHtml(e.message)}</div>`;
+        }
+    }
+
+    function renderInvoiceClients() {
+        const el = document.getElementById('invoices-list');
+        if (!invoiceClients.length) {
+            el.innerHTML = '<div class="empty-state">📋 Список порожній</div>';
+            return;
+        }
+        el.innerHTML = invoiceClients.map(c => `
+            <div class="invoice-item fade-in" data-name="${escapeHtml(c.client_name)}">
+                <div class="invoice-name">${escapeHtml(c.client_name)}</div>
+                <span class="invoice-icon">⋯</span>
+            </div>
+        `).join('');
+
+        el.querySelectorAll('.invoice-item').forEach(item => {
+            item.addEventListener('touchstart', () => {
+                longPressTimer = setTimeout(() => openSheet(item.dataset.name), 600);
+            }, { passive: true });
+            item.addEventListener('touchend',  () => clearTimeout(longPressTimer), { passive: true });
+            item.addEventListener('touchmove', () => clearTimeout(longPressTimer), { passive: true });
+            item.addEventListener('contextmenu', e => { e.preventDefault(); openSheet(item.dataset.name); });
+        });
+    }
+
+    // ─── AUTOCOMPLETE ─────────────────────────────────
+    const clientInput = document.getElementById('client-input');
+    const suggList    = document.getElementById('client-suggestions');
+
+    clientInput.addEventListener('input', function () {
+        const val = this.value.toLowerCase().trim();
+        suggList.innerHTML = '';
+        if (!val) { suggList.style.display = 'none'; return; }
+        const matches = allClients.filter(n => n.toLowerCase().includes(val));
+        matches.forEach(name => {
+            const d = document.createElement('div');
+            d.className = 'suggestion-item';
+            d.textContent = name;
+            d.onclick = () => {
+                clientInput.value = name;
+                suggList.style.display = 'none';
+                tg.HapticFeedback.impactOccurred('light');
+            };
+            suggList.appendChild(d);
+        });
+        suggList.style.display = matches.length ? 'block' : 'none';
+    });
+
+    document.addEventListener('click', e => {
+        if (e.target !== clientInput) suggList.style.display = 'none';
+    });
+
+    // ─── ДОДАТИ ───────────────────────────────────────
+    async function addClient() {
+        const name = clientInput.value.trim();
+        if (!name) { showToast('Введіть назву клієнта', 'error'); return; }
+
+        tg.HapticFeedback.impactOccurred('medium');
+        try {
+            const res = await apiPost('/api/add-invoice-client', {
+                manager_id: Number(managerId),
+                client_name: name,
+            });
+            if (!res.resp.ok) throw new Error(res.data.error || 'Помилка');
+            showToast('✅ Клієнта додано');
+            clientInput.value = '';
+            await loadInvoiceClients();
+        } catch (e) {
+            showToast(e.message, 'error');
+        }
+    }
+
+    // ─── BOTTOM SHEET ─────────────────────────────────
+    function openSheet(clientName) {
+        tg.HapticFeedback.impactOccurred('medium');
+        sheetClient = clientName;
+        document.getElementById('sheet-client-name').textContent = clientName;
+        document.getElementById('sheet-overlay').classList.add('open');
+        document.getElementById('bottom-sheet').classList.add('open');
+    }
+
+    function closeSheet() {
+        document.getElementById('sheet-overlay').classList.remove('open');
+        document.getElementById('bottom-sheet').classList.remove('open');
+        sheetClient = null;
+    }
+
+    async function deleteFromSheet() {
+        if (!sheetClient) return;
+        closeSheet();
+        tg.HapticFeedback.notificationOccurred('warning');
+        try {
+            const res = await apiPost('/api/delete-invoice-client', {
+                manager_id: Number(managerId),
+                client_name: sheetClient,
+            });
+            if (!res.resp.ok) throw new Error(res.data.error || 'Помилка');
+            showToast('✅ Видалено');
+            await loadInvoiceClients();
+        } catch (e) {
+            showToast(e.message, 'error');
+        }
+    }
+
+    // ─── INIT ─────────────────────────────────────────
+    Promise.all([loadAllClients(), loadInvoiceClients()]);
+</script>
+</body>
+</html>
