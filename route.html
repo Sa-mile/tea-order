@@ -2190,6 +2190,9 @@
                     showToast(`Призначено: ${result.assigned}`);
                 }
                 await loadAdmin();
+                if (adminMap && adminMarkersLayer !== null) {
+                    adminMarkersLayer = renderAdminMarkers(adminMap, adminMarkersLayer, points);
+                }
             } catch (e) { showToast(e.message, 'error'); }
         }
 
