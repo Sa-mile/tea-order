@@ -1893,13 +1893,14 @@
         }
 
         function scrollToPoint(orderId) {
-            const el = document.getElementById(`admin-point-${orderId}`);
-            if (!el) return;
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            const cb = el.querySelector('.bulk-check');
-            if (cb && !cb.disabled) cb.checked = true;
-            el.style.outline = '2px solid #31b545';
-            setTimeout(() => el.style.outline = '', 1500);
+            const wrapper = document.getElementById(`admin-point-${orderId}`);
+            if (!wrapper) return;
+            const cb = wrapper.querySelector('.bulk-check');
+            if (!cb || cb.disabled) return;
+
+            cb.checked = !cb.checked;
+            tg.HapticFeedback.impactOccurred('light');
+            showSelectionCount();
         }
 
         function toggleAdminPoint(orderId) {
@@ -1956,8 +1957,8 @@
                 const bgLeft  = wrapper.querySelector('.admin-point-swipe-bg.left');
                 const cb      = wrapper.querySelector('.bulk-check');
 
-                const hasDriver = wrapper.querySelector('.individual-driver-select')?.value;
-                if (!cb || cb.disabled || hasDriver) return;
+                const hasNumber = wrapper.querySelector('.point-num');
+                if (!cb || cb.disabled || hasNumber) return;
 
                 let startX = 0;
                 let currentX = 0;
@@ -2098,43 +2099,69 @@
                 return;
             }
 
-            list.innerHTML = points.map(p => {
-                const status = pointStatus(p);
-                const isLocked = p.delivery_status === 'delivered' || p.delivery_status === 'cancelled';
-                const isStarted = p.route_started;
-                const color = driverColor(p.driver_id);
-                const bgColor = p.driver_id ? hexToRgba(driverColor(p.driver_id), 0.12) : 'transparent';
+            const byDriver = {};
+            const unassigned = [];
+            drivers.forEach(d => { byDriver[d.id] = []; });
+            points.forEach(p => {
+                if (p.driver_id && byDriver[p.driver_id]) {
+                    byDriver[p.driver_id].push(p);
+                } else {
+                    unassigned.push(p);
+                }
+            });
 
-                const individualAssign = (!isLocked)
-                    ? `<select class="individual-driver-select" data-order-id="${p.order_id}"
-                               onchange="assignOneImmediate(${p.order_id}, this.value)">
-                           ${driverOptions(p.driver_id)}
-                       </select>`
-                    : `<span class="point-meta">${isLocked ? '🔒' : ''} ${escapeHtml(p.driver_name || 'без водія')}</span>`;
+            let html = '';
+            drivers.forEach((d, dIdx) => {
+                const driverPoints = byDriver[d.id] || [];
+                if (!driverPoints.length) return;
+                const color = DRIVER_COLORS[dIdx % DRIVER_COLORS.length];
+                driverPoints.forEach((p, i) => {
+                    html += buildAdminCard(p, color, i + 1);
+                });
+            });
+            unassigned.forEach(p => {
+                html += buildAdminCard(p, '#9e9e9e', null);
+            });
 
-                return `
-                    <div class="admin-point-swipe-wrapper" id="admin-point-${p.order_id}">
-                        <div class="admin-point-swipe-bg right">☑️</div>
-                        <div class="admin-point-swipe-bg left">☐</div>
-                        <div class="admin-point-swipe-inner point-card ${cardClass(p)}"
-                             style="background:${bgColor};">
-                            <div class="point-head" style="border-left-color:${color};">
-                                <input type="checkbox" class="bulk-check" value="${p.order_id}"
+            list.innerHTML = html;
+            attachAdminSwipe();
+        }
+
+        function buildAdminCard(p, color, num) {
+            const status = pointStatus(p);
+            const isLocked = p.delivery_status === 'delivered' || p.delivery_status === 'cancelled';
+            const bgColor = p.driver_id ? hexToRgba(color, 0.12) : 'transparent';
+
+            const individualAssign = (!isLocked)
+                ? `<select class="individual-driver-select" data-order-id="${p.order_id}"
+                           onchange="assignOneImmediate(${p.order_id}, this.value)">
+                       ${driverOptions(p.driver_id)}
+                   </select>`
+                : `<span class="point-meta">🔒 ${escapeHtml(p.driver_name || 'без водія')}</span>`;
+
+            return `
+                <div class="admin-point-swipe-wrapper" id="admin-point-${p.order_id}">
+                    <div class="admin-point-swipe-bg right">☑️</div>
+                    <div class="admin-point-swipe-bg left">☐</div>
+                    <div class="admin-point-swipe-inner point-card ${cardClass(p)}"
+                         style="background:${bgColor};">
+                        <div class="point-head" style="border-left-color:${color};">
+                            ${num !== null
+                                ? `<div class="point-num" style="background:${color}; flex-shrink:0;">${num}</div>`
+                                : `<input type="checkbox" class="bulk-check" value="${p.order_id}"
                                        ${isLocked ? 'disabled' : ''}
                                        style="width:18px; height:18px; accent-color:#31b545;
-                                              flex-shrink:0; margin-top:2px; cursor:pointer;">
-                                <div style="flex:1; min-width:0;">
-                                    <div class="point-name">${escapeHtml(p.client_name)}</div>
-                                    <div class="point-meta">${statusText(status)}</div>
-                                    ${individualAssign}
-                                </div>
+                                              flex-shrink:0; margin-top:2px; cursor:pointer;">`
+                            }
+                            <div style="flex:1; min-width:0;">
+                                <div class="point-name">${escapeHtml(p.client_name)}</div>
+                                <div class="point-meta">${statusText(status)}</div>
+                                ${individualAssign}
                             </div>
                         </div>
                     </div>
-                `;
-            }).join('');
-
-            attachAdminSwipe();
+                </div>
+            `;
         }
 
         function driverOptions(currentId) {
