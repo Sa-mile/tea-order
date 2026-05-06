@@ -622,6 +622,18 @@
         <div id="archive-list"></div>
     </div>
 
+    <!-- Archive detail screen -->
+    <div id="screen-archive-detail" class="screen">
+        <div style="margin-bottom:12px;">
+            <button onclick="showScreen('screen-archive'); loadArchive();"
+                    style="background:none; border:none; color:#31b545;
+                           font-size:14px; cursor:pointer; padding:0;">
+                ← Назад до архіву
+            </button>
+        </div>
+        <div id="archive-detail-content"></div>
+    </div>
+
     <!-- Final screen after route finish -->
     <div id="screen-final" class="screen">
         <div style="text-align:center; padding:20px 0 16px;">
@@ -2041,24 +2053,16 @@
                      data-driver-id="${r.driver_id || ''}"
                      data-driver-name="${escapeHtml(r.driver_name)}"
                      data-route-date="${r.route_date}"
-                     onclick="toggleArchiveDetails(this)">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                        <div>
-                            <div style="font-weight:700; font-size:15px;">📅 ${r.route_date} &nbsp; 🚗 ${escapeHtml(r.driver_name)}</div>
-                            <div class="point-meta" style="margin-top:4px;">
-                                ${Number(r.total_km || 0).toFixed(1)} км &nbsp;•&nbsp; ${r.delivered}/${r.total} доставлено
-                            </div>
-                            ${r.started_at ? `<div class="point-meta">⏱ ${r.started_at} → ${r.finished_at || '?'}</div>` : ''}
-                        </div>
-                        <span style="font-size:13px; color:var(--tg-theme-hint-color);">▼</span>
+                     onclick="openArchiveDetail('${r.driver_id}', '${r.route_date}')">
+                    <div style="font-weight:700; font-size:15px;">
+                        📅 ${r.route_date} &nbsp; 🚗 ${escapeHtml(r.driver_name)}
                     </div>
-                    <div class="archive-details" style="display:none; margin-top:10px; padding-top:10px;
-                                                       border-top:1px dashed var(--tg-theme-hint-color);">
-                        <div>📦 Доставлено: ${r.delivered} з ${r.total}</div>
-                        ${r.rescheduled_count > 0 ? `<div style="margin-top:4px;">📅 Перенесено: ${r.rescheduled_count}</div>` : ''}
-                        ${r.cancelled_count > 0 ? `<div style="margin-top:4px;">❌ Відмінено: ${r.cancelled_count}</div>` : ''}
-                        ${r.duration ? `<div style="margin-top:4px;">⏱ Тривалість: ${r.duration}</div>` : ''}
+                    <div class="point-meta" style="margin-top:4px;">
+                        ${Number(r.total_km || 0).toFixed(1)} км &nbsp;•&nbsp; ${r.delivered}/${r.total} доставлено
                     </div>
+                    ${r.started_at ? `<div class="point-meta">⏱ ${r.started_at} → ${r.finished_at || '?'} • ${r.duration || ''}</div>` : ''}
+                    ${r.paid_total > 0 ? `<div class="point-meta" style="color:#31b545;">💵 ${r.paid_total.toFixed(0)} грн</div>` : ''}
+                    ${r.debt_total > 0 ? `<div class="point-meta" style="color:#e53935;">🔴 Борг: ${r.debt_total.toFixed(0)} грн</div>` : ''}
                 </div>
             `).join('');
 
@@ -2079,9 +2083,67 @@
             }
         }
 
-        function toggleArchiveDetails(card) {
-            const details = card.querySelector('.archive-details');
-            details.style.display = details.style.display === 'none' ? 'block' : 'none';
+        async function openArchiveDetail(driverId, routeDate) {
+            showScreen('screen-archive-detail');
+            const content = document.getElementById('archive-detail-content');
+            content.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
+
+            try {
+                const res = await apiGet(
+                    `/api/archive-route-detail?manager_id=${managerId}&driver_id=${driverId}&date=${routeDate}`
+                );
+                if (!res.resp.ok) throw new Error(res.data.error || 'Помилка');
+                const d = res.data;
+
+                const statusLabel = { 'delivered': '✅', 'cancelled': '❌', 'pending': '⏳' };
+                const payLabel = { 'paid': '💵', 'unpaid': '🔴' };
+
+                content.innerHTML = `
+                    <div class="card" style="margin-bottom:12px;">
+                        <div style="font-weight:700; font-size:16px; margin-bottom:8px;">
+                            📅 ${d.route_date} — 🚗 ${escapeHtml(d.driver_name)}
+                        </div>
+                        <div class="point-meta">⏱ ${d.started_at || '—'} → ${d.finished_at || '—'} • ${d.duration}</div>
+                        <div class="point-meta">🚗 Пробіг: ${d.total_km.toFixed(1)} км</div>
+                        ${d.paid_total > 0 ? `<div class="point-meta" style="color:#31b545;">💵 Готівка: ${d.paid_total.toFixed(0)} грн</div>` : ''}
+                        ${d.debt_total > 0 ? `<div class="point-meta" style="color:#e53935;">🔴 Борг: ${d.debt_total.toFixed(0)} грн</div>` : ''}
+                    </div>
+
+                    <div class="card-title" style="margin-bottom:8px;">Маршрут доставки:</div>
+
+                    ${d.points.map((p, i) => `
+                        <div class="point-card ${p.delivery_status === 'delivered' ? 'delivered' : p.delivery_status === 'cancelled' ? 'cancelled' : ''}">
+                            <div class="point-head">
+                                <div class="point-num">${i + 1}</div>
+                                <div style="flex:1;">
+                                    <div class="point-name">
+                                        ${statusLabel[p.delivery_status] || ''} ${escapeHtml(p.client_name)}
+                                        ${payLabel[p.payment_status] || ''}
+                                    </div>
+                                    <div class="point-meta">
+                                        ${p.arrived_at ? `🕐 ${p.arrived_at}` : ''}
+                                        ${p.gap_min ? `&nbsp;•&nbsp; +${p.gap_min} хв` : ''}
+                                    </div>
+                                    <div class="point-meta">
+                                        💰 ${p.order_total.toFixed(0)} грн
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+
+                    ${isAdmin ? `
+                        <button onclick="showResetConfirm({driver_id:'${driverId}', driver_name:'${d.driver_name}', route_date:'${routeDate}'})"
+                                style="width:100%; margin-top:16px; padding:10px; border-radius:8px;
+                                       border:1px solid #e53935; background:transparent;
+                                       color:#e53935; font-size:13px; cursor:pointer;">
+                            🗑 Скинути маршрут
+                        </button>
+                    ` : ''}
+                `;
+            } catch (e) {
+                content.innerHTML = `<div class="empty-state">${escapeHtml(e.message)}</div>`;
+            }
         }
 
         function showResetConfirm(route) {
@@ -2112,7 +2174,8 @@
                 const data = await resp.json();
                 if (data.status === 'ok') {
                     showToast(`✅ Скинуто ${data.reset} замовлень`);
-                    loadArchive();
+                    showScreen('screen-archive');
+                    await loadArchive();
                 } else {
                     showToast(data.error || 'Помилка скидання', 'error');
                 }
