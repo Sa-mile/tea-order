@@ -407,12 +407,13 @@
 
     async function deleteFromSheet() {
         if (!sheetClient) return;
+        const nameToDelete = sheetClient;
         closeSheet();
         tg.HapticFeedback.notificationOccurred('warning');
         try {
             const res = await apiPost('/api/delete-invoice-client', {
                 manager_id: Number(managerId),
-                client_name: sheetClient,
+                client_name: nameToDelete,
             });
             if (!res.resp.ok) throw new Error(res.data.error || 'Помилка');
             showToast('✅ Видалено');
