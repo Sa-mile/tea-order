@@ -102,6 +102,48 @@
         }
 
 
+        .admin-point-swipe-wrapper {
+            position: relative;
+            overflow: hidden;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+
+        .admin-point-swipe-bg {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            border-radius: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        .admin-point-swipe-bg.right {
+            background: rgba(49, 181, 69, 0.15);
+            justify-content: flex-start;
+            padding-left: 20px;
+            color: #31b545;
+            font-size: 20px;
+        }
+
+        .admin-point-swipe-bg.left {
+            background: rgba(229, 57, 53, 0.12);
+            justify-content: flex-end;
+            padding-right: 20px;
+            color: #e53935;
+            font-size: 20px;
+        }
+
+        .admin-point-swipe-inner {
+            position: relative;
+            transition: transform 0.15s ease;
+            will-change: transform;
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 12px;
+        }
+
         .point-head {
             position: relative;
             z-index: 1;
@@ -1853,6 +1895,69 @@
             setTimeout(() => el.style.outline = '', 1500);
         }
 
+        function attachAdminSwipe() {
+            const THRESHOLD = 60;
+            const MAX_DRAG  = 100;
+
+            document.querySelectorAll('.admin-point-swipe-wrapper').forEach(wrapper => {
+                const inner   = wrapper.querySelector('.admin-point-swipe-inner');
+                const bgRight = wrapper.querySelector('.admin-point-swipe-bg.right');
+                const bgLeft  = wrapper.querySelector('.admin-point-swipe-bg.left');
+                const cb      = wrapper.querySelector('.bulk-check');
+
+                if (!cb || cb.disabled) return;
+
+                let startX = 0;
+                let currentX = 0;
+                let dragging = false;
+
+                wrapper.addEventListener('touchstart', e => {
+                    startX = e.touches[0].clientX;
+                    currentX = 0;
+                    dragging = true;
+                    inner.style.transition = 'none';
+                }, { passive: true });
+
+                wrapper.addEventListener('touchmove', e => {
+                    if (!dragging) return;
+                    currentX = e.touches[0].clientX - startX;
+
+                    const clamped = Math.max(-MAX_DRAG, Math.min(MAX_DRAG, currentX));
+                    inner.style.transform = `translateX(${clamped}px)`;
+
+                    if (currentX > 0) {
+                        bgRight.style.opacity = Math.min(currentX / THRESHOLD, 1);
+                        bgLeft.style.opacity  = 0;
+                    } else {
+                        bgLeft.style.opacity  = Math.min(Math.abs(currentX) / THRESHOLD, 1);
+                        bgRight.style.opacity = 0;
+                    }
+                }, { passive: true });
+
+                wrapper.addEventListener('touchend', () => {
+                    if (!dragging) return;
+                    dragging = false;
+
+                    inner.style.transition = 'transform 0.2s ease';
+                    inner.style.transform  = 'translateX(0)';
+                    bgRight.style.opacity  = 0;
+                    bgLeft.style.opacity   = 0;
+
+                    if (currentX >= THRESHOLD) {
+                        if (!cb.checked) {
+                            cb.checked = true;
+                            tg.HapticFeedback.impactOccurred('light');
+                        }
+                    } else if (currentX <= -THRESHOLD) {
+                        if (cb.checked) {
+                            cb.checked = false;
+                            tg.HapticFeedback.impactOccurred('light');
+                        }
+                    }
+                });
+            });
+        }
+
         function startWatchingPosition(targetMap) {
             if (!navigator.geolocation || watchId) return;
             const myIcon = L.divIcon({
@@ -1953,21 +2058,27 @@
                     : `<span class="point-meta">${isLocked ? '🔒' : ''} ${escapeHtml(p.driver_name || 'без водія')}</span>`;
 
                 return `
-                    <div class="point-card ${cardClass(p)}" id="admin-point-${p.order_id}">
-                        <div class="point-head" style="border-left-color:${color};">
-                            <input type="checkbox" class="bulk-check" value="${p.order_id}"
-                                   ${isLocked ? 'disabled' : ''}
-                                   style="width:18px; height:18px; accent-color:#31b545;
-                                          flex-shrink:0; margin-top:2px; cursor:pointer;">
-                            <div style="flex:1; min-width:0;">
-                                <div class="point-name">${escapeHtml(p.client_name)}</div>
-                                <div class="point-meta">${statusText(status)}</div>
-                                ${individualAssign}
+                    <div class="admin-point-swipe-wrapper" id="admin-point-${p.order_id}">
+                        <div class="admin-point-swipe-bg right">☑️</div>
+                        <div class="admin-point-swipe-bg left">☐</div>
+                        <div class="admin-point-swipe-inner point-card ${cardClass(p)}">
+                            <div class="point-head" style="border-left-color:${color};">
+                                <input type="checkbox" class="bulk-check" value="${p.order_id}"
+                                       ${isLocked ? 'disabled' : ''}
+                                       style="width:18px; height:18px; accent-color:#31b545;
+                                              flex-shrink:0; margin-top:2px; cursor:pointer;">
+                                <div style="flex:1; min-width:0;">
+                                    <div class="point-name">${escapeHtml(p.client_name)}</div>
+                                    <div class="point-meta">${statusText(status)}</div>
+                                    ${individualAssign}
+                                </div>
                             </div>
                         </div>
                     </div>
                 `;
             }).join('');
+
+            attachAdminSwipe();
         }
 
         function driverOptions(currentId) {
