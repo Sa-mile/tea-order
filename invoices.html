@@ -323,20 +323,23 @@
             el.innerHTML = '<div class="empty-state">📋 Список порожній</div>';
             return;
         }
-        el.innerHTML = invoiceClients.map(c => `
-            <div class="invoice-item fade-in" data-name="${escapeHtml(c.client_name)}">
+        el.innerHTML = invoiceClients.map((c, i) => `
+            <div class="invoice-item fade-in" data-index="${i}">
                 <div class="invoice-name">${escapeHtml(c.client_name)}</div>
                 <span class="invoice-icon">⋯</span>
             </div>
         `).join('');
 
         el.querySelectorAll('.invoice-item').forEach(item => {
+            const idx = parseInt(item.dataset.index);
+            const clientName = invoiceClients[idx]?.client_name;
+
             item.addEventListener('touchstart', () => {
-                longPressTimer = setTimeout(() => openSheet(item.dataset.name), 600);
+                longPressTimer = setTimeout(() => openSheet(clientName), 600);
             }, { passive: true });
             item.addEventListener('touchend',  () => clearTimeout(longPressTimer), { passive: true });
             item.addEventListener('touchmove', () => clearTimeout(longPressTimer), { passive: true });
-            item.addEventListener('contextmenu', e => { e.preventDefault(); openSheet(item.dataset.name); });
+            item.addEventListener('contextmenu', e => { e.preventDefault(); openSheet(clientName); });
         });
     }
 
