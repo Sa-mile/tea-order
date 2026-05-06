@@ -730,6 +730,13 @@
             const idx = drivers.findIndex(d => String(d.id) === String(driverId));
             return idx >= 0 ? DRIVER_COLORS[idx % DRIVER_COLORS.length] : '#9e9e9e';
         }
+
+        function hexToRgba(hex, alpha) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r},${g},${b},${alpha})`;
+        }
         let longTapTimer = null;
 
         document.getElementById('route-date').value = isoDate;
@@ -1878,7 +1885,7 @@
                 const marker = L.marker([lat, lng], {
                     icon: makeIcon(p.visit_order || '?', color)
                 }).addTo(layer);
-                marker.on('click', () => scrollToPoint(p.order_id));
+                marker.on('click', () => toggleAdminPoint(p.order_id));
                 bounds.push([lat, lng]);
             });
             if (bounds.length) targetMap.fitBounds(bounds, { padding: [25, 25] });
@@ -1895,6 +1902,50 @@
             setTimeout(() => el.style.outline = '', 1500);
         }
 
+        function toggleAdminPoint(orderId) {
+            const wrapper = document.getElementById(`admin-point-${orderId}`);
+            if (!wrapper) return;
+            const cb = wrapper.querySelector('.bulk-check');
+            if (!cb || cb.disabled) return;
+
+            cb.checked = !cb.checked;
+            tg.HapticFeedback.impactOccurred('light');
+            showSelectionCount();
+        }
+
+        let selectionToastTimer = null;
+
+        function showSelectionCount() {
+            const checked = document.querySelectorAll('.bulk-check:checked').length;
+            const total   = document.querySelectorAll('.bulk-check:not(:disabled)').length;
+
+            clearTimeout(selectionToastTimer);
+            const existing = document.getElementById('selection-count-toast');
+            if (existing) existing.remove();
+
+            const toast = document.createElement('div');
+            toast.id = 'selection-count-toast';
+            toast.style.cssText = `
+                position: fixed;
+                top: 16px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0,0,0,0.75);
+                color: white;
+                padding: 8px 20px;
+                border-radius: 20px;
+                font-size: 14px;
+                font-weight: 600;
+                z-index: 9999;
+                pointer-events: none;
+                animation: fadeIn 0.15s ease;
+            `;
+            toast.textContent = `Вибрано: ${checked} з ${total}`;
+            document.body.appendChild(toast);
+
+            selectionToastTimer = setTimeout(() => toast.remove(), 2000);
+        }
+
         function attachAdminSwipe() {
             const THRESHOLD = 60;
             const MAX_DRAG  = 100;
@@ -1905,7 +1956,8 @@
                 const bgLeft  = wrapper.querySelector('.admin-point-swipe-bg.left');
                 const cb      = wrapper.querySelector('.bulk-check');
 
-                if (!cb || cb.disabled) return;
+                const hasDriver = wrapper.querySelector('.individual-driver-select')?.value;
+                if (!cb || cb.disabled || hasDriver) return;
 
                 let startX = 0;
                 let currentX = 0;
@@ -1947,11 +1999,13 @@
                         if (!cb.checked) {
                             cb.checked = true;
                             tg.HapticFeedback.impactOccurred('light');
+                            showSelectionCount();
                         }
                     } else if (currentX <= -THRESHOLD) {
                         if (cb.checked) {
                             cb.checked = false;
                             tg.HapticFeedback.impactOccurred('light');
+                            showSelectionCount();
                         }
                     }
                 });
@@ -2049,6 +2103,7 @@
                 const isLocked = p.delivery_status === 'delivered' || p.delivery_status === 'cancelled';
                 const isStarted = p.route_started;
                 const color = driverColor(p.driver_id);
+                const bgColor = p.driver_id ? hexToRgba(driverColor(p.driver_id), 0.12) : 'transparent';
 
                 const individualAssign = (!isLocked)
                     ? `<select class="individual-driver-select" data-order-id="${p.order_id}"
@@ -2061,7 +2116,8 @@
                     <div class="admin-point-swipe-wrapper" id="admin-point-${p.order_id}">
                         <div class="admin-point-swipe-bg right">☑️</div>
                         <div class="admin-point-swipe-bg left">☐</div>
-                        <div class="admin-point-swipe-inner point-card ${cardClass(p)}">
+                        <div class="admin-point-swipe-inner point-card ${cardClass(p)}"
+                             style="background:${bgColor};">
                             <div class="point-head" style="border-left-color:${color};">
                                 <input type="checkbox" class="bulk-check" value="${p.order_id}"
                                        ${isLocked ? 'disabled' : ''}
