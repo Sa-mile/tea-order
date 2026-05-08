@@ -436,13 +436,13 @@
         }
 
         function clearOnFocus(input) {
-            if (input.value === '0') input.value = '';
+            input.select();
         }
 
         function restoreZero(input, key) {
             if (input.value === '' || input.value === null) {
-                input.value = '0';
-                delete order[key];
+                const prev = order[key] || 0;
+                input.value = prev;
             }
             updateSummary();
         }
@@ -514,12 +514,13 @@
         }
 
         function applyAllBy(cat, value) {
-            const qty = parseInt(value) || 0;
-            if (qty <= 0) return;
+            const qty = parseInt(value);
+            if (isNaN(qty) || qty < 0) return;
 
             const hasSelected = products[cat].some(name => selectedItems[`${cat}_${name}`]);
 
             products[cat].forEach(name => {
+                if (name === 'ГАРБУЗ') return;
                 const key = `${cat}_${name}`;
                 const shouldApply = hasSelected ? !!selectedItems[key] : true;
                 if (shouldApply) {
