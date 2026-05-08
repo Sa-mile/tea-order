@@ -101,7 +101,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 10px;
+            padding: 10px 12px;
             border-left: 4px solid #2196F3;
             background: var(--tg-theme-secondary-bg-color);
             border-radius: 10px;
@@ -112,19 +112,19 @@
         .item-card.selected { border-left-color: #31b545; }
         .item-card.unselected-warn { border-left-color: #e53935; }
 
-        .item-name { flex: 1; font-size: 14px; }
+        .item-name { flex: 1; font-size: 17px; }
 
         .controls { display: flex; align-items: center; gap: 6px; }
 
         .btn-qty {
-            width: 24px;
-            height: 24px;
+            width: 29px;
+            height: 29px;
             border-radius: 6px;
             border: none;
             background: var(--tg-theme-button-color);
             color: var(--tg-theme-button-text-color);
             font-weight: bold;
-            font-size: 14px;
+            font-size: 17px;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -132,14 +132,14 @@
         }
 
         .qty-input {
-            width: 40px;
-            height: 26px;
+            width: 48px;
+            height: 31px;
             text-align: center;
             border: 1px solid #ccc;
             border-radius: 6px;
             background: var(--tg-theme-bg-color);
             color: var(--tg-theme-text-color);
-            font-size: 15px;
+            font-size: 18px;
         }
 
         .category-header {
@@ -249,6 +249,16 @@
         <textarea id="comment" placeholder="Коментар..." rows="2"></textarea>
     </div>
 
+    <div style="display:flex; justify-content:flex-end; align-items:center;
+                gap:8px; margin-bottom:8px; padding: 0 4px;">
+        <label style="display:flex; align-items:center; gap:6px;
+                      font-size:13px; color:var(--tg-theme-hint-color); cursor:pointer;">
+            <input type="checkbox" id="swipe-mode" style="width:16px; height:16px; cursor:pointer;"
+                   onchange="toggleSwipeMode(this.checked)">
+            Слайд режим
+        </label>
+    </div>
+
     <!-- Лимонади -->
     <div class="category-header" onclick="toggleCat('lemonades', this)">
         <span>🍋 Лимонади <span id="arrow-lemonades">▼</span></span>
@@ -273,15 +283,9 @@
     </div>
     <div id="teas" class="items-container"></div>
 
-    <!-- ПЕТ -->
+    <!-- Інше -->
     <div class="category-header" onclick="toggleCat('glass', this)">
-        <span>🥤 ПЕТ Стакани <span id="arrow-glass">▼</span></span>
-        <div class="all-by-row" onclick="event.stopPropagation()">
-            <span style="font-size:13px; font-weight:normal;">Всіх по:</span>
-            <input type="number" class="all-by-input" id="allby-glass" min="0"
-                   placeholder="0"
-                   onchange="applyAllBy('glass', this.value)">
-        </div>
+        <span>📦 Інше <span id="arrow-glass">▼</span></span>
     </div>
     <div id="glass" class="items-container"></div>
 
@@ -315,6 +319,7 @@
         const order = {};
         const prices = {};
         const selectedItems = {};
+        let swipeModeActive = false;
 
         const params = new URLSearchParams(window.location.search);
         const managerId = params.get('manager_id');
@@ -333,6 +338,11 @@
             } catch (e) {
                 console.error('Помилка завантаження клієнтів', e);
             }
+        }
+
+        function toggleSwipeMode(active) {
+            swipeModeActive = active;
+            tg.HapticFeedback.impactOccurred('light');
         }
 
         async function loadPrices() {
@@ -359,7 +369,7 @@
                 if (!dates.length) return;
                 box.style.display = 'block';
                 list.innerHTML = dates.map(d =>
-                    `<div class="debts-item">• ${d.date} — ${d.total} грн</div>`
+                    `<div class="debts-item">• ${d.date} — ${d.total_amount} грн</div>`
                 ).join('');
             } catch (e) { console.error(e); }
         }
@@ -438,6 +448,7 @@
         }
 
         function attachSwipe(wrapper, itemKey, cat) {
+            if (cat === 'glass') return;
             const card = wrapper.querySelector('.item-card');
             const bgRight = wrapper.querySelector('.item-swipe-bg.right');
             const bgLeft  = wrapper.querySelector('.item-swipe-bg.left');
@@ -453,7 +464,7 @@
             }, { passive: true });
 
             wrapper.addEventListener('touchmove', e => {
-                if (!dragging) return;
+                if (!dragging || !swipeModeActive) return;
                 currentX = e.touches[0].clientX - startX;
                 const clamped = Math.max(-MAX_DRAG, Math.min(MAX_DRAG, currentX));
                 card.style.transform = `translateX(${clamped}px)`;
@@ -473,6 +484,8 @@
                 card.style.transform = 'translateX(0)';
                 bgRight.style.opacity = 0;
                 bgLeft.style.opacity = 0;
+
+                if (!swipeModeActive) return;
 
                 if (currentX >= THRESHOLD) {
                     selectedItems[itemKey] = true;
