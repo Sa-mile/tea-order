@@ -531,6 +531,45 @@
             margin-top: 6px;
             cursor: pointer;
         }
+
+        .sheet-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+        }
+        .sheet-overlay.open { display: block; }
+
+        .bottom-sheet {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            right: 0;
+            background: var(--tg-theme-bg-color);
+            border-radius: 20px 20px 0 0;
+            padding: 20px;
+            z-index: 2001;
+            transition: bottom 0.3s ease;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+        .bottom-sheet.open { bottom: 0; }
+
+        .sheet-handle {
+            width: 40px;
+            height: 4px;
+            background: var(--tg-theme-hint-color);
+            border-radius: 2px;
+            margin: 0 auto 16px;
+            opacity: 0.4;
+        }
+
+        .sheet-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
     </style>
 </head>
 
@@ -1242,9 +1281,11 @@
             const status = pointStatus(selectedPoint);
             document.getElementById('action-title').textContent = selectedPoint.client_name;
             document.getElementById('action-comment').textContent = selectedPoint.comment || '';
-            document.getElementById('waze-btn').style.display = selectedPoint.lat_to && selectedPoint.lng_to ? 'block' : 'none';
+            const hasCoords = selectedPoint.lat_to && selectedPoint.lng_to;
+            const hasPhotos = selectedPoint.photos && selectedPoint.photos.length > 0;
+            document.getElementById('waze-btn').style.display = hasCoords ? 'block' : 'none';
             document.getElementById('base-btn').style.display =
-                (!selectedPoint.lat_to && !selectedPoint.lng_to) ? 'block' : 'none';
+                (!hasCoords || !hasPhotos) ? 'block' : 'none';
             document.getElementById('status-actions').style.display = status === 'pending' ? 'block' : 'none';
             document.getElementById('debt-btn').style.display =
                 status === 'pending' ? 'block' : 'none';
@@ -1410,10 +1451,13 @@
                     if (!isDragging) return;
                     if (currentX >= THRESHOLD) {
                         const p = points.find(pt => Number(pt.order_id) === orderId);
-                        if (p && p.lat_to && p.lng_to) {
+                        if (!p) { currentX = 0; isDragging = false; return; }
+                        if (p.lat_to && p.lng_to && (!p.photos || p.photos.length === 0)) {
+                            openActionChoice(p);
+                        } else if (p.lat_to && p.lng_to) {
                             tg.HapticFeedback.impactOccurred('medium');
                             window.open(`https://waze.com/ul?ll=${p.lat_to},${p.lng_to}&navigate=yes`, '_blank');
-                        } else if (p) {
+                        } else {
                             openBaseModal(p);
                         }
                     } else if (currentX <= -THRESHOLD) {
@@ -1801,6 +1845,7 @@
             const s = p.delivery_status;
             if (s === 'delivered') return '#9e9e9e';
             if (s === 'cancelled') return '#e53935';
+            if (p.lat_to && p.lng_to && (!p.photos || p.photos.length === 0)) return '#2196F3';
             return '#31b545';
         }
 
@@ -1881,7 +1926,8 @@
             list.forEach(p => {
                 if (!p.lat_to || !p.lng_to) return;
                 const lat = Number(p.lat_to), lng = Number(p.lng_to);
-                const color = driverColor(p.driver_id);
+                const hasPhotos = p.photos && p.photos.length > 0;
+                const color = hasPhotos ? driverColor(p.driver_id) : '#2196F3';
                 const marker = L.marker([lat, lng], {
                     icon: makeIcon(p.visit_order || '?', color)
                 }).addTo(layer);
@@ -2125,6 +2171,7 @@
 
             list.innerHTML = html;
             attachAdminSwipe();
+            attachAdminLongPress();
         }
 
         function buildAdminCard(p, color, num) {
@@ -2154,7 +2201,10 @@
                                               flex-shrink:0; margin-top:2px; cursor:pointer;">`
                             }
                             <div style="flex:1; min-width:0;">
-                                <div class="point-name">${escapeHtml(p.client_name)}</div>
+                                <div class="point-name">
+                                    ${escapeHtml(p.client_name)}
+                                    ${!p.lat_to && !p.lng_to ? '<span style="color:#e53935; font-size:12px;">📍</span>' : ''}
+                                </div>
                                 <div class="point-meta">${statusText(status)}</div>
                                 ${individualAssign}
                             </div>
@@ -2381,6 +2431,126 @@
             }
         }
 
+        // ── Manual coords (admin long press) ─────────────────────────────────
+
+        let coordsPoint = null;
+
+        function attachAdminLongPress() {
+            document.querySelectorAll('.admin-point-swipe-wrapper').forEach(wrapper => {
+                const orderId = wrapper.id.replace('admin-point-', '');
+                const p = points.find(pt => String(pt.order_id) === String(orderId));
+                if (!p || (p.lat_to && p.lng_to)) return;
+
+                let timer = null;
+                wrapper.addEventListener('touchstart', () => {
+                    timer = setTimeout(() => {
+                        tg.HapticFeedback.impactOccurred('medium');
+                        openCoordsModal(p);
+                    }, 600);
+                }, { passive: true });
+                wrapper.addEventListener('touchend', () => clearTimeout(timer), { passive: true });
+                wrapper.addEventListener('touchmove', () => clearTimeout(timer), { passive: true });
+            });
+        }
+
+        function openCoordsModal(p) {
+            coordsPoint = p;
+            document.getElementById('coords-client-name').textContent = p.client_name;
+            document.getElementById('coords-input').value = '';
+            document.getElementById('coords-overlay').classList.add('open');
+            document.getElementById('coords-sheet').classList.add('open');
+            setTimeout(() => document.getElementById('coords-input').focus(), 300);
+        }
+
+        function closeCoordsModal() {
+            document.getElementById('coords-overlay').classList.remove('open');
+            document.getElementById('coords-sheet').classList.remove('open');
+            coordsPoint = null;
+        }
+
+        async function saveCoordsManual() {
+            if (!coordsPoint) return;
+            const raw = document.getElementById('coords-input').value.trim();
+
+            let lat = null, lng = null;
+
+            const mapsMatch = raw.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) ||
+                              raw.match(/ll=(-?\d+\.\d+),(-?\d+\.\d+)/) ||
+                              raw.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/);
+            if (mapsMatch) {
+                lat = parseFloat(mapsMatch[1]);
+                lng = parseFloat(mapsMatch[2]);
+            } else {
+                const parts = raw.replace(/\s/g, '').split(',');
+                if (parts.length === 2) {
+                    lat = parseFloat(parts[0]);
+                    lng = parseFloat(parts[1]);
+                }
+            }
+
+            if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+                showToast('Невірний формат координат', 'error');
+                return;
+            }
+
+            if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                showToast('Координати поза межами', 'error');
+                return;
+            }
+
+            const pointForSave = coordsPoint;
+            closeCoordsModal();
+
+            try {
+                await apiPost('/api/save-coords-manual', {
+                    manager_id: Number(managerId),
+                    client_name: pointForSave.client_name,
+                    lat: lat,
+                    lng: lng,
+                });
+                showToast('📍 Координати збережено');
+                tg.HapticFeedback.notificationOccurred('success');
+                await loadAdmin();
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        // ── Action choice sheet (swipe right: coords but no photos) ──────────
+
+        let actionChoicePoint = null;
+
+        function openActionChoice(p) {
+            actionChoicePoint = p;
+            document.getElementById('action-choice-name').textContent = p.client_name;
+            document.getElementById('action-choice-overlay').classList.add('open');
+            document.getElementById('action-choice-sheet').classList.add('open');
+            tg.HapticFeedback.impactOccurred('medium');
+        }
+
+        function closeActionChoice() {
+            document.getElementById('action-choice-overlay').classList.remove('open');
+            document.getElementById('action-choice-sheet').classList.remove('open');
+            actionChoicePoint = null;
+        }
+
+        function actionChoiceWaze() {
+            const p = actionChoicePoint;
+            closeActionChoice();
+            if (!p) return;
+            window.open(
+                `https://waze.com/ul?ll=${p.lat_to},${p.lng_to}&navigate=yes`,
+                '_blank'
+            );
+        }
+
+        function actionChoiceBase() {
+            const p = actionChoicePoint;
+            closeActionChoice();
+            if (!p) return;
+            openBaseModal(p);
+        }
+
         function backToAdmin() {
             const url = new URL(window.location.href);
             url.searchParams.set('manager_id', originalManagerId);
@@ -2553,6 +2723,61 @@
             <button id="confirm-modal-ok" class="btn btn-green" style="margin-top:0;">✅ Так</button>
             <button class="btn btn-gray" style="margin-top:8px;" onclick="closeConfirmModal()">❌ Скасувати</button>
         </div>
+    </div>
+
+    <!-- Action choice sheet (driver swipe right: has coords but no photos) -->
+    <div class="sheet-overlay" id="action-choice-overlay" onclick="closeActionChoice()"></div>
+    <div class="bottom-sheet" id="action-choice-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title" id="action-choice-name"></div>
+        <button onclick="actionChoiceWaze()"
+                style="width:100%; padding:13px; background:#31b545; color:white;
+                       border:none; border-radius:10px; font-size:15px;
+                       font-weight:600; cursor:pointer; margin-bottom:10px;">
+            🧭 Їхати (Waze)
+        </button>
+        <button onclick="actionChoiceBase()"
+                style="width:100%; padding:13px; background:none;
+                       border:1px solid rgba(0,0,0,0.2); border-radius:10px;
+                       color:var(--tg-theme-text-color); font-size:15px;
+                       font-weight:600; cursor:pointer; margin-bottom:10px;">
+            📍 Оновити координати та фото
+        </button>
+        <button onclick="closeActionChoice()"
+                style="width:100%; padding:10px; background:none; border:none;
+                       color:var(--tg-theme-hint-color); font-size:14px; cursor:pointer;">
+            Скасувати
+        </button>
+    </div>
+
+    <!-- Coords modal (admin long press on point without coords) -->
+    <div class="sheet-overlay" id="coords-overlay" onclick="closeCoordsModal()"></div>
+    <div class="bottom-sheet" id="coords-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title" id="coords-client-name"></div>
+        <div style="font-size:13px; color:var(--tg-theme-hint-color); margin-bottom:8px;">
+            Введіть координати з Google Maps:<br>
+            <span style="font-size:12px;">Формат: 50.4501, 30.5234</span>
+        </div>
+        <input type="text" id="coords-input"
+               placeholder="50.4501, 30.5234"
+               style="width:100%; padding:10px; border-radius:8px;
+                      border:1px solid rgba(0,0,0,0.2);
+                      background:var(--tg-theme-secondary-bg-color);
+                      color:var(--tg-theme-text-color);
+                      font-size:16px; margin-bottom:12px; box-sizing:border-box;">
+        <button onclick="saveCoordsManual()"
+                style="width:100%; padding:12px; background:#31b545; color:white;
+                       border:none; border-radius:8px; font-size:15px;
+                       font-weight:700; cursor:pointer; margin-bottom:8px;">
+            ✅ Зберегти
+        </button>
+        <button onclick="closeCoordsModal()"
+                style="width:100%; padding:10px; background:none;
+                       border:1px solid rgba(0,0,0,0.15); border-radius:8px;
+                       color:var(--tg-theme-hint-color); font-size:14px; cursor:pointer;">
+            Скасувати
+        </button>
     </div>
 
     <!-- Pending modal (finish route with pending points) -->
