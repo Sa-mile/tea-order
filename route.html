@@ -2450,6 +2450,10 @@
                 }, { passive: true });
                 wrapper.addEventListener('touchend', () => clearTimeout(timer), { passive: true });
                 wrapper.addEventListener('touchmove', () => clearTimeout(timer), { passive: true });
+
+                wrapper.addEventListener('dblclick', () => {
+                    openCoordsModal(p);
+                });
             });
         }
 
