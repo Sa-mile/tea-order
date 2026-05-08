@@ -70,73 +70,158 @@
             color: var(--tg-theme-button-text-color);
         }
 
+        .items-container {
+            display: none;
+            padding: 5px 0;
+        }
 
+        .item-wrapper {
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            margin-bottom: 6px;
+        }
 
-        .category-btn {
+        .item-swipe-bg {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            border-radius: 10px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        .item-swipe-bg.right { background: rgba(49,181,69,0.15); justify-content: flex-start; padding-left: 16px; }
+        .item-swipe-bg.left  { background: rgba(229,57,53,0.12);  justify-content: flex-end;   padding-right: 16px; }
+
+        .item-card {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            border-left: 4px solid #2196F3;
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 10px;
+            transition: transform 0.15s ease;
+            will-change: transform;
+        }
+
+        .item-card.selected { border-left-color: #31b545; }
+        .item-card.unselected-warn { border-left-color: #e53935; }
+
+        .item-name { flex: 1; font-size: 14px; }
+
+        .controls { display: flex; align-items: center; gap: 6px; }
+
+        .btn-qty {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            border: none;
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qty-input {
+            width: 40px;
+            height: 26px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            font-size: 15px;
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             width: 100%;
-            padding: 15px;
+            padding: 12px 15px;
             margin-top: 10px;
             border: none;
             border-radius: 10px;
             background: var(--tg-theme-secondary-bg-color);
             color: var(--tg-theme-text-color);
             font-weight: bold;
-            text-align: left;
-            display: flex;
-            justify-content: space-between;
             font-size: 16px;
             cursor: pointer;
+            box-sizing: border-box;
         }
 
-        .items-container {
-            display: none;
-            padding: 5px 10px;
-            background: rgba(0, 0, 0, 0.03);
-            border-radius: 0 0 10px 10px;
-        }
-
-
-
-        .item-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        .item-name {
-            flex: 1;
-            font-size: 14px;
-        }
-
-        .controls {
+        .all-by-row {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
-        .btn-qty {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            border: none;
-            background: var(--tg-theme-button-color);
-            color: var(--tg-theme-button-text-color);
-            font-weight: bold;
-            font-size: 18px;
-            cursor: pointer;
-        }
-
-        .qty-input {
-            width: 45px;
-            height: 30px;
-            text-align: center;
-            border: 1px solid #ccc;
+        .all-by-input {
+            width: 50px;
+            padding: 4px 6px;
             border-radius: 6px;
+            border: 1px solid rgba(0,0,0,0.2);
             background: var(--tg-theme-bg-color);
             color: var(--tg-theme-text-color);
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .summary-box {
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin-top: 16px;
+            margin-bottom: 8px;
+            display: none;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            padding: 3px 0;
+            color: var(--tg-theme-hint-color);
+        }
+
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
             font-size: 16px;
+            font-weight: bold;
+            padding-top: 8px;
+            margin-top: 6px;
+            border-top: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .debts-box {
+            background: rgba(229,57,53,0.08);
+            border-left: 3px solid #e53935;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-top: 10px;
+            display: none;
+            font-size: 13px;
+        }
+
+        .debts-title {
+            font-weight: bold;
+            color: #e53935;
+            margin-bottom: 6px;
+        }
+
+        .debts-item {
+            color: var(--tg-theme-text-color);
+            padding: 2px 0;
         }
 
         #send_btn {
@@ -162,17 +247,58 @@
             <div id="suggestions" class="suggestions-list"></div>
         </div>
         <textarea id="comment" placeholder="Коментар..." rows="2"></textarea>
-
     </div>
 
-    <button class="category-btn" onclick="toggleCat('lemonades')">🍋 Лимонади <span>▼</span></button>
+    <!-- Лимонади -->
+    <div class="category-header" onclick="toggleCat('lemonades', this)">
+        <span>🍋 Лимонади <span id="arrow-lemonades">▼</span></span>
+        <div class="all-by-row" onclick="event.stopPropagation()">
+            <span style="font-size:13px; font-weight:normal;">Всіх по:</span>
+            <input type="number" class="all-by-input" id="allby-lemonades" min="0"
+                   placeholder="0"
+                   onchange="applyAllBy('lemonades', this.value)">
+        </div>
+    </div>
     <div id="lemonades" class="items-container"></div>
 
-    <button class="category-btn" onclick="toggleCat('teas')">🍓 Чай <span>▼</span></button>
+    <!-- Чаї -->
+    <div class="category-header" onclick="toggleCat('teas', this)">
+        <span>🍓 Чай <span id="arrow-teas">▼</span></span>
+        <div class="all-by-row" onclick="event.stopPropagation()">
+            <span style="font-size:13px; font-weight:normal;">Всіх по:</span>
+            <input type="number" class="all-by-input" id="allby-teas" min="0"
+                   placeholder="0"
+                   onchange="applyAllBy('teas', this.value)">
+        </div>
+    </div>
     <div id="teas" class="items-container"></div>
 
-    <button class="category-btn" onclick="toggleCat('glass')">🥤 ПЕТ Стакани <span>▼</span></button>
+    <!-- ПЕТ -->
+    <div class="category-header" onclick="toggleCat('glass', this)">
+        <span>🥤 ПЕТ Стакани <span id="arrow-glass">▼</span></span>
+        <div class="all-by-row" onclick="event.stopPropagation()">
+            <span style="font-size:13px; font-weight:normal;">Всіх по:</span>
+            <input type="number" class="all-by-input" id="allby-glass" min="0"
+                   placeholder="0"
+                   onchange="applyAllBy('glass', this.value)">
+        </div>
+    </div>
     <div id="glass" class="items-container"></div>
+
+    <!-- Підсумок -->
+    <div class="summary-box" id="summary-box">
+        <div id="summary-rows"></div>
+        <div class="summary-total">
+            <span>Всього:</span>
+            <span id="summary-total-val">0 грн</span>
+        </div>
+    </div>
+
+    <!-- Борги -->
+    <div class="debts-box" id="debts-box">
+        <div class="debts-title">⚠️ Неоплачені замовлення:</div>
+        <div id="debts-list"></div>
+    </div>
 
     <button id="send_btn">НАДІСЛАТИ ЗАМОВЛЕННЯ</button>
 
@@ -187,6 +313,9 @@
         };
 
         const order = {};
+        const prices = {};
+        const selectedItems = {};
+
         const params = new URLSearchParams(window.location.search);
         const managerId = params.get('manager_id');
         const apiUrl = decodeURIComponent(params.get('api_url') || '');
@@ -194,7 +323,6 @@
         const clientInput = document.getElementById('client');
         const suggestionsBox = document.getElementById('suggestions');
 
-        // Загружаем клиентов с API
         let clients = [];
         async function loadClients() {
             if (!apiUrl || !managerId) return;
@@ -207,6 +335,35 @@
             }
         }
 
+        async function loadPrices() {
+            if (!apiUrl || !managerId) return;
+            try {
+                const resp = await fetch(`${apiUrl}/api/prices?manager_id=${managerId}`);
+                const data = await resp.json();
+                const priceList = data.prices || [];
+                priceList.forEach(p => { prices[p.name.toUpperCase()] = p.price; });
+            } catch (e) { console.error('Помилка завантаження цін', e); }
+        }
+
+        async function loadClientDebts(clientName) {
+            const box = document.getElementById('debts-box');
+            const list = document.getElementById('debts-list');
+            box.style.display = 'none';
+            if (!clientName || !apiUrl) return;
+            try {
+                const resp = await fetch(
+                    `${apiUrl}/api/debt-dates?manager_id=${managerId}&client=${encodeURIComponent(clientName)}`
+                );
+                const data = await resp.json();
+                const dates = data.dates || [];
+                if (!dates.length) return;
+                box.style.display = 'block';
+                list.innerHTML = dates.map(d =>
+                    `<div class="debts-item">• ${d.date} — ${d.total} грн</div>`
+                ).join('');
+            } catch (e) { console.error(e); }
+        }
+
         clientInput.addEventListener('input', function () {
             const val = this.value.toLowerCase();
             suggestionsBox.innerHTML = '';
@@ -216,7 +373,11 @@
                 const div = document.createElement('div');
                 div.className = 'suggestion-item';
                 div.innerText = name;
-                div.onclick = function () { clientInput.value = name; suggestionsBox.style.display = 'none'; };
+                div.onclick = function () {
+                    clientInput.value = name;
+                    suggestionsBox.style.display = 'none';
+                    loadClientDebts(name);
+                };
                 suggestionsBox.appendChild(div);
             });
             suggestionsBox.style.display = filtered.length > 0 ? 'block' : 'none';
@@ -230,26 +391,168 @@
                 if (!container) continue;
                 products[cat].forEach(name => {
                     const itemKey = `${cat}_${name}`;
-                    const row = document.createElement('div');
-                    row.className = 'item-row';
-                    row.innerHTML = `
-                    <div class="item-name">${name}</div>
-                    <div class="controls">
-                        <button class="btn-qty" onclick="changeQty('${itemKey}', -1)">-</button>
-                        <input type="number" class="qty-input" id="qty-${itemKey}" value="0" min="0" oninput="updateManual('${itemKey}', this.value)">
-                        <button class="btn-qty" onclick="changeQty('${itemKey}', 1)">+</button>
-                    </div>`;
-                    container.appendChild(row);
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'item-wrapper';
+                    wrapper.id = `wrapper-${itemKey}`;
+
+                    wrapper.innerHTML = `
+                        <div class="item-swipe-bg right">✓</div>
+                        <div class="item-swipe-bg left">✕</div>
+                        <div class="item-card" id="card-${itemKey}">
+                            <div class="item-name">${name}</div>
+                            <div class="controls">
+                                <button class="btn-qty" onclick="changeQty('${itemKey}', -1)">−</button>
+                                <input type="number" class="qty-input" id="qty-${itemKey}"
+                                       value="0" min="0"
+                                       onfocus="clearOnFocus(this)"
+                                       onblur="restoreZero(this, '${itemKey}')"
+                                       oninput="updateManual('${itemKey}', this.value)">
+                                <button class="btn-qty" onclick="changeQty('${itemKey}', 1)">+</button>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(wrapper);
+                    attachSwipe(wrapper, itemKey, cat);
                 });
             }
         }
 
-        function toggleCat(id) {
+        function toggleCat(id, btn) {
             const el = document.getElementById(id);
-            const span = el.previousElementSibling.querySelector('span');
+            const arrow = document.getElementById(`arrow-${id}`);
             const isVisible = el.style.display === 'block';
             el.style.display = isVisible ? 'none' : 'block';
-            span.innerText = isVisible ? '▼' : '▲';
+            if (arrow) arrow.textContent = isVisible ? '▼' : '▲';
+        }
+
+        function clearOnFocus(input) {
+            if (input.value === '0') input.value = '';
+        }
+
+        function restoreZero(input, key) {
+            if (input.value === '' || input.value === null) {
+                input.value = '0';
+                delete order[key];
+            }
+            updateSummary();
+        }
+
+        function attachSwipe(wrapper, itemKey, cat) {
+            const card = wrapper.querySelector('.item-card');
+            const bgRight = wrapper.querySelector('.item-swipe-bg.right');
+            const bgLeft  = wrapper.querySelector('.item-swipe-bg.left');
+            const THRESHOLD = 60;
+            const MAX_DRAG  = 90;
+            let startX = 0, currentX = 0, dragging = false;
+
+            wrapper.addEventListener('touchstart', e => {
+                startX = e.touches[0].clientX;
+                currentX = 0;
+                dragging = true;
+                card.style.transition = 'none';
+            }, { passive: true });
+
+            wrapper.addEventListener('touchmove', e => {
+                if (!dragging) return;
+                currentX = e.touches[0].clientX - startX;
+                const clamped = Math.max(-MAX_DRAG, Math.min(MAX_DRAG, currentX));
+                card.style.transform = `translateX(${clamped}px)`;
+                if (currentX > 0) {
+                    bgRight.style.opacity = Math.min(currentX / THRESHOLD, 1);
+                    bgLeft.style.opacity = 0;
+                } else {
+                    bgLeft.style.opacity = Math.min(Math.abs(currentX) / THRESHOLD, 1);
+                    bgRight.style.opacity = 0;
+                }
+            }, { passive: true });
+
+            wrapper.addEventListener('touchend', () => {
+                if (!dragging) return;
+                dragging = false;
+                card.style.transition = 'transform 0.2s ease';
+                card.style.transform = 'translateX(0)';
+                bgRight.style.opacity = 0;
+                bgLeft.style.opacity = 0;
+
+                if (currentX >= THRESHOLD) {
+                    selectedItems[itemKey] = true;
+                    tg.HapticFeedback.impactOccurred('light');
+                } else if (currentX <= -THRESHOLD) {
+                    delete selectedItems[itemKey];
+                    tg.HapticFeedback.impactOccurred('light');
+                }
+                updateCardColors(cat);
+            });
+        }
+
+        function updateCardColors(cat) {
+            const hasSelected = products[cat].some(name => selectedItems[`${cat}_${name}`]);
+            products[cat].forEach(name => {
+                const key = `${cat}_${name}`;
+                const card = document.getElementById(`card-${key}`);
+                if (!card) return;
+                card.classList.remove('selected', 'unselected-warn');
+                if (selectedItems[key]) {
+                    card.classList.add('selected');
+                } else if (hasSelected) {
+                    card.classList.add('unselected-warn');
+                }
+            });
+        }
+
+        function applyAllBy(cat, value) {
+            const qty = parseInt(value) || 0;
+            if (qty <= 0) return;
+
+            const hasSelected = products[cat].some(name => selectedItems[`${cat}_${name}`]);
+
+            products[cat].forEach(name => {
+                const key = `${cat}_${name}`;
+                const shouldApply = hasSelected ? !!selectedItems[key] : true;
+                if (shouldApply) {
+                    const input = document.getElementById(`qty-${key}`);
+                    input.value = qty;
+                    if (qty > 0) order[key] = qty; else delete order[key];
+                }
+            });
+
+            products[cat].forEach(name => delete selectedItems[`${cat}_${name}`]);
+            updateCardColors(cat);
+
+            document.getElementById(`allby-${cat}`).value = '';
+
+            updateSummary();
+            tg.HapticFeedback.notificationOccurred('success');
+        }
+
+        const catLabels = { lemonades: '🍋 Лимонади', teas: '🍓 Чаї', glass: '🥤 ПЕТ' };
+
+        function updateSummary() {
+            let total = 0;
+            const rows = [];
+
+            for (let cat in products) {
+                let catQty = 0;
+                products[cat].forEach(name => {
+                    const key = `${cat}_${name}`;
+                    const qty = parseInt(order[key] || 0);
+                    catQty += qty;
+                    const price = prices[name.toUpperCase()] || 0;
+                    total += qty * price;
+                });
+                if (catQty > 0) rows.push(`${catLabels[cat]}: ${catQty} шт`);
+            }
+
+            const box = document.getElementById('summary-box');
+            if (rows.length === 0) {
+                box.style.display = 'none';
+                return;
+            }
+            box.style.display = 'block';
+            document.getElementById('summary-rows').innerHTML = rows.map(r =>
+                `<div class="summary-row"><span>${r}</span></div>`
+            ).join('');
+            document.getElementById('summary-total-val').textContent = `${total} грн`;
         }
 
         function changeQty(key, delta) {
@@ -258,11 +561,13 @@
             if (val < 0) val = 0;
             input.value = val;
             if (val > 0) order[key] = val; else delete order[key];
+            updateSummary();
         }
 
         function updateManual(key, value) {
             let val = parseInt(value) || 0;
             if (val > 0) order[key] = val; else delete order[key];
+            updateSummary();
         }
 
         document.getElementById("send_btn").onclick = function () {
@@ -291,8 +596,8 @@
             setTimeout(() => { tg.close(); }, 100);
         };
 
-        // Запуск
         loadClients();
+        loadPrices();
         renderItems();
     </script>
 </body>
