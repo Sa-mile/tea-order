@@ -2474,12 +2474,18 @@
 
             let lat = null, lng = null;
 
-            const mapsMatch = raw.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) ||
-                              raw.match(/ll=(-?\d+\.\d+),(-?\d+\.\d+)/) ||
-                              raw.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/);
-            if (mapsMatch) {
-                lat = parseFloat(mapsMatch[1]);
-                lng = parseFloat(mapsMatch[2]);
+            if (raw.startsWith('http')) {
+                try {
+                    showToast('Отримую координати...', 'success');
+                    const res = await apiPost('/api/resolve-coords', { url: raw, manager_id: Number(managerId) });
+                    if (res.lat && res.lng) {
+                        lat = res.lat;
+                        lng = res.lng;
+                    }
+                } catch (e) {
+                    showToast('Не вдалось отримати координати', 'error');
+                    return;
+                }
             } else {
                 const parts = raw.replace(/\s/g, '').split(',');
                 if (parts.length === 2) {
