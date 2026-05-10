@@ -905,7 +905,9 @@
             const driverPicker = document.getElementById('driver-date-picker');
             const [dd, dm, dy] = currentDate.split('.');
             driverPicker.value = `${dy}-${dm}-${dd}`;
-            driverPicker.max = `${dy}-${dm}-${dd}`;
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            driverPicker.max = tomorrow.toISOString().slice(0, 10);
             driverPicker.addEventListener('change', () => {
                 const [y2, m2, d2] = driverPicker.value.split('-');
                 currentDate = `${d2}.${m2}.${y2}`;
