@@ -231,6 +231,8 @@
         <input type="text" id="client-input" placeholder="Назва клієнта..." autocomplete="off">
         <div id="client-suggestions" class="suggestions-list"></div>
     </div>
+    <input type="text" id="comment-input" placeholder="Коментар (необов'язково)..."
+           style="margin-bottom:6px;">
     <button class="btn btn-green" onclick="addClient()">+ Додати до списку</button>
 </div>
 
@@ -249,6 +251,10 @@
 <div class="bottom-sheet" id="bottom-sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-title" id="sheet-client-name"></div>
+    <input type="text" id="sheet-comment-input" placeholder="Коментар..."
+           style="margin-bottom:12px;">
+    <button class="sheet-btn" style="background:#31b545; color:white;"
+            onclick="saveComment()">💾 Зберегти коментар</button>
     <button class="sheet-btn sheet-btn-delete" onclick="deleteFromSheet()">🗑 Видалити</button>
     <button class="sheet-btn sheet-btn-cancel" onclick="closeSheet()">Скасувати</button>
 </div>
@@ -325,7 +331,10 @@
         }
         el.innerHTML = invoiceClients.map((c, i) => `
             <div class="invoice-item fade-in" data-index="${i}">
-                <div class="invoice-name">${escapeHtml(c.client_name)}</div>
+                <div>
+                    <div class="invoice-name">${escapeHtml(c.client_name)}</div>
+                    ${c.comment ? `<div style="font-size:12px; color:var(--tg-theme-hint-color); margin-top:2px;">${escapeHtml(c.comment)}</div>` : ''}
+                </div>
                 <span class="invoice-icon">⋯</span>
             </div>
         `).join('');
@@ -377,13 +386,16 @@
 
         tg.HapticFeedback.impactOccurred('medium');
         try {
+            const comment = document.getElementById('comment-input').value.trim();
             const res = await apiPost('/api/add-invoice-client', {
                 manager_id: Number(managerId),
                 client_name: name,
+                comment: comment || null,
             });
             if (!res.resp.ok) throw new Error(res.data.error || 'Помилка');
             showToast('✅ Клієнта додано');
             clientInput.value = '';
+            document.getElementById('comment-input').value = '';
             await loadInvoiceClients();
         } catch (e) {
             showToast(e.message, 'error');
@@ -394,9 +406,30 @@
     function openSheet(clientName) {
         tg.HapticFeedback.impactOccurred('medium');
         sheetClient = clientName;
+        const client = invoiceClients.find(c => c.client_name === clientName);
         document.getElementById('sheet-client-name').textContent = clientName;
+        document.getElementById('sheet-comment-input').value = client?.comment || '';
         document.getElementById('sheet-overlay').classList.add('open');
         document.getElementById('bottom-sheet').classList.add('open');
+    }
+
+    async function saveComment() {
+        if (!sheetClient) return;
+        const nameToSave = sheetClient;
+        const comment = document.getElementById('sheet-comment-input').value.trim();
+        closeSheet();
+        try {
+            const res = await apiPost('/api/update-invoice-comment', {
+                manager_id: Number(managerId),
+                client_name: nameToSave,
+                comment: comment || null,
+            });
+            if (!res.resp.ok) throw new Error(res.data.error || 'Помилка');
+            showToast('✅ Коментар збережено');
+            await loadInvoiceClients();
+        } catch (e) {
+            showToast(e.message, 'error');
+        }
     }
 
     function closeSheet() {
