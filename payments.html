@@ -778,16 +778,20 @@
                 const ordersList = cDiv.querySelector(`#client-orders-${cIdx}`);
                 c.orders.forEach((o, oIdx) => {
                     const oAccordionId = `collapsible-order-${cIdx}-${oIdx}`;
+                    const isPartial = o.payment_status === 'partial';
+                    const remainder = isPartial ? (o.order_total - o.paid_amount) : o.total;
                     const oDiv = document.createElement('div');
                     oDiv.style.padding = '10px';
                     oDiv.style.background = 'rgba(0,0,0,0.02)';
                     oDiv.style.borderRadius = '8px';
                     oDiv.style.marginBottom = '8px';
+                    if (isPartial) oDiv.style.borderLeft = '3px solid #ff9800';
 
                     oDiv.innerHTML = `
+                        ${isPartial ? `<div style="font-size:12px; color:#ff9800; margin-bottom:8px;">⚠️ Часткова оплата — залишок: ${remainder.toFixed(0)} грн</div>` : ''}
                         <div style="margin-bottom:10px;">
                             <div style="font-size:12px; color:var(--tg-theme-hint-color); margin-bottom:5px;">Сума оплати (грн):</div>
-                            <input type="number" id="pay-amt-${o.order_id}" value="${o.total}"
+                            <input type="number" id="pay-amt-${o.order_id}" value="${isPartial ? remainder.toFixed(0) : o.total}"
                                    style="width:100%; padding:10px; border-radius:8px;
                                           border:1px solid rgba(0,0,0,0.15);
                                           background:var(--tg-theme-secondary-bg-color);
@@ -992,6 +996,7 @@
 
                 grouped[date].forEach(o => {
                     const isPaid = o.payment_status === 'paid';
+                    const isHistoryPartial = o.payment_status === 'partial';
                     const paidAmount = Number(o.paid_amount) || 0;
                     const orderTotal = Number(o.total) || 0;
                     const showPaymentAmount = paidAmount > 0 && paidAmount !== orderTotal;
@@ -999,7 +1004,8 @@
                     const row = document.createElement('div');
                     row.className = 'card';
                     row.style.marginBottom = '10px';
-                    row.style.borderLeft = isPaid ? '4px solid #43a047' : '4px solid #e53935';
+                    const borderColor = isPaid ? '#43a047' : isHistoryPartial ? '#ff9800' : '#e53935';
+                    row.style.borderLeft = `4px solid ${borderColor}`;
 
                     const detailsId = `history-order-${o.order_id}`;
                     const itemsHtml = (o.items || []).map(i => `
