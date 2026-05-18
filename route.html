@@ -1073,11 +1073,10 @@
             }
 
             const toggleBlock = document.getElementById('reorder-toggle-block');
-            toggleBlock.style.display = (!routeStarted && points.length > 1) ? 'block' : 'none';
+            toggleBlock.style.display = points.length > 1 ? 'block' : 'none';
             if (routeStarted) {
-                reorderMode = false;
                 const toggle = document.getElementById('reorder-toggle');
-                if (toggle) { toggle.checked = false; toggle.disabled = true; }
+                if (toggle) { toggle.disabled = false; }
             }
 
             renderDriverList();
@@ -1495,9 +1494,15 @@
         let dragSrcOrderId = null;
 
         function initDragAndDrop() {
-            document.querySelectorAll('.point-card[draggable="true"]').forEach(card => {
-                card.addEventListener('dragstart', (e) => {
-                    dragSrcOrderId = Number(card.dataset.orderId);
+            const cards = document.querySelectorAll('.point-card[draggable="true"]');
+
+            cards.forEach(card => {
+                // ── Desktop: HTML5 drag ──────────────────────
+                card.addEventListener('dragstart', e => {
+                    const orderId = Number(card.dataset.orderId);
+                    const point = points.find(p => Number(p.order_id) === orderId);
+                    if (point && ['delivered', 'cancelled'].includes(point.delivery_status)) return;
+                    dragSrcOrderId = orderId;
                     card.classList.add('dragging');
                     e.dataTransfer.effectAllowed = 'move';
                 });
@@ -1505,28 +1510,99 @@
                     card.classList.remove('dragging');
                     document.querySelectorAll('.point-card').forEach(c => c.classList.remove('drag-over'));
                 });
-                card.addEventListener('dragover', (e) => {
-                    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
-
-                    const SCROLL_ZONE = 80, SCROLL_SPEED = 8;
-                    const y = e.clientY, viewH = window.innerHeight;
-                    if (y < SCROLL_ZONE) window.scrollBy(0, -SCROLL_SPEED);
-                    else if (y > viewH - SCROLL_ZONE) window.scrollBy(0, SCROLL_SPEED);
-
+                card.addEventListener('dragover', e => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
                     document.querySelectorAll('.point-card').forEach(c => c.classList.remove('drag-over'));
                     card.classList.add('drag-over');
                 });
                 card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
-                card.addEventListener('drop', (e) => {
-                    e.preventDefault(); card.classList.remove('drag-over');
+                card.addEventListener('drop', e => {
+                    e.preventDefault();
+                    card.classList.remove('drag-over');
                     const targetOrderId = Number(card.dataset.orderId);
                     if (!dragSrcOrderId || dragSrcOrderId === targetOrderId) return;
                     reorderPoints(dragSrcOrderId, targetOrderId);
                 });
+
+                // ── Mobile: Touch drag ───────────────────────
+                let touchStartY = 0;
+                let isDragging = false;
+                let touchTimer = null;
+                let clone = null;
+
+                card.addEventListener('touchstart', e => {
+                    const orderId = Number(card.dataset.orderId);
+                    const point = points.find(p => Number(p.order_id) === orderId);
+                    if (point && ['delivered', 'cancelled'].includes(point.delivery_status)) return;
+                    touchStartY = e.touches[0].clientY;
+                    touchTimer = setTimeout(() => {
+                        isDragging = true;
+                        dragSrcOrderId = orderId;
+                        card.classList.add('dragging');
+                        tg.HapticFeedback.impactOccurred('medium');
+
+                        clone = card.cloneNode(true);
+                        clone.style.cssText = `
+                            position: fixed; z-index: 9999; opacity: 0.85;
+                            width: ${card.offsetWidth}px; pointer-events: none;
+                            left: ${card.getBoundingClientRect().left}px;
+                            top: ${card.getBoundingClientRect().top}px;
+                            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+                            border-radius: 12px;
+                        `;
+                        document.body.appendChild(clone);
+                    }, 300);
+                }, { passive: true });
+
+                card.addEventListener('touchmove', e => {
+                    if (!isDragging) {
+                        clearTimeout(touchTimer);
+                        return;
+                    }
+                    e.preventDefault();
+                    const touch = e.touches[0];
+
+                    if (clone) {
+                        clone.style.top = `${touch.clientY - card.offsetHeight / 2}px`;
+                    }
+
+                    const SCROLL_ZONE = 80, SCROLL_SPEED = 8;
+                    if (touch.clientY < SCROLL_ZONE) window.scrollBy(0, -SCROLL_SPEED);
+                    else if (touch.clientY > window.innerHeight - SCROLL_ZONE) window.scrollBy(0, SCROLL_SPEED);
+
+                    document.querySelectorAll('.point-card').forEach(c => c.classList.remove('drag-over'));
+                    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                    const targetCard = el?.closest('.point-card[draggable="true"]');
+                    if (targetCard && targetCard !== card) targetCard.classList.add('drag-over');
+
+                }, { passive: false });
+
+                card.addEventListener('touchend', e => {
+                    clearTimeout(touchTimer);
+                    if (clone) { clone.remove(); clone = null; }
+                    if (!isDragging) return;
+                    isDragging = false;
+                    card.classList.remove('dragging');
+
+                    const touch = e.changedTouches[0];
+                    document.querySelectorAll('.point-card').forEach(c => c.classList.remove('drag-over'));
+                    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                    const targetCard = el?.closest('.point-card[draggable="true"]');
+                    if (targetCard) {
+                        const targetOrderId = Number(targetCard.dataset.orderId);
+                        if (dragSrcOrderId && dragSrcOrderId !== targetOrderId) {
+                            reorderPoints(dragSrcOrderId, targetOrderId);
+                        }
+                    }
+                    dragSrcOrderId = null;
+                }, { passive: true });
             });
         }
 
         function reorderPoints(fromOrderId, toOrderId) {
+            const fromPoint = points.find(p => Number(p.order_id) === fromOrderId);
+            if (fromPoint && ['delivered', 'cancelled'].includes(fromPoint.delivery_status)) return;
             const fromIdx = points.findIndex(p => Number(p.order_id) === fromOrderId);
             const toIdx = points.findIndex(p => Number(p.order_id) === toOrderId);
             if (fromIdx === -1 || toIdx === -1) return;
