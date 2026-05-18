@@ -1237,11 +1237,18 @@
         async function startRoute() {
             try {
                 const pos = await getPosition();
+
+                const order = points.map((p, i) => ({
+                    order_id: p.order_id,
+                    visit_order: p.visit_order || i + 1
+                }));
+
                 await apiPost('/api/driver-start', {
                     manager_id: Number(managerId),
                     date: currentDate,
                     lat: pos.coords.latitude,
-                    lng: pos.coords.longitude
+                    lng: pos.coords.longitude,
+                    visit_order: order
                 });
                 routeStarted = true;
                 reorderMode = false;
