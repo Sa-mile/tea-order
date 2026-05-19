@@ -1539,7 +1539,6 @@
 
                 handle.addEventListener('touchstart', e => {
                     if (!reorderMode) return;
-                    e.stopPropagation();
 
                     const point = points.find(p => Number(p.order_id) === orderId);
                     if (point && ['delivered', 'cancelled'].includes(point.delivery_status)) return;
@@ -1558,24 +1557,24 @@
                     `;
                     document.body.appendChild(dragClone);
                     card.style.opacity = '0.3';
+
+                    // Вішаємо move/end на document щоб не втрачати events при виході за межі handle
+                    document.addEventListener('touchmove', onTouchMove, { passive: false });
+                    document.addEventListener('touchend', onTouchEnd, { passive: true });
+                    document.addEventListener('touchcancel', onTouchCancel, { passive: true });
                 }, { passive: true });
 
-                card.addEventListener('touchmove', e => {
-                    if (!reorderMode) return;
+                function onTouchMove(e) {
                     if (!dragActive) return;
-
                     e.preventDefault();
-                    e.stopPropagation();
 
                     const touch = e.touches[0];
                     const cardHeight = card.offsetHeight;
 
-                    // Рухати клон
                     if (dragClone) {
                         dragClone.style.top = `${touch.clientY - cardHeight / 2}px`;
                     }
 
-                    // Автоскрол
                     clearInterval(scrollInterval);
                     const SCROLL_ZONE = 100;
                     if (touch.clientY < SCROLL_ZONE) {
@@ -1584,27 +1583,27 @@
                         scrollInterval = setInterval(() => window.scrollBy(0, 6), 16);
                     }
 
-                    // Підсвітити ціль
                     document.querySelectorAll('.point-card').forEach(c => c.classList.remove('drag-over'));
                     const el = document.elementFromPoint(touch.clientX, touch.clientY);
                     const targetCard = el?.closest('.point-card[draggable="true"]');
                     if (targetCard && targetCard !== card) {
                         targetCard.classList.add('drag-over');
                     }
-                }, { passive: false });
+                }
 
-                card.addEventListener('touchend', e => {
+                function onTouchEnd(e) {
+                    document.removeEventListener('touchmove', onTouchMove);
+                    document.removeEventListener('touchend', onTouchEnd);
+                    document.removeEventListener('touchcancel', onTouchCancel);
                     clearInterval(scrollInterval);
 
                     if (!dragActive) return;
                     dragActive = false;
 
-                    // Прибрати клон
                     if (dragClone) { dragClone.remove(); dragClone = null; }
                     card.style.opacity = '';
                     document.querySelectorAll('.point-card').forEach(c => c.classList.remove('drag-over'));
 
-                    // Чекаємо один фрейм щоб DOM перемалювався без клону
                     requestAnimationFrame(() => {
                         const touch = e.changedTouches[0];
                         const el = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -1617,16 +1616,19 @@
                         }
                         dragSrcOrderId = null;
                     });
-                }, { passive: true });
+                }
 
-                card.addEventListener('touchcancel', () => {
+                function onTouchCancel() {
+                    document.removeEventListener('touchmove', onTouchMove);
+                    document.removeEventListener('touchend', onTouchEnd);
+                    document.removeEventListener('touchcancel', onTouchCancel);
                     clearInterval(scrollInterval);
                     if (dragClone) { dragClone.remove(); dragClone = null; }
                     card.style.opacity = '';
                     document.querySelectorAll('.point-card').forEach(c => c.classList.remove('drag-over'));
                     dragActive = false;
                     dragSrcOrderId = null;
-                }, { passive: true });
+                }
             });
         }
 
