@@ -1531,58 +1531,37 @@
 
                 // ── Mobile touch drag ───────────────────────
                 let dragClone = null;
-                let dragStartY = 0;
-                let dragStartX = 0;
                 let dragActive = false;
-                let dragTimer = null;
                 let scrollInterval = null;
 
-                card.addEventListener('touchstart', e => {
+                const handle = card.querySelector('.drag-handle');
+                if (!handle) return;
+
+                handle.addEventListener('touchstart', e => {
                     if (!reorderMode) return;
-                    dragStartY = e.touches[0].clientY;
-                    dragStartX = e.touches[0].clientX;
-                    dragActive = false;
+                    e.stopPropagation();
 
-                    // Довгий тап 400мс → починаємо drag
-                    dragTimer = setTimeout(() => {
-                        const point = points.find(p => Number(p.order_id) === orderId);
-                        if (point && ['delivered', 'cancelled'].includes(point.delivery_status)) return;
+                    const point = points.find(p => Number(p.order_id) === orderId);
+                    if (point && ['delivered', 'cancelled'].includes(point.delivery_status)) return;
 
-                        dragActive = true;
-                        dragSrcOrderId = orderId;
-                        tg.HapticFeedback.impactOccurred('medium');
+                    dragActive = true;
+                    dragSrcOrderId = orderId;
+                    tg.HapticFeedback.impactOccurred('medium');
 
-                        // Створити клон
-                        const rect = card.getBoundingClientRect();
-                        dragClone = card.cloneNode(true);
-                        dragClone.style.cssText = `
-                            position: fixed;
-                            z-index: 9999;
-                            opacity: 0.9;
-                            width: ${rect.width}px;
-                            left: ${rect.left}px;
-                            top: ${rect.top}px;
-                            pointer-events: none;
-                            box-shadow: 0 8px 24px rgba(0,0,0,0.35);
-                            border-radius: 12px;
-                            transform: scale(1.03);
-                            transition: none;
-                        `;
-                        document.body.appendChild(dragClone);
-                        card.style.opacity = '0.3';
-                    }, 400);
+                    const rect = card.getBoundingClientRect();
+                    dragClone = card.cloneNode(true);
+                    dragClone.style.cssText = `
+                        position: fixed; z-index: 9999; opacity: 0.9;
+                        width: ${rect.width}px; left: ${rect.left}px; top: ${rect.top}px;
+                        pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+                        border-radius: 12px; transform: scale(1.03); transition: none;
+                    `;
+                    document.body.appendChild(dragClone);
+                    card.style.opacity = '0.3';
                 }, { passive: true });
 
                 card.addEventListener('touchmove', e => {
                     if (!reorderMode) return;
-
-                    // Якщо рух більше 10px до старту drag — скасувати
-                    const dx = Math.abs(e.touches[0].clientX - dragStartX);
-                    const dy = Math.abs(e.touches[0].clientY - dragStartY);
-                    if (!dragActive && (dx > 10 || dy > 10)) {
-                        clearTimeout(dragTimer);
-                        return;
-                    }
                     if (!dragActive) return;
 
                     e.preventDefault();
@@ -1615,7 +1594,6 @@
                 }, { passive: false });
 
                 card.addEventListener('touchend', e => {
-                    clearTimeout(dragTimer);
                     clearInterval(scrollInterval);
 
                     if (!dragActive) return;
@@ -1642,7 +1620,6 @@
                 }, { passive: true });
 
                 card.addEventListener('touchcancel', () => {
-                    clearTimeout(dragTimer);
                     clearInterval(scrollInterval);
                     if (dragClone) { dragClone.remove(); dragClone = null; }
                     card.style.opacity = '';
