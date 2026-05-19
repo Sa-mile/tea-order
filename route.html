@@ -1494,14 +1494,12 @@
         let dragSrcOrderId = null;
 
         function initDragAndDrop() {
-            const cards = document.querySelectorAll('.point-card[draggable="true"]');
+            document.querySelectorAll('.point-card[draggable="true"]').forEach(card => {
+                const orderId = Number(card.dataset.orderId);
 
-            cards.forEach(card => {
-                // ── Desktop: HTML5 drag ──────────────────────
+                // ── Desktop HTML5 drag ──────────────────────
                 card.addEventListener('dragstart', e => {
-                    const orderId = Number(card.dataset.orderId);
-                    const point = points.find(p => Number(p.order_id) === orderId);
-                    if (point && ['delivered', 'cancelled'].includes(point.delivery_status)) return;
+                    if (!reorderMode) return;
                     dragSrcOrderId = orderId;
                     card.classList.add('dragging');
                     e.dataTransfer.effectAllowed = 'move';
@@ -1511,82 +1509,127 @@
                     document.querySelectorAll('.point-card').forEach(c => c.classList.remove('drag-over'));
                 });
                 card.addEventListener('dragover', e => {
+                    if (!reorderMode) return;
                     e.preventDefault();
                     e.dataTransfer.dropEffect = 'move';
+                    const SCROLL_ZONE = 80, SCROLL_SPEED = 8;
+                    const y = e.clientY, viewH = window.innerHeight;
+                    if (y < SCROLL_ZONE) window.scrollBy(0, -SCROLL_SPEED);
+                    else if (y > viewH - SCROLL_ZONE) window.scrollBy(0, SCROLL_SPEED);
                     document.querySelectorAll('.point-card').forEach(c => c.classList.remove('drag-over'));
                     card.classList.add('drag-over');
                 });
                 card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
                 card.addEventListener('drop', e => {
+                    if (!reorderMode) return;
                     e.preventDefault();
                     card.classList.remove('drag-over');
-                    const targetOrderId = Number(card.dataset.orderId);
+                    const targetOrderId = orderId;
                     if (!dragSrcOrderId || dragSrcOrderId === targetOrderId) return;
                     reorderPoints(dragSrcOrderId, targetOrderId);
                 });
 
-                // ── Mobile: Touch drag ───────────────────────
-                let touchStartY = 0;
-                let isDragging = false;
-                let touchTimer = null;
-                let clone = null;
+                // ── Mobile touch drag ───────────────────────
+                let dragClone = null;
+                let dragStartY = 0;
+                let dragStartX = 0;
+                let dragActive = false;
+                let dragTimer = null;
+                let scrollInterval = null;
 
                 card.addEventListener('touchstart', e => {
-                    const orderId = Number(card.dataset.orderId);
-                    const point = points.find(p => Number(p.order_id) === orderId);
-                    if (point && ['delivered', 'cancelled'].includes(point.delivery_status)) return;
-                    touchStartY = e.touches[0].clientY;
-                    touchTimer = setTimeout(() => {
-                        isDragging = true;
+                    if (!reorderMode) return;
+                    dragStartY = e.touches[0].clientY;
+                    dragStartX = e.touches[0].clientX;
+                    dragActive = false;
+
+                    // Довгий тап 400мс → починаємо drag
+                    dragTimer = setTimeout(() => {
+                        const point = points.find(p => Number(p.order_id) === orderId);
+                        if (point && ['delivered', 'cancelled'].includes(point.delivery_status)) return;
+
+                        dragActive = true;
                         dragSrcOrderId = orderId;
-                        card.classList.add('dragging');
                         tg.HapticFeedback.impactOccurred('medium');
 
-                        clone = card.cloneNode(true);
-                        clone.style.cssText = `
-                            position: fixed; z-index: 9999; opacity: 0.85;
-                            width: ${card.offsetWidth}px; pointer-events: none;
-                            left: ${card.getBoundingClientRect().left}px;
-                            top: ${card.getBoundingClientRect().top}px;
-                            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+                        // Створити клон
+                        const rect = card.getBoundingClientRect();
+                        dragClone = card.cloneNode(true);
+                        dragClone.style.cssText = `
+                            position: fixed;
+                            z-index: 9999;
+                            opacity: 0.9;
+                            width: ${rect.width}px;
+                            left: ${rect.left}px;
+                            top: ${rect.top}px;
+                            pointer-events: none;
+                            box-shadow: 0 8px 24px rgba(0,0,0,0.35);
                             border-radius: 12px;
+                            transform: scale(1.03);
+                            transition: none;
                         `;
-                        document.body.appendChild(clone);
-                    }, 300);
+                        document.body.appendChild(dragClone);
+                        card.style.opacity = '0.3';
+                    }, 400);
                 }, { passive: true });
 
                 card.addEventListener('touchmove', e => {
-                    if (!isDragging) {
-                        clearTimeout(touchTimer);
+                    if (!reorderMode) return;
+
+                    // Якщо рух більше 10px до старту drag — скасувати
+                    const dx = Math.abs(e.touches[0].clientX - dragStartX);
+                    const dy = Math.abs(e.touches[0].clientY - dragStartY);
+                    if (!dragActive && (dx > 10 || dy > 10)) {
+                        clearTimeout(dragTimer);
                         return;
                     }
-                    e.preventDefault();
-                    const touch = e.touches[0];
+                    if (!dragActive) return;
 
-                    if (clone) {
-                        clone.style.top = `${touch.clientY - card.offsetHeight / 2}px`;
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const touch = e.touches[0];
+                    const cardHeight = card.offsetHeight;
+
+                    // Рухати клон
+                    if (dragClone) {
+                        dragClone.style.top = `${touch.clientY - cardHeight / 2}px`;
                     }
 
-                    const SCROLL_ZONE = 80, SCROLL_SPEED = 8;
-                    if (touch.clientY < SCROLL_ZONE) window.scrollBy(0, -SCROLL_SPEED);
-                    else if (touch.clientY > window.innerHeight - SCROLL_ZONE) window.scrollBy(0, SCROLL_SPEED);
+                    // Автоскрол
+                    clearInterval(scrollInterval);
+                    const SCROLL_ZONE = 100;
+                    if (touch.clientY < SCROLL_ZONE) {
+                        scrollInterval = setInterval(() => window.scrollBy(0, -6), 16);
+                    } else if (touch.clientY > window.innerHeight - SCROLL_ZONE) {
+                        scrollInterval = setInterval(() => window.scrollBy(0, 6), 16);
+                    }
 
+                    // Підсвітити ціль
                     document.querySelectorAll('.point-card').forEach(c => c.classList.remove('drag-over'));
                     const el = document.elementFromPoint(touch.clientX, touch.clientY);
                     const targetCard = el?.closest('.point-card[draggable="true"]');
-                    if (targetCard && targetCard !== card) targetCard.classList.add('drag-over');
-
+                    if (targetCard && targetCard !== card) {
+                        targetCard.classList.add('drag-over');
+                    }
                 }, { passive: false });
 
                 card.addEventListener('touchend', e => {
-                    clearTimeout(touchTimer);
-                    if (clone) { clone.remove(); clone = null; }
-                    if (!isDragging) return;
-                    isDragging = false;
-                    card.classList.remove('dragging');
+                    clearTimeout(dragTimer);
+                    clearInterval(scrollInterval);
 
-                    const touch = e.changedTouches[0];
+                    if (!dragActive) return;
+                    dragActive = false;
+
+                    // Прибрати клон
+                    if (dragClone) { dragClone.remove(); dragClone = null; }
+                    card.style.opacity = '';
+
+                    // Прибрати підсвітку
                     document.querySelectorAll('.point-card').forEach(c => c.classList.remove('drag-over'));
+
+                    // Знайти ціль
+                    const touch = e.changedTouches[0];
                     const el = document.elementFromPoint(touch.clientX, touch.clientY);
                     const targetCard = el?.closest('.point-card[draggable="true"]');
                     if (targetCard) {
@@ -1595,6 +1638,16 @@
                             reorderPoints(dragSrcOrderId, targetOrderId);
                         }
                     }
+                    dragSrcOrderId = null;
+                }, { passive: true });
+
+                card.addEventListener('touchcancel', () => {
+                    clearTimeout(dragTimer);
+                    clearInterval(scrollInterval);
+                    if (dragClone) { dragClone.remove(); dragClone = null; }
+                    card.style.opacity = '';
+                    document.querySelectorAll('.point-card').forEach(c => c.classList.remove('drag-over'));
+                    dragActive = false;
                     dragSrcOrderId = null;
                 }, { passive: true });
             });
