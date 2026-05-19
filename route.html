@@ -1624,21 +1624,21 @@
                     // Прибрати клон
                     if (dragClone) { dragClone.remove(); dragClone = null; }
                     card.style.opacity = '';
-
-                    // Прибрати підсвітку
                     document.querySelectorAll('.point-card').forEach(c => c.classList.remove('drag-over'));
 
-                    // Знайти ціль
-                    const touch = e.changedTouches[0];
-                    const el = document.elementFromPoint(touch.clientX, touch.clientY);
-                    const targetCard = el?.closest('.point-card[draggable="true"]');
-                    if (targetCard) {
-                        const targetOrderId = Number(targetCard.dataset.orderId);
-                        if (dragSrcOrderId && dragSrcOrderId !== targetOrderId) {
-                            reorderPoints(dragSrcOrderId, targetOrderId);
+                    // Чекаємо один фрейм щоб DOM перемалювався без клону
+                    requestAnimationFrame(() => {
+                        const touch = e.changedTouches[0];
+                        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                        const targetCard = el?.closest('.point-card[draggable="true"]');
+                        if (targetCard) {
+                            const targetOrderId = Number(targetCard.dataset.orderId);
+                            if (dragSrcOrderId && dragSrcOrderId !== targetOrderId) {
+                                reorderPoints(dragSrcOrderId, targetOrderId);
+                            }
                         }
-                    }
-                    dragSrcOrderId = null;
+                        dragSrcOrderId = null;
+                    });
                 }, { passive: true });
 
                 card.addEventListener('touchcancel', () => {
