@@ -158,6 +158,10 @@
             transition: transform 0.1s, opacity 0.15s;
         }
 
+        .point-card.delivered {
+            opacity: 0.5;
+        }
+
         .point-card.delivered .point-head {
             border-left-color: #2196F3;
         }
@@ -1083,6 +1087,7 @@
                 if (aDelivered !== bDelivered) return aDelivered - bDelivered;
                 return (a.visit_order || 999) - (b.visit_order || 999);
             });
+            points.forEach((p, i) => { p.displayNum = i + 1; });
             list.innerHTML = points.map((p, i) => {
                 const status = pointStatus(p);
                 const noCoords = !p.lat_to && !p.lng_to ? ' 📍' : '';
@@ -1111,7 +1116,7 @@
                         <div class="swipe-left-action">🔴 Борг</div>
                         <div class="point-head">
                             ${dragHandle}
-                            <div class="point-num" ${numOnclick}>${i + 1}</div>
+                            <div class="point-num" ${numOnclick}>${p.displayNum}</div>
                             <div style="flex:1; min-width:0;">
                                 <div class="point-name">${escapeHtml(p.client_name)}${lockIcon}${noCoords} ${photoIcon}</div>
                                 <div class="point-meta">${statusText(status)}</div>
@@ -1971,7 +1976,7 @@
                 }
                 return '✓';
             }
-            return String(p.visit_order || '');
+            return String(p.displayNum || p.visit_order || '');
         }
 
         function makeIcon(number, color, wide = false) {
