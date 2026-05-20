@@ -479,6 +479,10 @@
             border-left: 3px solid #e53935;
         }
 
+        .point-card.lock-fixed .point-head {
+            border-left: 3px solid #FF9800;
+        }
+
         /* Tab bar */
         .tab-bar {
             display: flex;
@@ -1011,25 +1015,9 @@
                             p.duration_min = routeMap[p.order_id].duration_min;
                             if (!p.lat_to && routeMap[p.order_id].lat) p.lat_to = routeMap[p.order_id].lat;
                             if (!p.lng_to && routeMap[p.order_id].lng) p.lng_to = routeMap[p.order_id].lng;
+                            p.visit_order = routeMap[p.order_id].visit_order;
                         }
                     });
-
-                    const delivered = points
-                        .filter(p => p.delivery_status === 'delivered')
-                        .sort((a, b) => (a.visit_order || 999) - (b.visit_order || 999));
-
-                    const active = points
-                        .filter(p => p.delivery_status !== 'delivered')
-                        .sort((a, b) => {
-                            const aO = routeMap[a.order_id]?.visit_order || 999;
-                            const bO = routeMap[b.order_id]?.visit_order || 999;
-                            return aO - bO;
-                        });
-
-                    const sorted = [...delivered, ...active];
-                    sorted.forEach((p, i) => { p.visit_order = i + 1; });
-                    points.length = 0;
-                    sorted.forEach(p => points.push(p));
                 }
             } catch (e) { console.warn('loadOptimized failed:', e); }
         }
@@ -1104,8 +1092,8 @@
                 const numOnclick = reorderMode ? '' : `onclick="event.stopPropagation(); focusOnMap(${p.order_id})"`;
                 const photoOnclick = reorderMode ? '' : `onclick="event.stopPropagation(); openPhotos(${p.order_id})"`;
                 const photoIcon = hasPhotos ? `<span class="photo-icon" ${photoOnclick}>📷</span>` : '';
-                const lockIcon = p.lock === 'first' ? ' 🔒' : p.lock === 'last' ? ' 🏁' : '';
-                const lockClass = p.lock ? `lock-${p.lock}` : '';
+                const lockIcon = p.lock === 'first' ? ' 🔒' : p.lock === 'last' ? ' 🏁' : p.lock === 'fixed' ? ' 📌' : '';
+                const lockClass = p.lock === 'fixed' ? 'lock-fixed' : p.lock ? `lock-${p.lock}` : '';
 
                 return `
                     <div class="point-card ${cardClass(p)} ${reorderMode ? 'reorder-active' : ''} ${lockClass}"
@@ -1335,15 +1323,6 @@
             try {
                 const pos = await getPosition();
 
-                let isOutOfOrder = false;
-                if (status === 'delivered') {
-                    const nextExpected = points
-                        .filter(p => p.delivery_status === 'pending')
-                        .sort((a, b) => (a.visit_order || 999) - (b.visit_order || 999))[0];
-                    isOutOfOrder = nextExpected &&
-                        selectedPoint.visit_order !== nextExpected.visit_order;
-                }
-
                 const data = await apiPost('/api/update-delivery-status', {
                     manager_id: Number(managerId),
                     order_id: Number(selectedPoint.order_id),
@@ -1360,7 +1339,6 @@
                 showScreen('screen-driver');
                 setActiveTab('driver');
 
-                await loadOptimized();
                 renderDriver();
 
             } catch (e) {
@@ -1641,9 +1619,13 @@
             const [moved] = points.splice(fromIdx, 1);
             points.splice(toIdx, 0, moved);
             const newIdx = points.findIndex(p => Number(p.order_id) === fromOrderId);
-            points.forEach(p => { p.lock = null; });
+            points.forEach((p, i) => {
+                if (p.lock === 'first' && i !== 0) p.lock = null;
+                if (p.lock === 'last' && i !== points.length - 1) p.lock = null;
+            });
             if (newIdx === 0) moved.lock = 'first';
             else if (newIdx === points.length - 1) moved.lock = 'last';
+            else moved.lock = 'fixed';
             points.forEach((p, i) => { p.visit_order = i + 1; });
             tg.HapticFeedback.impactOccurred('light');
             saveNewOrder().catch(() => { });
@@ -1670,8 +1652,13 @@
                 await saveNewOrder();
                 const lockedFirst = points.find(p => p.lock === 'first');
                 const lockedLast = points.find(p => p.lock === 'last');
+                const startPoint = lockedFirst || points.find(p => p.delivery_status !== 'cancelled' && p.lat_to && p.lng_to);
                 let url = `/api/route-optimized?manager_id=${managerId}&date=${currentDate}&force=1`;
-                if (driverLocation) url += `&driver_lat=${driverLocation.lat}&driver_lng=${driverLocation.lng}`;
+                if (startPoint?.lat_to && startPoint?.lng_to) {
+                    url += `&driver_lat=${startPoint.lat_to}&driver_lng=${startPoint.lng_to}`;
+                } else if (driverLocation) {
+                    url += `&driver_lat=${driverLocation.lat}&driver_lng=${driverLocation.lng}`;
+                }
                 if (lockedFirst) url += `&locked_first=${lockedFirst.order_id}`;
                 if (lockedLast) url += `&locked_last=${lockedLast.order_id}`;
                 const res = await apiGet(url);
@@ -1694,20 +1681,25 @@
         function sortPointsWithLocks() {
             const lockedFirst = points.find(p => p.lock === 'first');
             const lockedLast = points.find(p => p.lock === 'last');
-            const free = points.filter(p => !p.lock);
-            free.sort((a, b) => (a.visit_order || 999) - (b.visit_order || 999));
+            const middle = points
+                .filter(p => p.lock !== 'first' && p.lock !== 'last')
+                .sort((a, b) => (a.visit_order || 999) - (b.visit_order || 999));
             const sorted = [];
             if (lockedFirst) sorted.push(lockedFirst);
-            sorted.push(...free);
+            sorted.push(...middle);
             if (lockedLast) sorted.push(lockedLast);
             sorted.forEach((p, i) => { p.visit_order = i + 1; });
-            points.length = 0; sorted.forEach(p => points.push(p));
+            points.length = 0;
+            sorted.forEach(p => points.push(p));
         }
 
         async function saveNewOrder() {
             try {
                 const sequence = points.map(p => ({
-                    order_id: p.order_id, visit_order: p.visit_order, duration_min: p.duration_min || null
+                    order_id: p.order_id,
+                    visit_order: p.visit_order,
+                    duration_min: p.duration_min || null,
+                    lock: p.lock || null
                 }));
                 await apiPost('/api/save-visit-order', {
                     manager_id: Number(managerId), date: currentDate, sequence
@@ -1743,11 +1735,6 @@
                 const pos = await getPosition();
 
                 const p = points.find(pt => Number(pt.order_id) === orderId);
-                const nextExpected = points
-                    .filter(pt => pt.delivery_status === 'pending')
-                    .sort((a, b) => (a.visit_order || 999) - (b.visit_order || 999))[0];
-                const isOutOfOrder = nextExpected && p &&
-                    p.visit_order !== nextExpected.visit_order;
 
                 const data = await apiPost('/api/update-delivery-status', {
                     manager_id: Number(managerId), order_id: orderId, status: 'delivered',
@@ -1761,7 +1748,6 @@
                 showToast('Доставлено ✅');
                 closeDeliveryModal();
 
-                await loadOptimized();
                 renderDriver();
 
             } catch (e) {
