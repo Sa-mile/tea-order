@@ -1022,6 +1022,7 @@
                     points.forEach(p => {
                         if (routeMap[p.order_id]) {
                             p.duration_min = routeMap[p.order_id].duration_min;
+                            p.dist_from_last = routeMap[p.order_id].dist_from_last;
                             if (!p.lat_to && routeMap[p.order_id].lat) p.lat_to = routeMap[p.order_id].lat;
                             if (!p.lng_to && routeMap[p.order_id].lng) p.lng_to = routeMap[p.order_id].lng;
                             if (!p.lock) p.visit_order = routeMap[p.order_id].visit_order;
@@ -1098,7 +1099,16 @@
                 const hasPhotos = p.photos && p.photos.length > 0;
 
                 let badge = '';
-                if (p.duration_min != null) badge = `<div class="time-badge">~${p.duration_min} хв</div>`;
+                if (p.duration_min != null || p.dist_from_last != null) {
+                    let parts = [];
+                    if (p.dist_from_last != null) {
+                        parts.push(`${Number(p.dist_from_last).toFixed(1)} км`);
+                    }
+                    if (p.duration_min != null) {
+                        parts.push(`~${p.duration_min} хв`);
+                    }
+                    badge = `<div class="time-badge">${parts.join(' / ')}</div>`;
+                }
 
                 const dragHandle = reorderMode ? `<div class="drag-handle" title="Перетягнути">⠿</div>` : '';
                 const draggableAttr = reorderMode ? 'draggable="true"' : '';
@@ -1962,6 +1972,27 @@
 
         // ── Map helpers ───────────────────────────────────────────────────────
 
+        function formatDeliveredTime(deliveredAt) {
+            if (!deliveredAt) return '';
+            if (typeof deliveredAt === 'string') {
+                const match = deliveredAt.match(/(?:T|\s)(\d{2}):(\d{2})/);
+                if (match) return `${match[1]}:${match[2]}`;
+            }
+            try {
+                let cleanStr = String(deliveredAt);
+                if (cleanStr.includes(' ')) {
+                    cleanStr = cleanStr.replace(' ', 'T');
+                }
+                const t = new Date(cleanStr);
+                if (!isNaN(t.getTime())) {
+                    return `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
+                }
+            } catch (e) {
+                console.error("Error parsing delivered_at:", e);
+            }
+            return '';
+        }
+
         function markerColor(p) {
             const s = p.delivery_status;
             if (s === 'delivered') return '#9e9e9e';
@@ -1972,13 +2003,8 @@
 
         function markerLabel(p) {
             if (p.delivery_status === 'delivered') {
-                if (p.delivered_at) {
-                    try {
-                        const t = new Date(p.delivered_at);
-                        return `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
-                    } catch { return '✓'; }
-                }
-                return '✓';
+                const tStr = formatDeliveredTime(p.delivered_at);
+                return tStr || '✓';
             }
             return String(p.displayNum || p.visit_order || '');
         }
@@ -2007,22 +2033,33 @@
             if (layer) layer.remove();
             layer = L.layerGroup().addTo(targetMap);
             const bounds = [];
+            // Sort and assign displayNum so that marker indices match the list order perfectly
+            list.sort((a, b) => {
+                const aDelivered = a.delivery_status === 'delivered' ? 0 : 1;
+                const bDelivered = b.delivery_status === 'delivered' ? 0 : 1;
+                if (aDelivered !== bDelivered) return aDelivered - bDelivered;
+                return (a.visit_order || 999) - (b.visit_order || 999);
+            });
+            list.forEach((p, i) => { p.displayNum = i + 1; });
+
             list.forEach((p, i) => {
                 if (!p.lat_to || !p.lng_to) return;
                 const lat = Number(p.lat_to), lng = Number(p.lng_to);
                 const status = pointStatus(p);
                 const comment = p.comment ? `<br><span style="font-size:11px;color:#666">${escapeHtml(p.comment)}</span>` : '';
                 const price = p.order_total ? `<br><b style="color:#31b545">${p.order_total} грн</b>` : '';
-                const duration = p.duration_min != null ? `<br><span style="font-size:11px">~${p.duration_min} хв</span>` : '';
+                
+                let duration = '';
+                if (p.duration_min != null || p.dist_from_last != null) {
+                    let parts = [];
+                    if (p.dist_from_last != null) parts.push(`${Number(p.dist_from_last).toFixed(1)} км`);
+                    if (p.duration_min != null) parts.push(`~${p.duration_min} хв`);
+                    duration = `<br><span style="font-size:11px">${parts.join(' / ')}</span>`;
+                }
+
                 let deliveredTime = '';
                 if (p.delivery_status === 'delivered') {
-                    let timeStr = '—';
-                    if (p.delivered_at) {
-                        try {
-                            const t = new Date(p.delivered_at);
-                            timeStr = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
-                        } catch { }
-                    }
+                    const timeStr = formatDeliveredTime(p.delivered_at) || '—';
                     deliveredTime = `<br><span style="font-size:11px;color:#9e9e9e">✅ ${timeStr}</span>`;
                 }
                 const wazeBtn = `<br><a href="https://waze.com/ul?ll=${lat},${lng}&navigate=yes" target="_blank"
@@ -2376,6 +2413,11 @@
             await saveAssignments(toUnassign);
         }
 
+        async function saveAssignmentsRetry(assignments) {
+            showToast('Повторна спроба призначення...', 'info');
+            await saveAssignments(assignments);
+        }
+
         async function saveAssignments(assignments) {
             try {
                 const result = await apiPost('/api/driver-assign', {
@@ -2387,6 +2429,33 @@
                 } else {
                     showToast(`Призначено: ${result.assigned}`);
                 }
+
+                // Збираємо унікальних водіїв, яким було призначено замовлення
+                const driverIds = [...new Set(assignments.map(a => Number(a.driver_id)))].filter(id => id > 0);
+
+                if (result.assigned > 0 && driverIds.length > 0) {
+                    showToast("Будуємо дорожню матрицю...", "info");
+                    for (const dId of driverIds) {
+                        try {
+                            const matrixRes = await apiPost('/api/build-route-matrix', {
+                                manager_id: Number(managerId),
+                                driver_id: dId,
+                                date: currentDate
+                            });
+                            if (matrixRes.pairs_built > 0) {
+                                showToast(`Матрицю оновлено: +${matrixRes.pairs_built} зв'язків`, 'success');
+                            }
+                        } catch (matrixErr) {
+                            console.error("Error building route matrix:", matrixErr);
+                            showConfirmModal(
+                                "Помилка матриці",
+                                `Не вдалося побудувати матрицю відстаней: ${matrixErr.message}. Бажаєте повторити спробу?`,
+                                () => saveAssignmentsRetry(assignments)
+                            );
+                        }
+                    }
+                }
+
                 await loadAdmin();
                 if (adminMap && adminMarkersLayer !== null) {
                     adminMarkersLayer = renderAdminMarkers(adminMap, adminMarkersLayer, points);
