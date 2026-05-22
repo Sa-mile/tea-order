@@ -360,7 +360,7 @@
                     <div class="item-val" id="today-order-total">0.00 грн</div>
                 </div>
                 <div style="margin-top:15px;">
-                    <label style="font-size:12px; color:#888; font-weight:600;">СУМА ОПЛАТИ (грн):</label>
+                    <label style="font-size:12px; color:#888; font-weight:600;">ОТРИМАНО ВІД КЛІЄНТА (грн):</label>
                     <input type="number" id="today-paid-amount" style="margin-top:5px;">
                 </div>
                 <button class="btn btn-red" onclick="markUnpaid()">Не оплачено</button>
@@ -593,7 +593,7 @@
                     itemsDiv.appendChild(row);
                 });
                 document.getElementById('today-order-total').textContent = `${data.total} грн`;
-                document.getElementById('today-paid-amount').value = data.total;
+                document.getElementById('today-paid-amount').value = '';
                 document.getElementById('today-order-card').style.display = 'block';
             } catch (e) { console.error(e); }
         }
