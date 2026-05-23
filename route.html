@@ -1064,7 +1064,9 @@
                 mapEl.style.display = '';
                 map = initMap('map', map);
                 markersLayer = renderMarkers(map, markersLayer, points);
-                startWatchingPosition(map);
+                if (!isViewingAsDriver) {
+                    startWatchingPosition(map);
+                }
                 setTimeout(() => map.invalidateSize(), 50);
             } else {
                 mapEl.style.display = 'none';
@@ -1358,6 +1360,7 @@
 
                 routeKm = Number(data.total_km || routeKm || 0);
                 selectedPoint.delivery_status = status;
+                selectedPoint.lock = null;
 
                 tg.HapticFeedback.notificationOccurred('success');
                 showToast('Статус оновлено');
@@ -1770,7 +1773,10 @@
                 });
 
                 routeKm = Number(data.total_km || routeKm || 0);
-                if (p) p.delivery_status = 'delivered';
+                if (p) {
+                    p.delivery_status = 'delivered';
+                    p.lock = null;
+                }
 
                 tg.HapticFeedback.notificationOccurred('success');
                 showToast('Доставлено ✅');
