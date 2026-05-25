@@ -1367,6 +1367,16 @@
                 showScreen('screen-driver');
                 setActiveTab('driver');
 
+                try {
+                    const res = await apiGet(`/api/driver-points?manager_id=${managerId}&date=${currentDate}`);
+                    if (res.resp.ok && res.data.points) {
+                        points.length = 0;
+                        res.data.points.forEach(p => points.push(p));
+                    }
+                } catch (e) {
+                    console.warn("Фонове оновлення точок не вдалося:", e);
+                }
+
                 renderDriver();
 
             } catch (e) {
@@ -1781,6 +1791,16 @@
                 tg.HapticFeedback.notificationOccurred('success');
                 showToast('Доставлено ✅');
                 closeDeliveryModal();
+
+                try {
+                    const res = await apiGet(`/api/driver-points?manager_id=${managerId}&date=${currentDate}`);
+                    if (res.resp.ok && res.data.points) {
+                        points.length = 0;
+                        res.data.points.forEach(p => points.push(p));
+                    }
+                } catch (e) {
+                    console.warn("Фонове оновлення точок не вдалося:", e);
+                }
 
                 renderDriver();
 
