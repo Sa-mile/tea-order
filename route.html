@@ -1707,6 +1707,7 @@
                         if (routeMap[p.order_id]) {
                             if (!p.lock) p.visit_order = routeMap[p.order_id].visit_order;
                             p.duration_min = routeMap[p.order_id].duration_min;
+                            p.dist_from_last = routeMap[p.order_id].dist_from_last;
                         }
                     });
                     sortPointsWithLocks();
