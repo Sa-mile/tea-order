@@ -1333,8 +1333,7 @@
                         <div class="clickable-row"
                              data-order-id="${o.id}"
                              data-client-name="${escapeHtml(clientName)}"
-                             data-date="${o.date}"
-                             onclick="openOrderDetail(${o.id}, '${clientName.replace(/'/g, "\\'")}', '${o.date}', 'screen-client')">
+                             data-date="${o.date}">
                             <div class="row-main">
                                 <div class="row-name">${o.date}</div>
                                 ${o.comment ? `<div class="row-sub">${o.comment}</div>` : ''}
@@ -1352,33 +1351,27 @@
                     const oid  = parseInt(row.dataset.orderId);
                     const name = row.dataset.clientName;
                     const date = row.dataset.date;
-                    let touchStartX = 0;
-                    let touchStartY = 0;
-                    let longFired = false;
-                    row.addEventListener('touchstart', (e) => {
-                        touchStartX = e.touches[0].clientX;
-                        touchStartY = e.touches[0].clientY;
+                    let longTapTimer = null;
+                    let longFired    = false;
+
+                    row.addEventListener('touchstart', () => {
                         longFired = false;
-                        invLongTimer = setTimeout(() => {
+                        longTapTimer = setTimeout(() => {
                             longFired = true;
                             openInvSheet(oid, name, date);
                         }, 600);
                     }, { passive: true });
-                    row.addEventListener('touchend',  () => clearTimeout(invLongTimer), { passive: true });
-                    row.addEventListener('touchmove', (e) => {
-                        const dx = e.touches[0].clientX - touchStartX;
-                        const dy = e.touches[0].clientY - touchStartY;
-                        if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
-                            clearTimeout(invLongTimer);
+
+                    row.addEventListener('touchend',    () => clearTimeout(longTapTimer), { passive: true });
+                    row.addEventListener('touchmove',   () => clearTimeout(longTapTimer), { passive: true });
+                    row.addEventListener('touchcancel', () => clearTimeout(longTapTimer), { passive: true });
+
+                    row.addEventListener('click', () => {
+                        if (!longFired) {
+                            openOrderDetail(oid, name, date, 'screen-client');
                         }
-                    }, { passive: true });
-                    row.addEventListener('click', (e) => {
-                        if (longFired) {
-                            e.stopImmediatePropagation();
-                            e.preventDefault();
-                            longFired = false;
-                        }
-                    }, { capture: true });
+                        longFired = false;
+                    });
                     row.addEventListener('contextmenu', e => { e.preventDefault(); openInvSheet(oid, name, date); });
                 });
 
