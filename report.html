@@ -627,6 +627,53 @@
         input, select, textarea {
             font-size: 16px !important;
         }
+
+        /* ─── BOTTOM SHEET: НАКЛАДНА ─── */
+        .sheet-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 900;
+            display: none;
+        }
+        .sheet-overlay.open { display: block; }
+
+        .bottom-sheet {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: var(--tg-theme-bg-color);
+            border-radius: 16px 16px 0 0;
+            padding: 20px 15px 32px;
+            z-index: 1000;
+            transform: translateY(100%);
+            transition: transform 0.25s ease;
+        }
+        .bottom-sheet.open { transform: translateY(0); }
+
+        .sheet-handle {
+            width: 40px; height: 4px;
+            background: rgba(0,0,0,0.15);
+            border-radius: 2px;
+            margin: 0 auto 16px;
+        }
+        .sheet-title {
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .sheet-btn {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+        .sheet-btn-invoice { background: rgba(49,181,69,0.12); color: #31b545; }
+        .sheet-btn-cancel  { background: var(--tg-theme-secondary-bg-color); color: var(--tg-theme-hint-color); }
     </style>
 </head>
 
@@ -778,6 +825,11 @@
         let prevScreen = 'screen-main';
 
         let mainScrollY = 0; // Зберігаємо позицію прокрутки головного екрану
+
+        let invOrderId   = null;
+        let invOrderName = null;
+        let invOrderDate = null;
+        let invLongTimer = null;
 
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
@@ -1263,7 +1315,11 @@
                 <div class="result-section">
                     <div class="result-title">Замовлення <span style="color:#aaa;font-size:11px;font-weight:400">— натисніть для деталей</span></div>
                     ${data.orders.map(o => `
-                        <div class="clickable-row" onclick="openOrderDetail(${o.id}, '${clientName.replace(/'/g, "\\'")}', '${o.date}', 'screen-client')">
+                        <div class="clickable-row"
+                             data-order-id="${o.id}"
+                             data-client-name="${escapeHtml(clientName)}"
+                             data-date="${o.date}"
+                             onclick="openOrderDetail(${o.id}, '${clientName.replace(/'/g, "\\'")}', '${o.date}', 'screen-client')">
                             <div class="row-main">
                                 <div class="row-name">${o.date}</div>
                                 ${o.comment ? `<div class="row-sub">${o.comment}</div>` : ''}
@@ -1276,6 +1332,19 @@
                     `).join('')}
                 </div>
             `;
+                // Long press на замовленнях → накладна
+                list.querySelectorAll('.clickable-row[data-order-id]').forEach(row => {
+                    const oid  = parseInt(row.dataset.orderId);
+                    const name = row.dataset.clientName;
+                    const date = row.dataset.date;
+                    row.addEventListener('touchstart', () => {
+                        invLongTimer = setTimeout(() => openInvSheet(oid, name, date), 600);
+                    }, { passive: true });
+                    row.addEventListener('touchend',  () => clearTimeout(invLongTimer), { passive: true });
+                    row.addEventListener('touchmove', () => clearTimeout(invLongTimer), { passive: true });
+                    row.addEventListener('contextmenu', e => { e.preventDefault(); openInvSheet(oid, name, date); });
+                });
+
                 showScreen('screen-client');
             } catch (e) {
                 tg.HapticFeedback.notificationOccurred('error');
@@ -1447,9 +1516,68 @@
             navigator.clipboard.writeText(text).then(() => showToast('Скопійовано!'));
         }
 
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+            }[ch]));
+        }
+
+        function openInvSheet(orderId, clientName, dateStr) {
+            invOrderId   = orderId;
+            invOrderName = clientName;
+            invOrderDate = dateStr;
+            document.getElementById('inv-sheet-title').textContent = `${clientName} · ${dateStr}`;
+            document.getElementById('inv-overlay').classList.add('open');
+            document.getElementById('inv-sheet').classList.add('open');
+            tg.HapticFeedback.impactOccurred('medium');
+        }
+
+        function closeInvSheet() {
+            document.getElementById('inv-overlay').classList.remove('open');
+            document.getElementById('inv-sheet').classList.remove('open');
+            invOrderId = invOrderName = invOrderDate = null;
+        }
+
+        async function generateInvoice() {
+            if (!invOrderId) return;
+            closeInvSheet();
+            tg.HapticFeedback.impactOccurred('light');
+            showToast('⏳ Генерую накладну...');
+            try {
+                const resp = await fetch(`${apiUrl}/api/generate-invoice`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        manager_id: Number(managerId),
+                        order_id:   invOrderId,
+                    }),
+                });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || 'Помилка');
+                tg.HapticFeedback.notificationOccurred('success');
+                showToast(`✅ Накладна ${data.invoice_num} відправлена`);
+            } catch (e) {
+                tg.HapticFeedback.notificationOccurred('error');
+                showToast('❌ ' + e.message, 'error');
+            }
+        }
+
         loadClients();
         renderItems();
     </script>
+
+    <!-- ─── BOTTOM SHEET: НАКЛАДНА ─── -->
+    <div class="sheet-overlay" id="inv-overlay" onclick="closeInvSheet()"></div>
+    <div class="bottom-sheet" id="inv-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title" id="inv-sheet-title">Дія</div>
+        <button class="sheet-btn sheet-btn-invoice" onclick="generateInvoice()">
+            🧾 Генерувати накладну
+        </button>
+        <button class="sheet-btn sheet-btn-cancel" onclick="closeInvSheet()">
+            Скасувати
+        </button>
+    </div>
 </body>
 
 </html>
