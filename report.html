@@ -1563,11 +1563,25 @@
             }[ch]));
         }
 
-        function openInvSheet(orderId, clientName, dateStr) {
+        async function openInvSheet(orderId, clientName, dateStr) {
             invOrderId   = orderId;
             invOrderName = clientName;
             invOrderDate = dateStr;
             document.getElementById('inv-sheet-title').textContent = `${clientName} · ${dateStr}`;
+
+            // Одразу підставити ім'я клієнта як fallback
+            document.getElementById('inv-recipient-input').value = clientName;
+
+            // Спробувати підтягнути одержувача з invoice_clients
+            try {
+                const res = await fetch(`${apiUrl}/api/invoice-recipient?manager_id=${managerId}&client=${encodeURIComponent(clientName)}`);
+                if (res.ok) {
+                    const d = await res.json();
+                    // Якщо є в БД — підставити, інакше залишити clientName
+                    document.getElementById('inv-recipient-input').value = d.recipient || clientName;
+                }
+            } catch (_) {}
+
             document.getElementById('inv-overlay').classList.add('open');
             document.getElementById('inv-sheet').classList.add('open');
             tg.HapticFeedback.impactOccurred('medium');
@@ -1582,6 +1596,7 @@
         async function generateInvoice() {
             if (!invOrderId) return;
             const orderIdToSend = invOrderId;
+            const recipient = document.getElementById('inv-recipient-input').value.trim();
             closeInvSheet();
             tg.HapticFeedback.impactOccurred('light');
             showToast('⏳ Генерую накладну...');
@@ -1592,6 +1607,7 @@
                     body: JSON.stringify({
                         manager_id: Number(managerId),
                         order_id:   orderIdToSend,
+                        recipient:  recipient || null,
                     }),
                 });
                 const data = await resp.json();
@@ -1609,7 +1625,7 @@
             const oid = parseInt(btn.dataset.orderId);
             const name = btn.dataset.clientName;
             const date = btn.dataset.date;
-            openInvSheet(oid, name, date);
+            await openInvSheet(oid, name, date);
         }
 
         loadClients();
@@ -1621,6 +1637,13 @@
     <div class="bottom-sheet" id="inv-sheet">
         <div class="sheet-handle"></div>
         <div class="sheet-title" id="inv-sheet-title">Дія</div>
+        <input type="text" id="inv-recipient-input"
+               placeholder="Одержувач..."
+               style="width:100%; padding:12px; border-radius:10px;
+                      border:1px solid rgba(0,0,0,0.15);
+                      background:var(--tg-theme-secondary-bg-color);
+                      color:var(--tg-theme-text-color);
+                      font-size:15px; margin-bottom:10px; box-sizing:border-box;">
         <button class="sheet-btn sheet-btn-invoice" onclick="generateInvoice()">
             🧾 Генерувати накладну
         </button>
