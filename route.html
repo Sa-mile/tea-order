@@ -689,6 +689,7 @@
         <button class="btn-secondary" onclick="backToDriver()">‹ До маршруту</button>
         <div class="card" style="margin-top:15px;">
             <div class="card-title" id="action-title"></div>
+            <div id="action-client-comment" style="font-size:13px; color:#2196F3; font-weight:600; margin-top:4px; margin-bottom:8px; display:none;"></div>
             <div id="action-comment" class="point-meta"></div>
             <div id="action-photos" style="display:none;"></div>
             <button class="btn btn-outline" id="waze-btn" onclick="openWaze()">🧭 Їхати (Waze)</button>
@@ -1135,6 +1136,7 @@
                             <div class="point-num" ${numOnclick}>${p.displayNum}</div>
                             <div style="flex:1; min-width:0;">
                                 <div class="point-name">${escapeHtml(p.client_name)}${lockIcon}${noCoords} ${photoIcon}</div>
+                                ${p.client_comment ? `<div style="font-size:12px; color:#2196F3; font-weight:600; margin-top:2px;">📍 ${escapeHtml(p.client_comment)}</div>` : ''}
                                 <div class="point-meta">${statusText(status)}</div>
                                 ${p.comment ? `<div class="point-comment">${escapeHtml(p.comment)}</div>` : ''}
                                 ${p.order_total ? `<div class="point-price">💰 ${p.order_total} грн</div>` : ''}
@@ -1303,6 +1305,11 @@
             tg.HapticFeedback.impactOccurred('light');
             const status = pointStatus(selectedPoint);
             document.getElementById('action-title').textContent = selectedPoint.client_name;
+            const actionClientComment = document.getElementById('action-client-comment');
+            if (actionClientComment) {
+                actionClientComment.textContent = selectedPoint.client_comment ? `📍 ${selectedPoint.client_comment}` : '';
+                actionClientComment.style.display = selectedPoint.client_comment ? 'block' : 'none';
+            }
             document.getElementById('action-comment').textContent = selectedPoint.comment || '';
             const hasCoords = selectedPoint.lat_to && selectedPoint.lng_to;
             const hasPhotos = selectedPoint.photos && selectedPoint.photos.length > 0;
