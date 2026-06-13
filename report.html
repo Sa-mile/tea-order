@@ -799,6 +799,13 @@
         <div class="screen-title" id="order-screen-title"></div>
         <div class="screen-subtitle" id="order-screen-sub"></div>
         <div class="order-summary" id="order-summary"></div>
+        <button id="order-invoice-btn"
+                style="display:none; width:100%; margin:12px 0 0; padding:13px;
+                       border:none; border-radius:10px; background:rgba(49,181,69,0.12);
+                       color:#31b545; font-size:15px; font-weight:600; cursor:pointer;"
+                onclick="generateInvoiceFromDetail()">
+            🧾 Генерувати накладну
+        </button>
         <div class="result-section">
             <div class="result-title">📦 Позиції замовлення</div>
             <div id="order-items-list"></div>
@@ -1347,10 +1354,15 @@
                     const date = row.dataset.date;
                     let touchStartX = 0;
                     let touchStartY = 0;
+                    let longFired = false;
                     row.addEventListener('touchstart', (e) => {
                         touchStartX = e.touches[0].clientX;
                         touchStartY = e.touches[0].clientY;
-                        invLongTimer = setTimeout(() => openInvSheet(oid, name, date), 600);
+                        longFired = false;
+                        invLongTimer = setTimeout(() => {
+                            longFired = true;
+                            openInvSheet(oid, name, date);
+                        }, 600);
                     }, { passive: true });
                     row.addEventListener('touchend',  () => clearTimeout(invLongTimer), { passive: true });
                     row.addEventListener('touchmove', (e) => {
@@ -1360,6 +1372,13 @@
                             clearTimeout(invLongTimer);
                         }
                     }, { passive: true });
+                    row.addEventListener('click', (e) => {
+                        if (longFired) {
+                            e.stopImmediatePropagation();
+                            e.preventDefault();
+                            longFired = false;
+                        }
+                    }, { capture: true });
                     row.addEventListener('contextmenu', e => { e.preventDefault(); openInvSheet(oid, name, date); });
                 });
 
@@ -1454,6 +1473,10 @@
             document.getElementById('order-screen-sub').textContent = dateStr;
             document.getElementById('order-summary').innerHTML = '<div class="skeleton"></div>';
             document.getElementById('order-items-list').innerHTML = '<div class="skeleton"></div><div class="skeleton"></div>';
+            
+            const invBtn = document.getElementById('order-invoice-btn');
+            if (invBtn) invBtn.style.display = 'none';
+            
             showScreen('screen-order');
 
             try {
@@ -1493,6 +1516,13 @@
                 }
 
                 document.getElementById('order-items-list').innerHTML = html;
+                
+                if (invBtn) {
+                    invBtn.style.display = 'block';
+                    invBtn.dataset.orderId   = orderId;
+                    invBtn.dataset.clientName = clientName;
+                    invBtn.dataset.date       = dateStr;
+                }
             } catch (e) {
                 tg.HapticFeedback.notificationOccurred('error');
                 showToast('Помилка завантаження деталей', 'error');
@@ -1578,6 +1608,14 @@
                 tg.HapticFeedback.notificationOccurred('error');
                 showToast('❌ ' + e.message, 'error');
             }
+        }
+
+        async function generateInvoiceFromDetail() {
+            const btn = document.getElementById('order-invoice-btn');
+            const oid = parseInt(btn.dataset.orderId);
+            const name = btn.dataset.clientName;
+            const date = btn.dataset.date;
+            openInvSheet(oid, name, date);
         }
 
         loadClients();
