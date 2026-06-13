@@ -1581,6 +1581,7 @@
 
         async function generateInvoice() {
             if (!invOrderId) return;
+            const orderIdToSend = invOrderId;
             closeInvSheet();
             tg.HapticFeedback.impactOccurred('light');
             showToast('⏳ Генерую накладну...');
@@ -1590,7 +1591,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         manager_id: Number(managerId),
-                        order_id:   invOrderId,
+                        order_id:   orderIdToSend,
                     }),
                 });
                 const data = await resp.json();
