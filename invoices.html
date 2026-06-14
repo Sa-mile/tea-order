@@ -349,6 +349,7 @@
             item.addEventListener('touchend',  () => clearTimeout(longPressTimer), { passive: true });
             item.addEventListener('touchmove', () => clearTimeout(longPressTimer), { passive: true });
             item.addEventListener('contextmenu', e => { e.preventDefault(); openSheet(clientName); });
+            item.addEventListener('dblclick', e => { e.preventDefault(); openSheet(clientName); });
         });
     }
 
