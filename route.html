@@ -632,6 +632,9 @@
                 <div class="stat-box">
                     <div class="stat-label">Пробіг</div>
                     <div class="stat-value" id="driver-km">0.0 км</div>
+                    <div id="driver-km-total" style="font-size:9px; opacity:0.7; margin-top:2px;">
+                        Всього: 0.0 км
+                    </div>
                 </div>
             </div>
             <button class="btn btn-outline" id="start-route-btn" onclick="startRoute()">Старт маршруту</button>
@@ -1149,6 +1152,14 @@
 
             if (reorderMode) initDragAndDrop();
             else attachCardHandlers();
+
+            updateTotalKm();
+        }
+
+        function updateTotalKm() {
+            const total = points.reduce((sum, p) => sum + (Number(p.dist_from_last) || 0), 0);
+            const el = document.getElementById('driver-km-total');
+            if (el) el.textContent = `Всього: ${total.toFixed(1)} км`;
         }
 
         // ── Finish route flow ─────────────────────────────────────────────────
