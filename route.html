@@ -1520,6 +1520,24 @@
             document.querySelectorAll('.point-card[draggable="true"]').forEach(card => {
                 const orderId = Number(card.dataset.orderId);
 
+                // ── Довгий тап по картці — відкріпити точку ──
+                let unlockTimer = null;
+                card.addEventListener('touchstart', e => {
+                    if (e.target.closest('.drag-handle')) return;
+                    const p = points.find(pt => Number(pt.order_id) === orderId);
+                    if (!p || !p.lock) return;
+                    unlockTimer = setTimeout(() => {
+                        showConfirmModal(
+                            'Відкріпити точку?',
+                            `Точку «${p.client_name}» більше не буде зафіксовано на цій позиції.`,
+                            () => unlockPoint(p)
+                        );
+                    }, 600);
+                    const clearUnlockTimer = () => clearTimeout(unlockTimer);
+                    card.addEventListener('touchmove', clearUnlockTimer, { once: true });
+                    card.addEventListener('touchend', clearUnlockTimer, { once: true });
+                }, { passive: true });
+
                 // ── Desktop HTML5 drag ──────────────────────
                 card.addEventListener('dragstart', e => {
                     if (!reorderMode) return;
@@ -1653,6 +1671,13 @@
                     dragSrcOrderId = null;
                 }
             });
+        }
+
+        function unlockPoint(p) {
+            p.lock = null;
+            tg.HapticFeedback.notificationOccurred('success');
+            saveNewOrder().catch(() => { });
+            renderDriverList();
         }
 
         function reorderPoints(fromOrderId, toOrderId) {
