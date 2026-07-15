@@ -1027,7 +1027,7 @@
                         if (routeMap[p.order_id]) {
                             p.duration_min = routeMap[p.order_id].duration_min;
                             p.dist_from_last = routeMap[p.order_id].dist_from_last;
-                            p.distance_km = routeMap[p.order_id].distance_km;
+                            p.planned_distance_km = routeMap[p.order_id].distance_km;
                             if (!p.lat_to && routeMap[p.order_id].lat) p.lat_to = routeMap[p.order_id].lat;
                             if (!p.lng_to && routeMap[p.order_id].lng) p.lng_to = routeMap[p.order_id].lng;
                             if (!p.lock) p.visit_order = routeMap[p.order_id].visit_order;
@@ -1158,7 +1158,11 @@
         }
 
         function updateTotalKm() {
-            const total = points.reduce((sum, p) => sum + (Number(p.distance_km) || 0), 0);
+            const total = points.reduce((sum, p) => {
+                const isDelivered = p.delivery_status === 'delivered';
+                const val = isDelivered ? p.distance_km : p.planned_distance_km;
+                return sum + (Number(val) || 0);
+            }, 0);
             const el = document.getElementById('driver-km-total');
             if (el) el.textContent = `Всього: ${total.toFixed(1)} км`;
         }
@@ -1452,7 +1456,11 @@
                         if (!p) return;
                         if (!routeStarted) {
                             tg.HapticFeedback.notificationOccurred('warning');
-                            showToast('Спочатку старт маршруту', 'warning');
+                            showConfirmModal(
+                                'Маршрут ще не почато',
+                                'Спочатку потрібно натиснути «Старт маршруту». Почати зараз?',
+                                () => startRoute()
+                            );
                             return;
                         }
                         confirmDelivery(p);
@@ -1508,7 +1516,11 @@
                         if (!p) return;
                         if (!routeStarted) {
                             tg.HapticFeedback.notificationOccurred('warning');
-                            showToast('Спочатку старт маршруту', 'warning');
+                            showConfirmModal(
+                                'Маршрут ще не почато',
+                                'Спочатку потрібно натиснути «Старт маршруту». Почати зараз?',
+                                () => startRoute()
+                            );
                             return;
                         }
                         openUnpaidModal(p);
@@ -1752,7 +1764,7 @@
                             if (!p.lock) p.visit_order = routeMap[p.order_id].visit_order;
                             p.duration_min = routeMap[p.order_id].duration_min;
                             p.dist_from_last = routeMap[p.order_id].dist_from_last;
-                            p.distance_km = routeMap[p.order_id].distance_km;
+                            p.planned_distance_km = routeMap[p.order_id].distance_km;
                         }
                     });
                     sortPointsWithLocks();
