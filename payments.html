@@ -425,6 +425,14 @@
                        autocomplete="off">
                 <div id="debts-client-suggestions" class="suggestions-list"></div>
             </div>
+            <div style="display:flex; justify-content:flex-end; align-items:center; margin-bottom:8px;">
+                <label style="display:flex; align-items:center; gap:6px;
+                              font-size:13px; color:var(--tg-theme-hint-color); cursor:pointer;">
+                    <input type="checkbox" id="debts-amount-mode" style="width:16px; height:16px; cursor:pointer;"
+                           onchange="toggleDebtsAmountMode(this.checked)">
+                    Пошук за сумою боргу
+                </label>
+            </div>
             <div class="date-row">
                 <input type="date" id="debts-filter-from">
                 <span>—</span>
@@ -500,6 +508,9 @@
         let activeDateForState2 = null;
         let debtsLoaded = false;
         let debtCopyData = [];
+        let debtsAmountMode = false;
+        let amountSearchTimer = null;
+        let amountSearchSeq = 0;
 
         const DEBT_COPY_ICON = '<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="9" width="11" height="11" rx="2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
         const DEBT_CHECK_ICON = '<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.2 4.2L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -680,7 +691,7 @@
                 const dateFixed = document.getElementById('debts-filter-date').value;
                 const dateFrom = document.getElementById('debts-filter-from').value;
                 const dateTo = document.getElementById('debts-filter-to').value;
-                const client = document.getElementById('debts-filter-client').value;
+                const client = debtsAmountMode ? '' : document.getElementById('debts-filter-client').value;
 
                 let url = `${apiUrl}/api/debt-dates?manager_id=${managerId}`;
                 if (dateFixed) url += `&date=${fmtIn(dateFixed)}`;
@@ -727,6 +738,11 @@
         }
 
         function applyDebtsFilters() {
+            if (debtsAmountMode) {
+                const normalized = normalizeAmountInput(debtsFilterInput.value);
+                if (normalized) onDebtsAmountInput(debtsFilterInput.value);
+                return;
+            }
             debtsLoaded = false;
             backToState1();
             loadDebtsData();
@@ -737,6 +753,17 @@
             document.getElementById('debts-filter-from').value = '';
             document.getElementById('debts-filter-to').value = '';
             document.getElementById('debts-filter-client').value = '';
+
+            if (debtsAmountMode) {
+                debtsAmountMode = false;
+                document.getElementById('debts-amount-mode').checked = false;
+                debtsFilterInput.placeholder = '🔍 Пошук по імені клієнта...';
+                debtsFilterInput.setAttribute('inputmode', 'text');
+                debtsFilterSugg.style.maxHeight = '';
+            }
+            debtsFilterSugg.innerHTML = '';
+            debtsFilterSugg.style.display = 'none';
+
             debtsLoaded = false;
             applyDebtsFilters();
         }
@@ -744,7 +771,136 @@
         const debtsFilterInput = document.getElementById('debts-filter-client');
         const debtsFilterSugg = document.getElementById('debts-client-suggestions');
 
+        function toggleDebtsAmountMode(checked) {
+            const hadValue = debtsFilterInput.value.trim() !== '';
+            debtsAmountMode = checked;
+
+            if (amountSearchTimer) { clearTimeout(amountSearchTimer); amountSearchTimer = null; }
+            amountSearchSeq++;
+
+            debtsFilterInput.value = '';
+            debtsFilterSugg.innerHTML = '';
+            debtsFilterSugg.style.display = 'none';
+            debtsFilterSugg.style.maxHeight = debtsAmountMode ? '280px' : '';
+
+            if (debtsAmountMode) {
+                debtsFilterInput.placeholder = 'Сума боргу, грн…';
+                debtsFilterInput.setAttribute('inputmode', 'decimal');
+            } else {
+                debtsFilterInput.placeholder = '🔍 Пошук по імені клієнта...';
+                debtsFilterInput.setAttribute('inputmode', 'text');
+            }
+
+            if (hadValue) {
+                applyDebtsFilters();
+            }
+        }
+
+        function normalizeAmountInput(raw) {
+            const normalized = String(raw || '')
+                .replace(/грн/gi, '')
+                .replace(/\s+/g, '')
+                .replace(',', '.');
+            if (normalized.length < 2 || !/^\d+(\.\d+)?$/.test(normalized)) return null;
+            return normalized;
+        }
+
+        function onDebtsAmountInput(raw) {
+            if (amountSearchTimer) { clearTimeout(amountSearchTimer); amountSearchTimer = null; }
+
+            const amount = normalizeAmountInput(raw);
+            if (!amount) {
+                debtsFilterSugg.innerHTML = '';
+                debtsFilterSugg.style.display = 'none';
+                return;
+            }
+
+            const seq = ++amountSearchSeq;
+            debtsFilterSugg.innerHTML = '<div class="suggestion-item" style="cursor:default; color:var(--tg-theme-hint-color);">Шукаю…</div>';
+            debtsFilterSugg.style.display = 'block';
+
+            amountSearchTimer = setTimeout(async () => {
+                try {
+                    const dateFrom = document.getElementById('debts-filter-from').value;
+                    const dateTo = document.getElementById('debts-filter-to').value;
+
+                    let url = `${apiUrl}/api/debts-by-amount?manager_id=${managerId}&amount=${encodeURIComponent(amount)}`;
+                    if (dateFrom) url += `&date_from=${fmtIn(dateFrom)}`;
+                    if (dateTo) url += `&date_to=${fmtIn(dateTo)}`;
+
+                    const resp = await fetch(url);
+                    const data = await resp.json();
+
+                    if (seq !== amountSearchSeq) return; // застаріла відповідь — ігноруємо
+                    renderAmountSuggestions(data.matches || [], amount);
+                } catch (e) {
+                    console.error(e);
+                    if (seq !== amountSearchSeq) return;
+                    debtsFilterSugg.innerHTML = '';
+                    debtsFilterSugg.style.display = 'none';
+                }
+            }, 350);
+        }
+
+        function renderAmountSuggestions(matches, amountText) {
+            debtsFilterSugg.innerHTML = '';
+
+            if (matches.length === 0) {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.style.cursor = 'default';
+                div.style.color = 'var(--tg-theme-hint-color)';
+                div.textContent = `Боржників на суму ${amountText} грн не знайдено`;
+                debtsFilterSugg.appendChild(div);
+                debtsFilterSugg.style.display = 'block';
+                return;
+            }
+
+            matches.forEach(m => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+
+                const nameEl = document.createElement('div');
+                nameEl.style.fontWeight = '600';
+                nameEl.textContent = m.client_name;
+
+                let metaText = `📅 ${m.date} · борг ${m.amount} грн`;
+                if (m.kind === 'order') metaText += ' · окреме замовлення';
+                if (m.has_partial) metaText += ' · часткова оплата';
+                const metaEl = document.createElement('div');
+                metaEl.style.cssText = 'font-size:12px; color:var(--tg-theme-hint-color); margin-top:2px;';
+                metaEl.textContent = metaText;
+
+                div.appendChild(nameEl);
+                div.appendChild(metaEl);
+                div.onclick = () => pickDebtByAmount(m);
+                debtsFilterSugg.appendChild(div);
+            });
+            debtsFilterSugg.style.display = 'block';
+        }
+
+        function pickDebtByAmount(match) {
+            debtsFilterSugg.innerHTML = '';
+            debtsFilterSugg.style.display = 'none';
+
+            debtsAmountMode = false;
+            document.getElementById('debts-amount-mode').checked = false;
+            debtsFilterSugg.style.maxHeight = '';
+            debtsFilterInput.placeholder = '🔍 Пошук по імені клієнта...';
+            debtsFilterInput.setAttribute('inputmode', 'text');
+            debtsFilterInput.value = match.client_name;
+
+            openDateDebtors(match.date);
+
+            debtsLoaded = false;
+            loadDebtsData();
+        }
+
         debtsFilterInput.addEventListener('input', function () {
+            if (debtsAmountMode) {
+                onDebtsAmountInput(this.value);
+                return;
+            }
             const val = this.value.toLowerCase().trim();
             debtsFilterSugg.innerHTML = '';
             if (!val) { debtsFilterSugg.style.display = 'none'; applyDebtsFilters(); return; }
@@ -783,7 +939,7 @@
                 const list = document.getElementById('debts-debtors-list');
                 list.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
 
-                const client = document.getElementById('debts-filter-client').value;
+                const client = debtsAmountMode ? '' : document.getElementById('debts-filter-client').value;
                 const dateFrom = document.getElementById('debts-filter-from').value;
                 const dateTo = document.getElementById('debts-filter-to').value;
 
