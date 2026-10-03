@@ -272,6 +272,26 @@
             background: rgba(49, 181, 69, 0.22);
         }
 
+        /* ─── ЦІЛЬОВИЙ БЛОК ЗАМОВЛЕННЯ ДЛЯ ВСТАВКИ КВИТАНЦІЇ (Ctrl+V) ─── */
+        .receipt-target {
+            border: 1px dashed transparent;
+            transition: border-color 0.15s;
+        }
+
+        .receipt-target.receipt-active {
+            border-color: rgba(49, 181, 69, 0.6);
+        }
+
+        .receipt-remove-btn {
+            background: none;
+            border: none;
+            color: #e53935;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 4px 6px;
+            white-space: nowrap;
+        }
+
         .btn {
             width: 100%;
             padding: 14px;
@@ -505,6 +525,9 @@
 
         let allClientsList = [];
         let accordionPhotos = {};
+        let orderClientNames = {};
+        let activeReceiptOrderId = null;
+        const SHOW_CTRL_V_HINT = !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
         let activeDateForState2 = null;
         let debtsLoaded = false;
         let debtCopyData = [];
@@ -958,6 +981,8 @@
             const list = document.getElementById('debts-debtors-list');
             list.innerHTML = '';
             debtCopyData = [];
+            orderClientNames = {};
+            activeReceiptOrderId = null;
             if (clients.length === 0) {
                 list.innerHTML = '<div class="empty-state">✅ За цією датою боржників немає</div>';
                 return;
@@ -997,7 +1022,10 @@
                     const oAccordionId = `collapsible-order-${cIdx}-${oIdx}`;
                     const isPartial = o.payment_status === 'partial';
                     const remainder = isPartial ? (o.order_total - o.paid_amount) : o.total;
+                    orderClientNames[o.order_id] = c.client_name;
                     const oDiv = document.createElement('div');
+                    oDiv.className = 'receipt-target';
+                    oDiv.dataset.orderId = o.order_id;
                     oDiv.style.padding = '10px';
                     oDiv.style.background = 'rgba(0,0,0,0.02)';
                     oDiv.style.borderRadius = '8px';
@@ -1023,9 +1051,12 @@
                                     style="padding:8px 14px; font-size:13px;">
                                 📎 Квитанція
                             </button>
-                            <div id="accordion-photo-preview-${o.order_id}" style="margin-top:8px; display:none;">
-                                <img src="" id="accordion-img-${o.order_id}"
-                                     style="max-width:80px; border-radius:8px;">
+                            ${SHOW_CTRL_V_HINT ? `<span style="font-size:11px; color:var(--tg-theme-hint-color); margin-left:6px;">або Ctrl+V</span>` : ''}
+                            <div id="accordion-photo-preview-${o.order_id}" style="margin-top:8px; display:none; align-items:flex-start; gap:8px;">
+                                <img src="" id="accordion-img-${o.order_id}" alt="Квитанція"
+                                     onclick="viewReceipt(document.getElementById('accordion-img-${o.order_id}').src)"
+                                     style="max-width:120px; border-radius:8px; cursor:pointer;">
+                                <button type="button" class="receipt-remove-btn" onclick="removeAccordionPhoto(${o.order_id})">✕ Прибрати</button>
                             </div>
                         </div>
 
@@ -1044,6 +1075,10 @@
                         </div>
                     `;
                     ordersList.appendChild(oDiv);
+
+                    if (accordionPhotos[o.order_id]) {
+                        setReceiptPreview(o.order_id, `data:image/jpeg;base64,${accordionPhotos[o.order_id]}`);
+                    }
                 });
             });
         }
@@ -1134,15 +1169,19 @@
             if (button) {
                 button.textContent = expanded ? 'Згорнути ▲' : 'Розгорнути ▼';
             }
+
+            if (expanded && id.startsWith('collapsible-client-')) {
+                const orderBlocks = el.querySelectorAll('.receipt-target');
+                if (orderBlocks.length === 1) {
+                    setActiveReceiptOrder(parseInt(orderBlocks[0].dataset.orderId, 10));
+                }
+            }
         }
 
-        function handleAccordionPhoto(input, orderId) {
-            const file = input.files[0];
+        // ── Квитанції: стиснення/прев'ю, спільне для вибору файлу й вставки з буфера ──
+
+        function processReceiptFile(file, orderId, onDone) {
             if (!file) return;
-            const fileNameEl = document.getElementById(`accordion-photo-name-${orderId}`);
-            if (fileNameEl) {
-                fileNameEl.textContent = file.name;
-            }
             const reader = new FileReader();
             reader.onload = function (e) {
                 const img = new Image();
@@ -1159,13 +1198,125 @@
                     const compressed = canvas.toDataURL('image/jpeg', 0.82);
 
                     accordionPhotos[orderId] = compressed.split(',')[1];
-                    document.getElementById(`accordion-img-${orderId}`).src = compressed;
-                    document.getElementById(`accordion-photo-preview-${orderId}`).style.display = 'block';
+                    setReceiptPreview(orderId, compressed);
+                    if (typeof onDone === 'function') onDone();
                 };
                 img.src = e.target.result;
             };
             reader.readAsDataURL(file);
         }
+
+        function setReceiptPreview(orderId, dataUrl) {
+            const imgEl = document.getElementById(`accordion-img-${orderId}`);
+            const previewEl = document.getElementById(`accordion-photo-preview-${orderId}`);
+            if (imgEl) imgEl.src = dataUrl;
+            if (previewEl) previewEl.style.display = 'flex';
+        }
+
+        function removeAccordionPhoto(orderId) {
+            delete accordionPhotos[orderId];
+            const imgEl = document.getElementById(`accordion-img-${orderId}`);
+            const previewEl = document.getElementById(`accordion-photo-preview-${orderId}`);
+            if (imgEl) imgEl.src = '';
+            if (previewEl) previewEl.style.display = 'none';
+        }
+
+        function handleAccordionPhoto(input, orderId) {
+            const file = input.files[0];
+            if (!file) return;
+            const fileNameEl = document.getElementById(`accordion-photo-name-${orderId}`);
+            if (fileNameEl) {
+                fileNameEl.textContent = file.name;
+            }
+            processReceiptFile(file, orderId);
+        }
+
+        // ── Вставка квитанції з буфера обміну (Ctrl+V / Cmd+V) ──
+
+        function setActiveReceiptOrder(orderId) {
+            if (activeReceiptOrderId === orderId) return;
+            if (activeReceiptOrderId !== null) {
+                const prevEl = document.querySelector(`.receipt-target[data-order-id="${activeReceiptOrderId}"]`);
+                if (prevEl) prevEl.classList.remove('receipt-active');
+            }
+            activeReceiptOrderId = orderId;
+            if (orderId !== null) {
+                const el = document.querySelector(`.receipt-target[data-order-id="${orderId}"]`);
+                if (el) el.classList.add('receipt-active');
+            }
+        }
+
+        function resolveReceiptTargetOrderId() {
+            if (activeReceiptOrderId !== null) {
+                const el = document.querySelector(`.receipt-target[data-order-id="${activeReceiptOrderId}"]`);
+                if (el && el.closest('.collapse-content.expanded')) {
+                    return activeReceiptOrderId;
+                }
+            }
+
+            const expandedBlocks = document.querySelectorAll('.collapse-content.expanded .receipt-target');
+            if (expandedBlocks.length === 1) {
+                return parseInt(expandedBlocks[0].dataset.orderId, 10);
+            }
+
+            return null;
+        }
+
+        (function initReceiptPasteHandling() {
+            const debtorsList = document.getElementById('debts-debtors-list');
+
+            debtorsList.addEventListener('click', e => {
+                const target = e.target.closest('.receipt-target');
+                if (target) setActiveReceiptOrder(parseInt(target.dataset.orderId, 10));
+            });
+            debtorsList.addEventListener('focusin', e => {
+                const target = e.target.closest('.receipt-target');
+                if (target) setActiveReceiptOrder(parseInt(target.dataset.orderId, 10));
+            });
+
+            document.addEventListener('paste', e => {
+                const screenDebts = document.getElementById('screen-debts');
+                const state2 = document.getElementById('debts-state-2');
+                const onDebtsState2 = screenDebts && screenDebts.classList.contains('active') &&
+                                       state2 && state2.style.display === 'block';
+                if (!onDebtsState2) return;
+
+                const items = e.clipboardData && e.clipboardData.items;
+                if (!items) return;
+
+                let imageFile = null;
+                let hasText = false;
+                for (const item of items) {
+                    if (!imageFile && item.kind === 'file' && item.type.indexOf('image/') === 0) {
+                        imageFile = item.getAsFile();
+                    }
+                    if (item.kind === 'string' && item.type === 'text/plain') {
+                        hasText = true;
+                    }
+                }
+                if (!imageFile) return; // немає зображення — звичайна вставка тексту не чіпається
+
+                const active = document.activeElement;
+                const isTextField = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
+                if (isTextField && hasText) {
+                    const text = e.clipboardData.getData('text/plain');
+                    if (text && text.trim() !== '') return; // користувач вставляє текст — не перехоплюємо
+                }
+
+                e.preventDefault();
+
+                const orderId = resolveReceiptTargetOrderId();
+                if (orderId === null) {
+                    showToast('Клацніть у блок замовлення, до якого додати квитанцію', 'error');
+                    return;
+                }
+
+                const clientName = orderClientNames[orderId] || '';
+                processReceiptFile(imageFile, orderId, () => {
+                    showToast(`Квитанцію додано${clientName ? ': ' + clientName : ''}`);
+                });
+            });
+        })();
 
         async function accordionMarkPaid(orderId) {
             const paid = parseFloat(document.getElementById(`pay-amt-${orderId}`).value);
