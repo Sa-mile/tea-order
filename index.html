@@ -5,6 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- ТІЛЬКИ ДЛЯ ПЕРЕГЛЯДУ ПОЗА TELEGRAM: заглушка, у бойовий файл не потрапляє -->
+    <script>
+        if (!window.Telegram) {
+            window.Telegram = { WebApp: {
+                expand() {}, close() {}, sendData(d) { console.log('sendData', d); },
+                showAlert(m) { alert(m); },
+                HapticFeedback: { impactOccurred() {}, notificationOccurred() {} }
+            }};
+        }
+    </script>
     <style>
         body {
             font-family: -apple-system, sans-serif;
@@ -287,6 +297,9 @@
     </div>
     <div id="teas" class="items-container"></div>
 
+    <!-- Пюре (Груша, Гарбуз) — без категорії, завжди видно -->
+    <div id="puree" style="margin-top:10px; padding:5px 0;"></div>
+
     <!-- Інше -->
     <div class="category-header" onclick="toggleCat('glass', this)">
         <span>📦 Інше <span id="arrow-glass">▼</span></span>
@@ -314,9 +327,13 @@
         let tg = window.Telegram.WebApp;
         tg.expand();
 
+        // Порядок ключів важливий: від нього залежить порядок рядків у підсумку.
+        // puree (Груша, Гарбуз) — тільки візуально окремий блок; для бекенду
+        // це й далі лимонади (бекенд бере з ключа лише частину після "_").
         const products = {
-            lemonades: ["АПЕЛЬСИН", "ГРЕЙПФРУТ", "КЛАСИК", "ІМБИР", "ПЕРСИК", "ДИНЯ", "ПОЛУНИЦЯ", "МАРАКУЙЯ", "ВИШНЯ", "МАЛИНА", "ГРУША", "ГАРБУЗ"],
+            lemonades: ["АПЕЛЬСИН", "ГРЕЙПФРУТ", "КЛАСИК", "ІМБИР", "ПЕРСИК", "ДИНЯ", "ПОЛУНИЦЯ", "МАРАКУЙЯ", "ВИШНЯ", "МАЛИНА"],
             teas: ["ОБЛІПИХА", "ЖУРАВЛИНА", "ІМБИР ЧАЙ", "СМОРОДИНА", "МАЛИНА ЧАЙ", "ЧОРНИЦЯ", "ПОЛУНИЦЯ ЧАЙ", "ОБЛІПИХА+МАРАКУЙЯ", "ВИШНЯ ЧАЙ", "ОБЛІПИХА+ІМБИР", "ІМБИР+МАЛИНА"],
+            puree: ["ГРУША", "ГАРБУЗ"],
             glass: ["0,4 ПЕТ 100 шт", "0,5 ПЕТ 100 шт"]
         };
 
@@ -452,7 +469,8 @@
         }
 
         function attachSwipe(wrapper, itemKey, cat) {
-            if (cat === 'glass') return;
+            // glass і puree — без свайп-вибору (там немає "Всіх по:")
+            if (cat === 'glass' || cat === 'puree') return;
             const card = wrapper.querySelector('.item-card');
             const bgRight = wrapper.querySelector('.item-swipe-bg.right');
             const bgLeft  = wrapper.querySelector('.item-swipe-bg.left');
@@ -524,7 +542,6 @@
             const hasSelected = products[cat].some(name => selectedItems[`${cat}_${name}`]);
 
             products[cat].forEach(name => {
-                if (name === 'ГАРБУЗ') return;
                 const key = `${cat}_${name}`;
                 const shouldApply = hasSelected ? !!selectedItems[key] : true;
                 if (shouldApply) {
@@ -543,7 +560,12 @@
             tg.HapticFeedback.notificationOccurred('success');
         }
 
-        const catLabels = { lemonades: '🍋 Лимонади', teas: '🍓 Чаї', glass: '🥤 ПЕТ' };
+        const catLabels = {
+            lemonades: '🍋 Лимонади',
+            teas:      '🍓 Чаї',
+            puree:     '🥣 Пюре',
+            glass:     '🥤 ПЕТ'
+        };
 
         function updateSummary() {
             let total = 0;
