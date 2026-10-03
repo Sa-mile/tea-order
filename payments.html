@@ -230,6 +230,48 @@
             color: #43a047;
         }
 
+        /* ─── КНОПКА "СКОПІЮВАТИ НАГАДУВАННЯ" ─── */
+        .copy-reminder-btn {
+            width: 44px;
+            height: 44px;
+            margin: -4px 0 -4px -4px;
+            padding: 0;
+            border: none;
+            background: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .copy-reminder-square {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid rgba(49, 181, 69, 0.5);
+            background: rgba(49, 181, 69, 0.10);
+            color: #31b545;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s, border-color 0.15s, transform 0.1s;
+        }
+
+        .copy-reminder-square svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .copy-reminder-btn:active .copy-reminder-square {
+            transform: scale(0.94);
+        }
+
+        .copy-reminder-btn.copied .copy-reminder-square {
+            border-color: rgba(49, 181, 69, 0.7);
+            background: rgba(49, 181, 69, 0.22);
+        }
+
         .btn {
             width: 100%;
             padding: 14px;
@@ -457,6 +499,10 @@
         let accordionPhotos = {};
         let activeDateForState2 = null;
         let debtsLoaded = false;
+        let debtCopyData = [];
+
+        const DEBT_COPY_ICON = '<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="9" width="11" height="11" rx="2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        const DEBT_CHECK_ICON = '<svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.2 4.2L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
@@ -755,6 +801,7 @@
         function renderDateDebtors(clients) {
             const list = document.getElementById('debts-debtors-list');
             list.innerHTML = '';
+            debtCopyData = [];
             if (clients.length === 0) {
                 list.innerHTML = '<div class="empty-state">✅ За цією датою боржників немає</div>';
                 return;
@@ -764,6 +811,8 @@
                 const cTotal = c.orders.reduce((sum, o) => {
                     return sum + (o.payment_status === 'partial' ? (o.order_total - o.paid_amount) : o.total);
                 }, 0);
+                debtCopyData[cIdx] = { name: c.client_name, total: cTotal };
+
                 const cDiv = document.createElement('div');
                 cDiv.className = 'card';
                 cDiv.style.marginBottom = '10px';
@@ -774,6 +823,12 @@
                     <div class="item-row" style="cursor:pointer;" onclick="toggleCollapse('${accordionId}')">
                         <div class="item-name" style="font-weight:700;">🏪 ${c.client_name}${c.deposit > 0 ? `<div style="font-size:13px; color:#31b545; margin-top:4px;">💚 Депозит: ${c.deposit} грн</div>` : ''}</div>
                         <div class="item-val red" style="font-weight:700;">${cTotal} грн <span>▼</span></div>
+                    </div>
+                    <div style="display:flex; align-items:center;">
+                        <button type="button" class="copy-reminder-btn" aria-label="Скопіювати нагадування"
+                                onclick="event.stopPropagation(); copyDebtReminder(this, ${cIdx})">
+                            <span class="copy-reminder-square">${DEBT_COPY_ICON}</span>
+                        </button>
                     </div>
                     <div id="${accordionId}" class="collapse-content" style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.05);">
                         <div id="client-orders-${cIdx}"></div>
@@ -835,6 +890,79 @@
                     ordersList.appendChild(oDiv);
                 });
             });
+        }
+
+        // ── Копіювання нагадування боржнику ──
+
+        function copyDebtReminder(btn, idx) {
+            const data = debtCopyData[idx];
+            if (!data || !activeDateForState2) {
+                tg.HapticFeedback.notificationOccurred('error');
+                showToast('Не вдалося скопіювати', 'error');
+                return;
+            }
+
+            const text = `Добрий день! Нагадуємо про заборгованість за ${activeDateForState2} — ${data.total} грн (${data.name}). Дякуємо!`;
+
+            // Основний спосіб — Clipboard API, запасний — execCommand('copy').
+            // Якщо на iPhone основний спосіб відхилятиметься й запасний після нього
+            // теж не спрацює (втрата "жесту користувача" після await) — поміняти
+            // місцями: спершу execCommand, потім navigator.clipboard.
+            copyTextToClipboard(text).then(ok => {
+                if (ok) {
+                    onDebtCopySuccess(btn);
+                } else {
+                    tg.HapticFeedback.notificationOccurred('error');
+                    showToast('Не вдалося скопіювати', 'error');
+                }
+            });
+        }
+
+        function onDebtCopySuccess(btn) {
+            if (btn._copyResetTimer) {
+                clearTimeout(btn._copyResetTimer);
+            }
+            const square = btn.querySelector('.copy-reminder-square');
+            btn.classList.add('copied');
+            if (square) square.innerHTML = DEBT_CHECK_ICON;
+
+            btn._copyResetTimer = setTimeout(() => {
+                btn.classList.remove('copied');
+                if (square) square.innerHTML = DEBT_COPY_ICON;
+                btn._copyResetTimer = null;
+            }, 1500);
+
+            tg.HapticFeedback.notificationOccurred('success');
+            showToast('Скопійовано');
+        }
+
+        function copyTextToClipboard(text) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                return navigator.clipboard.writeText(text)
+                    .then(() => true)
+                    .catch(() => copyTextFallback(text));
+            }
+            return Promise.resolve(copyTextFallback(text));
+        }
+
+        function copyTextFallback(text) {
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.readOnly = true;
+                ta.style.position = 'fixed';
+                ta.style.top = '-9999px';
+                ta.style.left = '-9999px';
+                ta.style.fontSize = '16px';
+                document.body.appendChild(ta);
+                ta.select();
+                ta.setSelectionRange(0, text.length);
+                const ok = document.execCommand('copy');
+                document.body.removeChild(ta);
+                return ok;
+            } catch (e) {
+                return false;
+            }
         }
 
         function toggleCollapse(id, button) {
